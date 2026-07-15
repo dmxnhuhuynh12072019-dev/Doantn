@@ -38,7 +38,7 @@
 
 ## 4. CHI TIẾT TỪNG MODULE (TÁCH BIỆT FE, BE, CHỨC NĂNG & API)
 
-### MODULE 1: QUẢN LÝ TÀI KHOẢN & PHÂN QUYỀN (AUTH & USER MANAGEMENT) nhu
+### MODULE 1: QUẢN LÝ TÀI KHOẢN & PHÂN QUYỀN (AUTH & USER MANAGEMENT)
 
 #### A. Mô tả chức năng & Chi tiết quy trình nghiệp vụ
 * [cite_start]**Đăng ký / Đăng nhập:** Hệ thống cho phép người dùng đăng ký tài khoản bằng thông tin cá nhân cơ bản[cite: 13]. Mật khẩu khi gửi lên server bắt buộc phải được băm bảo mật. [cite_start]Khi đăng nhập thành công, hệ thống phát hành mã JWT lưu trữ phiên làm việc của người dùng[cite: 13].
