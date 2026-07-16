@@ -66,6 +66,92 @@
 * [cite_start]`PUT /profile` -> Body: `{ fullName, phoneNumber }` (Cập nhật thông tin cá nhân)[cite: 13].
 * [cite_start]`PUT /change-password` -> Body: `{ oldPassword, newPassword }` (Đổi mật khẩu trực tiếp)[cite: 13].
 
+#### E. Hướng dẫn Kiểm thử Module 1 (Test Guide)
+
+> **Điều kiện tiên quyết:** Backend đang chạy tại `http://localhost:3000` và Frontend đang chạy tại `http://localhost:5173`. Database đã được seed bằng file `seed.sql`.
+
+##### 🖥️ Kiểm thử qua Giao diện (Frontend)
+
+**1. Kiểm thử Đăng nhập & Phân quyền (RBAC)**
+- Mở trình duyệt, vào `http://localhost:5173` → Tự động chuyển về trang `/login`.
+- Đăng nhập bằng `user@acoh.com` / `user123` → Phải chuyển hướng đến `/user/dashboard`.
+- Thử truy cập `http://localhost:5173/admin/dashboard` (trong khi đang đăng nhập User) → Phải bị chặn và chuyển hướng về `/unauthorized`.
+- Đăng xuất → Đăng nhập `garage@acoh.com` / `garage123` → Phải chuyển về `/garage/dashboard`.
+- Đăng xuất → Đăng nhập `admin@acoh.com` / `admin123` → Phải chuyển về `/admin/dashboard`.
+
+**2. Kiểm thử Đăng ký tài khoản mới**
+- Vào trang `/register` → Nhập thông tin mới, chọn vai trò **Chủ phương tiện (User)**.
+- Nhấn Đăng ký → Phải thấy thông báo thành công và tự chuyển về `/login` sau 3 giây.
+- Thử đăng ký lại **email vừa dùng** → Phải thấy lỗi "Email đã được đăng ký".
+
+**3. Kiểm thử Cập nhật Hồ sơ & Đổi mật khẩu**
+- Sau khi đăng nhập, vào trang `/profile`.
+- Sửa **Họ tên** hoặc **Số điện thoại** → Nhấn Lưu → Phải thấy thông báo thành công.
+- Nhập **Mật khẩu hiện tại sai** → Phải thấy lỗi "Mật khẩu cũ không chính xác".
+- Nhập đúng mật khẩu cũ và mật khẩu mới → Đổi thành công → Đăng xuất và đăng nhập lại bằng mật khẩu mới để xác nhận.
+
+**4. Kiểm thử Quên mật khẩu (OTP)**
+- Vào `/forgot-password` → Nhập email `user@acoh.com` → Nhấn Gửi OTP.
+- Nếu SMTP chưa cấu hình: Xem **console Terminal backend** để lấy mã OTP được in ra.
+- Vào `/reset-password` → Nhập email, OTP, mật khẩu mới → Xác nhận thành công.
+- Đăng nhập lại bằng mật khẩu mới để xác nhận.
+
+##### 🔌 Kiểm thử qua API trực tiếp (Dùng Postman hoặc Thunder Client)
+
+**Đăng ký tài khoản:**
+```
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+  "fullName": "Nguyễn Văn Test",
+  "email": "test@acoh.com",
+  "password": "test123",
+  "phoneNumber": "0909090909",
+  "role": "User"
+}
+```
+✅ Kết quả mong đợi: `{ "message": "Đăng ký tài khoản thành công!" }`
+
+**Đăng nhập:**
+```
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@acoh.com",
+  "password": "user123"
+}
+```
+✅ Kết quả mong đợi: Nhận về `{ "token": "eyJ...", "user": { ... } }` — Lưu lại token để dùng cho các API sau.
+
+**Xem hồ sơ (cần Token):**
+```
+GET http://localhost:3000/api/auth/profile
+Authorization: Bearer <Token lấy từ bước đăng nhập>
+```
+✅ Kết quả mong đợi: Trả về thông tin người dùng hiện tại.
+
+**Đổi mật khẩu (cần Token):**
+```
+PUT http://localhost:3000/api/auth/change-password
+Authorization: Bearer <Token>
+Content-Type: application/json
+
+{
+  "oldPassword": "user123",
+  "newPassword": "newpass123"
+}
+```
+✅ Kết quả mong đợi: `{ "message": "Đổi mật khẩu thành công!" }`
+
+**Kiểm tra phân quyền bị chặn:**
+```
+PUT http://localhost:3000/api/auth/profile
+(Không có header Authorization)
+```
+✅ Kết quả mong đợi: HTTP `401 Unauthorized` — `{ "message": "Authorization header is missing" }`
+
 ---
 
 ### MODULE 2: QUẢN LÝ PHƯƠNG TIỆN (VEHICLE MANAGEMENT)
@@ -93,7 +179,91 @@
 * [cite_start]`PATCH /:id/odometer` -> Body: `{ currentOdometer }` (Cập nhật nhanh chỉ số kilomet thực tế)[cite: 13].
 * [cite_start]`DELETE /:id` -> Xóa phương tiện khỏi hệ thống[cite: 13].
 
+#### E. Hướng dẫn Kiểm thử Module 2 (Test Guide)
+
+> **Điều kiện tiên quyết:** Đảm bảo Backend và Frontend đã được khởi động. Bạn đã đăng nhập bằng tài khoản `user@acoh.com` / `user123`.
+
+##### 🖥️ Kiểm thử qua Giao diện (Frontend)
+
+**1. Kiểm tra danh sách phương tiện ban đầu**
+- Sau khi đăng nhập, tại trang Dashboard của bạn, giao diện phải hiển thị 2 thẻ (Card) phương tiện:
+  - Ô tô Toyota Vios 1.5G (Biển số: `59A-123.45`)
+  - Xe máy Honda SH Mode 125cc (Biển số: `59B-678.90`)
+
+**2. Kiểm thử thêm mới phương tiện**
+- Click nút **"Thêm phương tiện mới"** ở góc phải trên.
+- Nhập thông tin:
+  - Loại xe: `Ô tô`
+  - Biển số: `79A-888.88`
+  - Hãng xe: `Ford`
+  - Dòng xe: `Ranger`
+  - Năm sản xuất: `2021`
+  - Số km hiện tại: `25000`
+- Click **"Thêm phương tiện"** → Thẻ xe Ford Ranger mới phải lập tức xuất hiện trên màn hình.
+- Thử bấm thêm xe lần nữa và điền biển số trùng `79A-888.88` → Form phải báo lỗi: *"Biển số xe này đã được đăng ký trên hệ thống"*.
+
+**3. Kiểm thử cập nhật số kilomet nhanh (Odometer)**
+- Tại thẻ xe Ford Ranger vừa tạo, click nút **"Cập nhật km"**.
+- Nhập giá trị mới: `26000` → Nhấn **Cập nhật** → Số km trên thẻ xe phải chuyển thành `26,000 km`.
+- Tiếp tục click **"Cập nhật km"**, nhập giá trị nhỏ hơn: `25500` → Hệ thống phải từ chối và báo lỗi: *"Số km mới không được nhỏ hơn số km hiện tại"*.
+
+**4. Kiểm thử chỉnh sửa thông tin cố định**
+- Tại thẻ xe Ford Ranger, click biểu tượng **Sửa (hình cây bút)**.
+- Thay đổi Hãng xe thành `Ford Raptor` và thay đổi Dòng xe.
+- Nhấn **Lưu thay đổi** → Thông tin trên thẻ xe phải được cập nhật tương ứng.
+
+**5. Kiểm thử xóa phương tiện**
+- Tại thẻ xe Ford Raptor, click biểu tượng **Xóa (hình thùng rác)**.
+- Xác nhận hộp thoại thông báo của trình duyệt → Thẻ xe Ford Raptor phải biến mất hoàn toàn khỏi giao diện.
+
+##### 🔌 Kiểm thử qua API trực tiếp (Dùng Postman hoặc Thunder Client)
+
+**Lấy danh sách xe của user đăng nhập:**
+```
+GET http://localhost:3000/api/vehicles
+Authorization: Bearer <Token>
+```
+✅ Kết quả mong đợi: HTTP `200 OK` — Trả về mảng JSON chứa các xe của bạn.
+
+**Thêm xe mới:**
+```
+POST http://localhost:3000/api/vehicles
+Authorization: Bearer <Token>
+Content-Type: application/json
+
+{
+  "licensePlate": "79A-888.88",
+  "vehicleType": "Ô tô",
+  "brand": "Ford",
+  "model": "Ranger",
+  "manufactureYear": 2021,
+  "purchaseDate": "2021-05-10",
+  "currentOdometer": 25000
+}
+```
+✅ Kết quả mong đợi: HTTP `201 Created` — `{ "message": "Thêm phương tiện mới thành công!", "vehicleId": 3 }`
+
+**Cập nhật số km (Odometer):**
+```
+PATCH http://localhost:3000/api/vehicles/3/odometer
+Authorization: Bearer <Token>
+Content-Type: application/json
+
+{
+  "currentOdometer": 26000
+}
+```
+✅ Kết quả mong đợi: HTTP `200 OK` — `{ "message": "Cập nhật số km (Odometer) thành công!" }`
+
+**Xóa phương tiện:**
+```
+DELETE http://localhost:3000/api/vehicles/3
+Authorization: Bearer <Token>
+```
+✅ Kết quả mong đợi: HTTP `200 OK` — `{ "message": "Xóa phương tiện thành công!" }`
+
 ---
+
 
 ### MODULE 3: QUẢN LÝ BẢO DƯỠNG & SỬA CHỮA (MAINTENANCE MANAGEMENT)
 
