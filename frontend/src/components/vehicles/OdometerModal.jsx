@@ -100,7 +100,7 @@ const OdometerModal = ({ isOpen, onClose, onSave, vehicle = null }) => {
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-indigo-650 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 transition flex items-center gap-1.5"
+              className="px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 transition flex items-center gap-1.5"
             >
               {loading && <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>}
               Cập nhật

@@ -20,7 +20,6 @@ DB_PASSWORD=MậtKhẩuCủaBạn
 ### 3. Chạy Backend
 ```powershell
 cd backend
-npm install
 npm run start:dev
 ```
 ✅ Thành công khi thấy: `Application is running on: http://localhost:3000`
@@ -36,6 +35,6 @@ npm run dev
 ### Tài khoản mẫu
 | Email | Mật khẩu | Vai trò |
 |---|---|---|
-| admin@acoh.com | admin123 | Admin |
+| admin@acoh.com | 123456 | Admin |
 | garage@acoh.com | garage123 | Garage |
 | user@acoh.com | user123 | User |
