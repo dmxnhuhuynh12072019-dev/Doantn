@@ -7,6 +7,7 @@ import { DatabaseModule } from './modules/database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { VehiclesModule } from './modules/vehicles/vehicles.module';
 import { MaintenancesModule } from './modules/maintenances/maintenances.module';
+import { LegalModule } from './modules/legal/legal.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { MaintenancesModule } from './modules/maintenances/maintenances.module';
     AuthModule,
     VehiclesModule,
     MaintenancesModule,
+    LegalModule,
     MailerModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

@@ -5,6 +5,7 @@ import VehicleFormModal from '../../components/vehicles/VehicleFormModal';
 import OdometerModal from '../../components/vehicles/OdometerModal';
 import MaintenanceSchedulesTab from '../../components/maintenances/MaintenanceSchedulesTab';
 import MaintenanceHistoryTab from '../../components/maintenances/MaintenanceHistoryTab';
+import LegalDocumentsTab from '../../components/legal/LegalDocumentsTab';
 
 const UserDashboard = () => {
   const { user, logout } = useAuth();
@@ -180,10 +181,10 @@ const UserDashboard = () => {
 
             {/* Tabs bảo dưỡng */}
             <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
-              <div className="flex border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30">
+              <div className="flex border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30 overflow-x-auto">
                 <button
                   onClick={() => setActiveTab('schedules')}
-                  className={`flex-1 sm:flex-initial px-6 py-4 text-sm font-bold border-b-2 transition ${
+                  className={`flex-1 sm:flex-initial px-6 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${
                     activeTab === 'schedules'
                       ? 'border-indigo-600 text-indigo-600 bg-white dark:bg-slate-800 dark:text-indigo-400'
                       : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white'
@@ -193,13 +194,23 @@ const UserDashboard = () => {
                 </button>
                 <button
                   onClick={() => setActiveTab('history')}
-                  className={`flex-1 sm:flex-initial px-6 py-4 text-sm font-bold border-b-2 transition ${
+                  className={`flex-1 sm:flex-initial px-6 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${
                     activeTab === 'history'
                       ? 'border-indigo-600 text-indigo-600 bg-white dark:bg-slate-800 dark:text-indigo-400'
                       : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white'
                   }`}
                 >
                   🔧 Nhật ký sửa chữa
+                </button>
+                <button
+                  onClick={() => setActiveTab('legal')}
+                  className={`flex-1 sm:flex-initial px-6 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${
+                    activeTab === 'legal'
+                      ? 'border-indigo-600 text-indigo-600 bg-white dark:bg-slate-800 dark:text-indigo-400'
+                      : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white'
+                  }`}
+                >
+                  📄 Giấy tờ & Bảo hiểm
                 </button>
               </div>
 
@@ -209,8 +220,13 @@ const UserDashboard = () => {
                     vehicleId={selectedVehicleForDetail.VehicleID}
                     currentOdometer={selectedVehicleForDetail.CurrentOdometer}
                   />
-                ) : (
+                ) : activeTab === 'history' ? (
                   <MaintenanceHistoryTab vehicleId={selectedVehicleForDetail.VehicleID} />
+                ) : (
+                  <LegalDocumentsTab
+                    vehicleId={selectedVehicleForDetail.VehicleID}
+                    vehicleType={selectedVehicleForDetail.VehicleType}
+                  />
                 )}
               </div>
             </div>
