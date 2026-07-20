@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { DatabaseModule } from './modules/database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { VehiclesModule } from './modules/vehicles/vehicles.module';
+import { MaintenancesModule } from './modules/maintenances/maintenances.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { VehiclesModule } from './modules/vehicles/vehicles.module';
     DatabaseModule,
     AuthModule,
     VehiclesModule,
+    MaintenancesModule,
     MailerModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

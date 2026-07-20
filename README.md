@@ -14,7 +14,7 @@ Mở SSMS, chạy lần lượt:
 ### 2. Cấu hình Backend
 Mở `backend/.env`, điền mật khẩu SQL Server thật:
 ```env
-DB_PASSWORD=MậtKhẩuCủaBạn
+DB_PASSWORD=MậtKhẩuCủaBạn (123456)
 ```
 
 ### 3. Chạy Backend
@@ -38,3 +38,8 @@ npm run dev
 | admin@acoh.com | 123456 | Admin |
 | garage@acoh.com | garage123 | Garage |
 | user@acoh.com | user123 | User |
+
+### API Swagger
+http://localhost:3000/api/docs
+### cách bât lại khung chat AI
+Ctrl + L
