@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import * as maintenanceService from '../../services/maintenanceService';
 import * as garageService from '../../services/garageService';
 import * as appointmentService from '../../services/appointmentService';
+import * as extensionService from '../../services/extensionService';
 import GarageHistoryModal from '../../components/maintenances/GarageHistoryModal';
 import CompleteAppointmentModal from '../../components/appointments/CompleteAppointmentModal';
 import VehicleProfileModal from '../../components/garages/VehicleProfileModal';
@@ -121,6 +122,11 @@ const GarageDashboard = () => {
     await appointmentService.completeAppointment(apptId, data);
     alert('Xác nhận hoàn thành sửa chữa & gửi thông báo thành công!');
     fetchAppointments();
+  };
+
+  const handleExportInvoice = async (appointmentId) => {
+    const url = `/api/extensions/export/invoice/${appointmentId}`;
+    await extensionService.downloadFileWithAuth(url, `invoice_appointment_${appointmentId}.csv`);
   };
 
   // B. Serviced Vehicle handlers
@@ -403,6 +409,15 @@ const GarageDashboard = () => {
                             className="px-4 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition shadow-xs flex items-center gap-1"
                           >
                             ✔️ Hoàn tất sửa chữa
+                          </button>
+                        )}
+
+                        {appt.Status === 'Hoàn thành' && (
+                          <button
+                            onClick={() => handleExportInvoice(appt.AppointmentID)}
+                            className="px-4 py-1.5 text-xs font-bold text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-950/20 border border-indigo-150 dark:border-indigo-900/30 rounded-xl transition shadow-xs flex items-center gap-1"
+                          >
+                            📥 Xuất hóa đơn (CSV)
                           </button>
                         )}
                       </div>

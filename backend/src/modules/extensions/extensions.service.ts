@@ -117,4 +117,81 @@ export class ExtensionsService {
     );
     return result.recordset;
   }
+
+  // 4. Xuất báo cáo chi tiêu của chủ xe ra file CSV (UTF-8 BOM hỗ trợ tiếng Việt)
+  async exportExpenses(userId: number): Promise<string> {
+    const result = await this.dbService.query(
+      `SELECT h.ExecutionDate, v.LicensePlate, v.Brand, v.Model, h.ExecutionOdometer, h.TotalCost, h.Details, g.GarageName
+       FROM MaintenanceHistory h
+       JOIN Vehicles v ON h.VehicleID = v.VehicleID
+       LEFT JOIN Garages g ON h.GarageID = g.GarageID
+       WHERE v.UserID = @userId
+       ORDER BY h.ExecutionDate DESC`,
+      [{ name: 'userId', type: sql.Int, value: userId }]
+    );
+
+    // Tạo nội dung CSV
+    let csv = '\uFEFF'; // UTF-8 BOM
+    csv += 'Ngày thực hiện,Biển số,Nhãn hiệu,Dòng xe,Số km lúc làm,Chi phí (VND),Nội dung chi tiết,Gara thực hiện\n';
+
+    result.recordset.forEach(row => {
+      const dateStr = new Date(row.ExecutionDate).toLocaleDateString('vi-VN');
+      const detailsEscaped = `"${(row.Details || '').replace(/"/g, '""')}"`;
+      const garageEscaped = `"${(row.GarageName || 'Tự bảo dưỡng').replace(/"/g, '""')}"`;
+      csv += `${dateStr},${row.LicensePlate},${row.Brand},${row.Model},${row.ExecutionOdometer},${row.TotalCost},${detailsEscaped},${garageEscaped}\n`;
+    });
+
+    return csv;
+  }
+
+  // 5. Xuất hóa đơn chi tiết bảo dưỡng của lịch hẹn ra file CSV hóa đơn thanh toán
+  async exportInvoice(appointmentId: number, userId: number, role: string): Promise<string> {
+    // A. Lấy thông tin hóa đơn và kiểm tra quyền
+    const queryStr = role === 'Garage'
+      ? `SELECT h.*, v.LicensePlate, v.Brand, v.Model, g.GarageName, g.Address AS GarageAddress, u.FullName AS OwnerName, g.UserID AS GarageOwnerUserID
+         FROM MaintenanceHistory h
+         JOIN Vehicles v ON h.VehicleID = v.VehicleID
+         JOIN Users u ON v.UserID = u.UserID
+         LEFT JOIN Garages g ON h.GarageID = g.GarageID
+         WHERE h.AppointmentID = @appointmentId`
+      : `SELECT h.*, v.LicensePlate, v.Brand, v.Model, g.GarageName, g.Address AS GarageAddress, u.FullName AS OwnerName
+         FROM MaintenanceHistory h
+         JOIN Vehicles v ON h.VehicleID = v.VehicleID
+         JOIN Users u ON v.UserID = u.UserID
+         LEFT JOIN Garages g ON h.GarageID = g.GarageID
+         WHERE h.AppointmentID = @appointmentId AND v.UserID = @userId`;
+
+    const result = await this.dbService.query(queryStr, [
+      { name: 'appointmentId', type: sql.Int, value: appointmentId },
+      { name: 'userId', type: sql.Int, value: userId }
+    ]);
+
+    if (result.recordset.length === 0) {
+      throw new Error('Không tìm thấy hóa đơn bảo dưỡng hoặc bạn không có quyền truy cập');
+    }
+
+    const row = result.recordset[0];
+
+    // Tạo hóa đơn dạng TEXT/CSV biên nhận thanh toán cực kỳ trực quan
+    let invoice = '\uFEFF'; // UTF-8 BOM
+    invoice += `HÓA ĐƠN THANH TOÁN BẢO DƯỠNG XE\n`;
+    invoice += `----------------------------------------\n`;
+    invoice += `Gara thực hiện: ,${row.GarageName || 'N/A'}\n`;
+    invoice += `Địa chỉ Gara: ,"${(row.GarageAddress || '').replace(/"/g, '""')}"\n`;
+    invoice += `----------------------------------------\n`;
+    invoice += `Chủ phương tiện: ,${row.OwnerName}\n`;
+    invoice += `Tên xe: ,${row.Brand} ${row.Model}\n`;
+    invoice += `Biển số kiểm soát: ,${row.LicensePlate}\n`;
+    invoice += `Số Odometer bàn giao: ,${row.ExecutionOdometer} km\n`;
+    invoice += `Ngày hoàn tất: ,${new Date(row.ExecutionDate).toLocaleDateString('vi-VN')}\n`;
+    invoice += `----------------------------------------\n`;
+    invoice += `HẠNG MỤC CHI TIẾT:\n`;
+    invoice += `"${(row.Details || '').replace(/"/g, '""')}"\n`;
+    invoice += `----------------------------------------\n`;
+    invoice += `TỔNG CỘNG THANH TOÁN: ,${row.TotalCost} VND\n`;
+    invoice += `----------------------------------------\n`;
+    invoice += `Cảm ơn quý khách đã tin tưởng dịch vụ của chúng tôi!\n`;
+
+    return invoice;
+  }
 }

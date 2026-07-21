@@ -3,9 +3,12 @@ import { useAuth } from '../../context/AuthContext';
 import * as vehicleService from '../../services/vehicleService';
 import * as appointmentService from '../../services/appointmentService';
 import * as garageService from '../../services/garageService';
+import * as extensionService from '../../services/extensionService';
 import VehicleFormModal from '../../components/vehicles/VehicleFormModal';
 import OdometerModal from '../../components/vehicles/OdometerModal';
 import AppointmentModal from '../../components/appointments/AppointmentModal';
+import ReviewModal from '../../components/extensions/ReviewModal';
+import AiAssistantChat from '../../components/extensions/AiAssistantChat';
 import MaintenanceSchedulesTab from '../../components/maintenances/MaintenanceSchedulesTab';
 import MaintenanceHistoryTab from '../../components/maintenances/MaintenanceHistoryTab';
 import LegalDocumentsTab from '../../components/legal/LegalDocumentsTab';
@@ -55,6 +58,28 @@ const UserDashboard = () => {
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+  };
+
+  // Review & Export states & handlers (Module 8)
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const [selectedReviewGarage, setSelectedReviewGarage] = useState(null);
+
+  const handleOpenReviewModal = (appt) => {
+    setSelectedReviewGarage({
+      id: appt.GarageID,
+      name: appt.GarageName
+    });
+    setIsReviewOpen(true);
+  };
+
+  const handleExportInvoice = async (appointmentId) => {
+    const url = `/api/extensions/export/invoice/${appointmentId}`;
+    await extensionService.downloadFileWithAuth(url, `invoice_appointment_${appointmentId}.csv`);
+  };
+
+  const handleExportExpenses = async () => {
+    const url = `/api/extensions/export/expenses`;
+    await extensionService.downloadFileWithAuth(url, `personal_expenses.csv`);
   };
 
   // Appointment states
@@ -413,6 +438,23 @@ const UserDashboard = () => {
                                 </button>
                               </div>
                             )}
+
+                            {appt.Status === 'Hoàn thành' && (
+                              <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-slate-750/50 mt-1 gap-2">
+                                <button
+                                  onClick={() => handleExportInvoice(appt.AppointmentID)}
+                                  className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-950/20 border border-indigo-150 dark:border-indigo-900/30 transition flex items-center gap-1.5"
+                                >
+                                  📥 Xuất hóa đơn (CSV)
+                                </button>
+                                <button
+                                  onClick={() => handleOpenReviewModal(appt)}
+                                  className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-amber-600 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/20 border border-amber-150 dark:border-amber-900/30 transition flex items-center gap-1.5"
+                                >
+                                  ⭐ Đánh giá Gara
+                                </button>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -607,8 +649,16 @@ const UserDashboard = () => {
                           {formatCurrency(expensesData.totalCost)}
                         </p>
                       </div>
-                      <div className="w-14 h-14 bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 text-2xl flex items-center justify-center rounded-2xl border border-indigo-100/30">
-                        💳
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={handleExportExpenses}
+                          className="px-4 py-2.5 rounded-2xl text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/20 dark:text-indigo-400 dark:hover:bg-indigo-950/40 border border-indigo-100/30 transition flex items-center gap-1.5"
+                        >
+                          📥 Xuất báo cáo (CSV)
+                        </button>
+                        <div className="w-14 h-14 bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 text-2xl flex items-center justify-center rounded-2xl border border-indigo-100/30 shrink-0">
+                          💳
+                        </div>
                       </div>
                     </div>
 
@@ -735,6 +785,19 @@ const UserDashboard = () => {
         onSave={handleSaveAppointment}
         vehicle={selectedVehicleForDetail}
       />
+
+      <ReviewModal
+        isOpen={isReviewOpen}
+        onClose={() => {
+          setIsReviewOpen(false);
+          setSelectedReviewGarage(null);
+        }}
+        garageId={selectedReviewGarage?.id}
+        garageName={selectedReviewGarage?.name}
+        onSaveSuccess={fetchAppointments}
+      />
+
+      <AiAssistantChat />
     </div>
   );
 };
