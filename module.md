@@ -375,3 +375,32 @@ Authorization: Bearer <Token>
 
 ---
 
+### MODULE 8: TIỆN ÍCH NÂNG CAO & MỞ RỘNG (AI CHATBOT, XUẤT FILE BÁO CÁO & ĐÁNH GIÁ GARA)
+
+#### A. Mô tả chức năng & Chi tiết quy trình nghiệp vụ
+* **Trợ lý ảo AI tư vấn bảo dưỡng (AutoCare AI Assistant):** Hệ thống tích hợp mô hình ngôn ngữ lớn (LLM) để làm trợ lý đắc lực giải đáp thắc mắc về kỹ thuật xe, chu kỳ bảo dưỡng lý thuyết và chẩn đoán sơ bộ các mã lỗi xe cho người dùng.
+* **Xuất hóa đơn & Báo cáo thống kê (Export PDF/Excel):**
+  * Chủ xe có thể xuất file Excel/PDF bảng phân tích chi tiêu cá nhân để lưu trữ ngoại tuyến.
+  * Gara có thể xuất file PDF hóa đơn thanh toán bảo dưỡng chi tiết (dịch vụ, phụ tùng, đơn giá) để bàn giao cho chủ xe.
+* **Hệ thống Đánh giá & Phản hồi Gara (Rating & Reviews):** Sau khi lịch hẹn bảo dưỡng chuyển sang trạng thái "Hoàn thành", khách hàng có thể chấm điểm (1-5 sao) và để lại đánh giá chất lượng phục vụ của Gara.
+
+#### B. Thành phần Front-end (FE Interface)
+* Khung chat bong bóng (Floating Chatbox) ở góc dưới màn hình hỗ trợ người dùng trò chuyện thời gian thực với AI Assistant.
+* Nút "Xuất báo cáo PDF/Excel" trực quan trong các bảng thống kê chi tiêu của User và bảng quản lý doanh thu của Gara.
+* Form chấm điểm đánh giá (Rating Modal) hiển thị sau khi lịch hẹn kết thúc và hiển thị điểm sao trung bình trên danh sách Gara.
+
+#### C. Thành phần Back-end (BE Logic)
+* Tích hợp API Gemini/OpenAI tại Backend để phân tích câu hỏi người dùng và trả về phản hồi hỗ trợ thông minh.
+* Tích hợp các thư viện xuất file (như ExcelJS, PDFKit hoặc html2pdf) để kết xuất dữ liệu hóa đơn và chi tiêu trực tiếp sang tệp tài liệu.
+* API tính toán điểm đánh giá trung bình (`AVG(Rating)`) của từng Gara dựa trên phản hồi của khách hàng.
+
+#### D. Hệ thống API Endpoints (`/api/extensions`)
+* `POST /api/extensions/ai-chat` -> Body: `{ message }` (Gửi câu hỏi lên trợ lý ảo AI).
+* `GET /api/extensions/export/expenses` -> Xuất báo cáo chi tiêu của chủ xe ra file.
+* `GET /api/extensions/export/invoice/:appointmentId` -> Xuất hóa đơn bảo dưỡng của lịch hẹn ra file PDF.
+* `POST /api/extensions/garages/:id/reviews` -> Body: `{ rating, comment }` (Khách hàng gửi đánh giá cho Gara).
+* `GET /api/extensions/garages/:id/reviews` -> Lấy danh sách đánh giá của Gara.
+
+
+---
+
