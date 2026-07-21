@@ -10,6 +10,9 @@ import { VehiclesModule } from './modules/vehicles/vehicles.module';
 import { MaintenancesModule } from './modules/maintenances/maintenances.module';
 import { LegalModule } from './modules/legal/legal.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { GaragesModule } from './modules/garages/garages.module';
+import { AppointmentsModule } from './modules/appointments/appointments.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 
 @Module({
   imports: [
@@ -21,6 +24,9 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     MaintenancesModule,
     LegalModule,
     NotificationsModule,
+    GaragesModule,
+    AppointmentsModule,
+    AnalyticsModule,
     MailerModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

@@ -25,8 +25,36 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     try {
       this.pool = await new sql.ConnectionPool(config).connect();
       this.logger.log('Connected to SQL Server successfully.');
+      await this.runMigrations();
     } catch (err) {
       this.logger.error('Failed to connect to SQL Server:', err);
+    }
+  }
+
+  async runMigrations() {
+    try {
+      this.logger.log('Running database schema migrations...');
+      // 1. Create Reviews table if not exists
+      await this.pool.request().query(`
+        IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Reviews' and xtype='U')
+        BEGIN
+            CREATE TABLE Reviews (
+                ReviewID INT IDENTITY(1,1),
+                GarageID INT NOT NULL,
+                UserID INT NOT NULL,
+                Rating INT NOT NULL,
+                Comment NVARCHAR(MAX) NULL,
+                CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
+                CONSTRAINT PK_Reviews PRIMARY KEY (ReviewID),
+                CONSTRAINT FK_Reviews_Garages FOREIGN KEY (GarageID) REFERENCES Garages(GarageID),
+                CONSTRAINT FK_Reviews_Users FOREIGN KEY (UserID) REFERENCES Users(UserID),
+                CONSTRAINT CHK_Reviews_Rating CHECK (Rating >= 1 AND Rating <= 5)
+            );
+        END
+      `);
+      this.logger.log('Database schema migrations completed successfully.');
+    } catch (err) {
+      this.logger.error('Database migration failed:', err);
     }
   }
 

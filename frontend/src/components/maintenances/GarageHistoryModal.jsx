@@ -138,7 +138,7 @@ const GarageHistoryModal = ({ isOpen, onClose, onSave }) => {
                 <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">
                   {searchedVehicle.VehicleType === 'Ô tô' ? '🚗 Ô tô' : '🏍️ Xe máy'}
                 </span>
-                <span className="px-2 py-0.5 border border-slate-800 dark:border-slate-400 rounded-md text-xs font-black tracking-wide text-slate-800 dark:text-white">
+                <span className="px-2 py-0.5 border border-slate-800 dark:border-slate-400 rounded-md text-xs font-black tracking-wide text-slate-800 dark:text-white shrink-0 whitespace-nowrap">
                   {searchedVehicle.LicensePlate}
                 </span>
               </div>
