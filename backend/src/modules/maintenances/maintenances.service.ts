@@ -1,13 +1,19 @@
-import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, ForbiddenException, Logger } from '@nestjs/common';
 import * as sql from 'mssql';
 import { DatabaseService } from '../database/database.service';
 import { CreateScheduleDto } from './dto/create-schedule.dto';
 import { UpdateScheduleDto } from './dto/update-schedule.dto';
 import { CreateHistoryGarageDto } from './dto/create-history-garage.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class MaintenancesService {
-  constructor(private dbService: DatabaseService) {}
+  private readonly logger = new Logger(MaintenancesService.name);
+
+  constructor(
+    private dbService: DatabaseService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   // Kiểm tra quyền truy cập của người dùng đối với xe
   private async checkVehicleAccess(vehicleId: number, userId: number, role: string) {
@@ -297,6 +303,29 @@ export class MaintenancesService {
         { name: 'details', type: sql.NVarChar, value: dto.details }
       ]
     );
+
+    // Tự động gửi thông báo cho chủ xe báo xe đã hoàn tất bảo dưỡng tại Gara
+    try {
+      const vehicleInfo = await this.dbService.query(
+        `SELECT v.LicensePlate, v.UserID, g.GarageName 
+         FROM Vehicles v
+         LEFT JOIN Garages g ON g.GarageID = @garageId
+         WHERE v.VehicleID = @vehicleId`,
+        [
+          { name: 'vehicleId', type: sql.Int, value: dto.vehicleId },
+          { name: 'garageId', type: sql.Int, value: garageId || 0 }
+        ]
+      );
+      if (vehicleInfo.recordset.length > 0) {
+        const { UserID: ownerId, LicensePlate, GarageName } = vehicleInfo.recordset[0];
+        const gName = GarageName || 'Gara đối tác';
+        const title = `[ACOH] Thông báo hoàn tất bảo dưỡng xe ${LicensePlate}`;
+        const message = `Xe ${LicensePlate} của bạn đã hoàn tất bảo dưỡng và sửa chữa tại ${gName}. Mời bạn đến nhận xe.\nChi tiết dịch vụ: ${dto.details}`;
+        await this.notificationsService.create(ownerId, title, message, 'All');
+      }
+    } catch (err) {
+      this.logger.warn(`Không thể gửi thông báo hoàn tất bảo dưỡng: ${err.message}`);
+    }
 
     return { message: 'Ghi sổ lịch sử bảo dưỡng thành công!' };
   }

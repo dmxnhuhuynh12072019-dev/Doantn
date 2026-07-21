@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import * as maintenanceService from '../../services/maintenanceService';
 import GarageHistoryModal from '../../components/maintenances/GarageHistoryModal';
+import NotificationBell from '../../components/notifications/NotificationBell';
 
 const GarageDashboard = () => {
   const { user, logout } = useAuth();
@@ -98,6 +99,7 @@ const GarageDashboard = () => {
           </div>
           
           <div className="flex items-center gap-4">
+            <NotificationBell />
             <span className="text-sm text-slate-600 dark:text-slate-300 hidden sm:inline">
               Garage: <span className="font-bold text-slate-800 dark:text-white">{user?.fullName}</span>
             </span>

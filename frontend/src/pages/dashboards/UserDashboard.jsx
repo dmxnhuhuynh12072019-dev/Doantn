@@ -6,6 +6,7 @@ import OdometerModal from '../../components/vehicles/OdometerModal';
 import MaintenanceSchedulesTab from '../../components/maintenances/MaintenanceSchedulesTab';
 import MaintenanceHistoryTab from '../../components/maintenances/MaintenanceHistoryTab';
 import LegalDocumentsTab from '../../components/legal/LegalDocumentsTab';
+import NotificationBell from '../../components/notifications/NotificationBell';
 
 const UserDashboard = () => {
   const { user, logout } = useAuth();
@@ -108,6 +109,7 @@ const UserDashboard = () => {
           </div>
           
           <div className="flex items-center gap-4">
+            <NotificationBell />
             <span className="text-sm text-slate-600 dark:text-slate-300 hidden sm:inline">
               Chào, <span className="font-bold text-slate-800 dark:text-white">{user?.fullName}</span>
             </span>
