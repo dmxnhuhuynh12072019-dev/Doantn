@@ -102,12 +102,20 @@ const Login = () => {
         </form>
 
         <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 text-center">
-          <p className="text-slate-500 dark:text-slate-400 text-sm">
+          <p className="text-slate-500 dark:text-slate-400 text-sm mb-3">
             Chưa có tài khoản?{' '}
             <Link to="/register" className="font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300">
               Đăng ký ngay
             </Link>
           </p>
+          <div className="mt-4">
+            <Link
+              to="/presentation"
+              className="inline-flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-bold bg-indigo-50/50 hover:bg-indigo-50 dark:bg-slate-800/50 dark:hover:bg-slate-800 px-3.5 py-2 rounded-xl transition-all border border-indigo-100/50 dark:border-slate-700/50"
+            >
+              📽️ Xem Slide Thuyết Trình Đồ Án
+            </Link>
+          </div>
         </div>
       </div>
     </div>

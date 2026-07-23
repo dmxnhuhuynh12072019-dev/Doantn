@@ -415,7 +415,7 @@ const GarageDashboard = () => {
                         {appt.Status === 'Hoàn thành' && (
                           <button
                             onClick={() => handleExportInvoice(appt.AppointmentID)}
-                            className="px-4 py-1.5 text-xs font-bold text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-950/20 border border-indigo-150 dark:border-indigo-900/30 rounded-xl transition shadow-xs flex items-center gap-1"
+                            className="px-4 py-1.5 text-xs font-bold text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900/30 rounded-xl transition shadow-xs flex items-center gap-1"
                           >
                             📥 Xuất hóa đơn (CSV)
                           </button>
@@ -506,7 +506,7 @@ const GarageDashboard = () => {
                           <td className="px-6 py-4 text-right">
                             <button
                               onClick={() => handleViewVehicleProfile(vehicle.VehicleID)}
-                              className="px-4 py-2 rounded-xl text-xs font-bold text-indigo-650 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/20 dark:text-indigo-400 dark:hover:bg-indigo-950/40 transition"
+                              className="px-4 py-2 rounded-xl text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/20 dark:text-indigo-400 dark:hover:bg-indigo-950/40 transition"
                             >
                               Xem hồ sơ xe
                             </button>
@@ -659,7 +659,7 @@ const GarageDashboard = () => {
                               </td>
                               <td className="px-4 py-3 font-bold">{cust.Brand} {cust.Model}</td>
                               <td className="px-4 py-3 font-medium">{cust.OwnerName}</td>
-                              <td className="px-4 py-3 text-right font-black text-indigo-650 dark:text-indigo-400 text-sm">
+                              <td className="px-4 py-3 text-right font-black text-indigo-600 dark:text-indigo-400 text-sm">
                                 {cust.VisitCount} lần
                               </td>
                             </tr>

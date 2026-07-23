@@ -385,7 +385,7 @@ const UserDashboard = () => {
                         {appointments.map((appt) => (
                           <div
                             key={appt.AppointmentID}
-                            className="bg-white dark:bg-slate-800/40 border border-slate-150 dark:border-slate-750 rounded-2xl p-5 hover:shadow-xs transition space-y-4"
+                            className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-750 rounded-2xl p-5 hover:shadow-xs transition space-y-4"
                           >
                             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-slate-100 dark:border-slate-750 pb-3">
                               <div>
@@ -443,13 +443,13 @@ const UserDashboard = () => {
                               <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-slate-750/50 mt-1 gap-2">
                                 <button
                                   onClick={() => handleExportInvoice(appt.AppointmentID)}
-                                  className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-950/20 border border-indigo-150 dark:border-indigo-900/30 transition flex items-center gap-1.5"
+                                  className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900/30 transition flex items-center gap-1.5"
                                 >
                                   📥 Xuất hóa đơn (CSV)
                                 </button>
                                 <button
                                   onClick={() => handleOpenReviewModal(appt)}
-                                  className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-amber-600 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/20 border border-amber-150 dark:border-amber-900/30 transition flex items-center gap-1.5"
+                                  className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-amber-600 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 transition flex items-center gap-1.5"
                                 >
                                   ⭐ Đánh giá Gara
                                 </button>
@@ -746,7 +746,7 @@ const UserDashboard = () => {
                                   <td className="px-4 py-3 text-slate-500">{new Date(hist.ExecutionDate).toLocaleDateString()}</td>
                                   <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-300">{hist.GarageName || 'Tự bảo dưỡng'}</td>
                                   <td className="px-4 py-3 text-slate-600 dark:text-slate-400 truncate max-w-xs">{hist.Details}</td>
-                                  <td className="px-4 py-3 text-right font-black text-indigo-650 dark:text-indigo-400 text-sm">
+                                  <td className="px-4 py-3 text-right font-black text-indigo-600 dark:text-indigo-400 text-sm">
                                     {formatCurrency(hist.TotalCost)}
                                   </td>
                                 </tr>

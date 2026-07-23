@@ -138,7 +138,7 @@ const LegalDocumentsTab = ({ vehicleId, vehicleType }) => {
   if (loading && documents.length === 0) {
     return (
       <div className="py-12 flex justify-center items-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-650 border-t-transparent"></div>
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
       </div>
     );
   }

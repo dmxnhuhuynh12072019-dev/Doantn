@@ -156,7 +156,7 @@ const NotificationBell = () => {
                   {/* Indicator Dot */}
                   <div className="shrink-0 pt-1">
                     {!notification.IsRead ? (
-                      <span className="flex h-2.5 w-2.5 rounded-full bg-indigo-650 animate-pulse"></span>
+                      <span className="flex h-2.5 w-2.5 rounded-full bg-indigo-600 animate-pulse"></span>
                     ) : (
                       <span className="flex h-2.5 w-2.5 rounded-full bg-slate-300 dark:bg-slate-600"></span>
                     )}

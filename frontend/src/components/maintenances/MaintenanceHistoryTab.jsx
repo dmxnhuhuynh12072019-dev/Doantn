@@ -57,7 +57,7 @@ const MaintenanceHistoryTab = ({ vehicleId }) => {
           {history.map((record) => (
             <div key={record.HistoryID} className="relative">
               {/* Timeline dot */}
-              <span className="absolute -left-[31px] top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-150 border-4 border-white dark:border-slate-900 ring-2 ring-indigo-600"></span>
+              <span className="absolute -left-[31px] top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-100 border-4 border-white dark:border-slate-900 ring-2 ring-indigo-600"></span>
               
               <div className="bg-white dark:bg-slate-850 rounded-2xl border border-slate-100 dark:border-slate-750/70 p-5 shadow-sm space-y-3 hover:shadow-md transition">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 border-b border-slate-50 dark:border-slate-800/60 pb-3">

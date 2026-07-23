@@ -70,7 +70,7 @@ const AiAssistantChat = () => {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="w-14 h-14 bg-indigo-650 hover:bg-indigo-700 text-white rounded-full flex items-center justify-center shadow-xl hover:shadow-2xl hover:scale-105 transition duration-300 relative group animate-bounce"
+          className="w-14 h-14 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full flex items-center justify-center shadow-xl hover:shadow-2xl hover:scale-105 transition duration-300 relative group animate-bounce"
           title="Trò chuyện với AI Assistant"
         >
           <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -87,7 +87,7 @@ const AiAssistantChat = () => {
       {isOpen && (
         <div className="w-[350px] sm:w-[400px] h-[500px] bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 duration-300">
           {/* Header */}
-          <div className="bg-indigo-650 p-4 flex justify-between items-center text-white">
+          <div className="bg-indigo-600 p-4 flex justify-between items-center text-white">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center font-bold text-lg">
                 🤖
@@ -104,6 +104,7 @@ const AiAssistantChat = () => {
             <button
               onClick={() => setIsOpen(false)}
               className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition"
+              title="Thoát khung chat"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -167,7 +168,7 @@ const AiAssistantChat = () => {
             <button
               type="submit"
               disabled={loading || !input.trim()}
-              className="w-10 h-10 rounded-xl bg-indigo-650 text-white flex items-center justify-center hover:bg-indigo-700 disabled:bg-slate-100 disabled:text-slate-400 dark:disabled:bg-slate-700/50 dark:disabled:text-slate-600 transition shrink-0 shadow-sm"
+              className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center hover:bg-indigo-700 disabled:bg-slate-100 disabled:text-slate-400 dark:disabled:bg-slate-700/50 dark:disabled:text-slate-600 transition shrink-0 shadow-sm"
             >
               <svg className="w-4 h-4 transform rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
