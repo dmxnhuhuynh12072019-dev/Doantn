@@ -4,7 +4,7 @@ import * as adminService from '../../services/adminService';
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
-  
+
   // Navigation: 'overview' | 'users' | 'garages' | 'profile'
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -85,7 +85,7 @@ const AdminDashboard = () => {
   const handleToggleUserStatus = async (targetUser) => {
     const nextStatus = targetUser.Status === 'Hoạt động' ? 'Bị khóa' : 'Hoạt động';
     const confirmMessage = `Bạn có chắc chắn muốn ${nextStatus === 'Bị khóa' ? 'khóa' : 'mở khóa'} tài khoản của "${targetUser.FullName}"?`;
-    
+
     if (window.confirm(confirmMessage)) {
       try {
         await adminService.updateUserStatus(targetUser.UserID, nextStatus);
@@ -102,7 +102,7 @@ const AdminDashboard = () => {
   const handleChangeUserRole = async (targetUser, newRole) => {
     if (targetUser.Role === newRole) return;
     const confirmMessage = `Bạn có chắc chắn muốn thay đổi vai trò của "${targetUser.FullName}" thành "${newRole}"?`;
-    
+
     if (window.confirm(confirmMessage)) {
       try {
         await adminService.updateUserRole(targetUser.UserID, newRole);
@@ -117,7 +117,7 @@ const AdminDashboard = () => {
   const handleToggleGarageStatus = async (garage) => {
     const nextActive = !garage.IsActive;
     const confirmMessage = `Bạn có chắc chắn muốn ${nextActive ? 'kích hoạt' : 'tạm dừng'} hoạt động của Gara "${garage.GarageName}"?`;
-    
+
     if (window.confirm(confirmMessage)) {
       try {
         await adminService.updateGarageStatus(garage.GarageID, nextActive);
@@ -178,41 +178,37 @@ const AdminDashboard = () => {
         <nav className="flex-1 p-4 space-y-1.5">
           <button
             onClick={() => setActiveTab('overview')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition ${
-              activeTab === 'overview'
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition ${activeTab === 'overview'
                 ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/25'
                 : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-100'
-            }`}
+              }`}
           >
             <span>📊</span> Tổng quan hệ thống
           </button>
           <button
             onClick={() => setActiveTab('users')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition ${
-              activeTab === 'users'
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition ${activeTab === 'users'
                 ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/25'
                 : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-100'
-            }`}
+              }`}
           >
             <span>👥</span> Quản lý tài khoản
           </button>
           <button
             onClick={() => setActiveTab('garages')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition ${
-              activeTab === 'garages'
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition ${activeTab === 'garages'
                 ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/25'
                 : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-100'
-            }`}
+              }`}
           >
             <span>🏬</span> Quản lý Gara liên kết
           </button>
           <button
             onClick={() => setActiveTab('profile')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition ${
-              activeTab === 'profile'
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition ${activeTab === 'profile'
                 ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/25'
                 : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-100'
-            }`}
+              }`}
           >
             <span>👤</span> Hồ sơ & Đăng xuất
           </button>
@@ -257,7 +253,7 @@ const AdminDashboard = () => {
         </header>
 
         <div className="p-6 md:p-8 max-w-7xl w-full mx-auto space-y-6">
-          
+
           {/* TAB 1: OVERVIEW */}
           {activeTab === 'overview' && (
             <div className="space-y-6">
@@ -486,11 +482,10 @@ const AdminDashboard = () => {
                                 value={item.Role}
                                 disabled={item.UserID === user?.userId} // Admin không được tự đổi vai trò của mình để tránh mất quyền quản trị
                                 onChange={(e) => handleChangeUserRole(item, e.target.value)}
-                                className={`font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 px-2 py-1 focus:outline-none cursor-pointer ${
-                                  item.Role === 'Admin' ? 'text-violet-600 dark:text-violet-400' :
-                                  item.Role === 'Garage' ? 'text-emerald-600 dark:text-emerald-400' :
-                                  'text-slate-600 dark:text-slate-400'
-                                }`}
+                                className={`font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 px-2 py-1 focus:outline-none cursor-pointer ${item.Role === 'Admin' ? 'text-violet-600 dark:text-violet-400' :
+                                    item.Role === 'Garage' ? 'text-emerald-600 dark:text-emerald-400' :
+                                      'text-slate-600 dark:text-slate-400'
+                                  }`}
                               >
                                 <option value="User">User</option>
                                 <option value="Garage">Garage</option>
@@ -498,11 +493,10 @@ const AdminDashboard = () => {
                               </select>
                             </td>
                             <td className="px-6 py-4">
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black ${
-                                item.Status === 'Hoạt động'
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black ${item.Status === 'Hoạt động'
                                   ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400'
                                   : 'bg-rose-50 text-rose-750 dark:bg-rose-950/20 dark:text-rose-400'
-                              }`}>
+                                }`}>
                                 {item.Status}
                               </span>
                             </td>
@@ -511,11 +505,10 @@ const AdminDashboard = () => {
                               {item.UserID !== user?.userId ? (
                                 <button
                                   onClick={() => handleToggleUserStatus(item)}
-                                  className={`px-3 py-1.5 rounded-lg font-bold text-[10px] uppercase tracking-wide border transition ${
-                                    item.Status === 'Hoạt động'
+                                  className={`px-3 py-1.5 rounded-lg font-bold text-[10px] uppercase tracking-wide border transition ${item.Status === 'Hoạt động'
                                       ? 'border-rose-200 text-rose-600 bg-rose-50 hover:bg-rose-100 dark:border-rose-900/30 dark:text-rose-400 dark:bg-rose-950/20'
                                       : 'border-emerald-200 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 dark:border-emerald-900/30 dark:text-emerald-400 dark:bg-emerald-950/20'
-                                  }`}
+                                    }`}
                                 >
                                   {item.Status === 'Hoạt động' ? 'Khóa' : 'Mở khóa'}
                                 </button>
@@ -590,22 +583,20 @@ const AdminDashboard = () => {
                               <span className="font-black text-amber-500 text-sm">⭐ {parseFloat(gara.Rating).toFixed(1)}</span>
                             </td>
                             <td className="px-6 py-4">
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black ${
-                                gara.IsActive
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black ${gara.IsActive
                                   ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400'
                                   : 'bg-rose-50 text-rose-750 dark:bg-rose-950/20 dark:text-rose-400'
-                              }`}>
+                                }`}>
                                 {gara.IsActive ? 'Đang hoạt động' : 'Tạm dừng'}
                               </span>
                             </td>
                             <td className="px-6 py-4 text-center">
                               <button
                                 onClick={() => handleToggleGarageStatus(gara)}
-                                className={`px-3 py-1.5 rounded-lg font-bold text-[10px] uppercase tracking-wide border transition ${
-                                  gara.IsActive
+                                className={`px-3 py-1.5 rounded-lg font-bold text-[10px] uppercase tracking-wide border transition ${gara.IsActive
                                     ? 'border-rose-200 text-rose-600 bg-rose-50 hover:bg-rose-100 dark:border-rose-900/30 dark:text-rose-400 dark:bg-rose-950/20'
                                     : 'border-emerald-200 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 dark:border-emerald-900/30 dark:text-emerald-400 dark:bg-emerald-950/20'
-                                }`}
+                                  }`}
                               >
                                 {gara.IsActive ? 'Dừng hoạt động' : 'Kích hoạt'}
                               </button>

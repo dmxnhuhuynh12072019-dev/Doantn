@@ -9,14 +9,12 @@ import Unauthorized from './pages/unauthorized/Unauthorized';
 import UserDashboard from './pages/dashboards/UserDashboard';
 import GarageDashboard from './pages/dashboards/GarageDashboard';
 import AdminDashboard from './pages/dashboards/AdminDashboard';
-import Presentation from './pages/presentation/Presentation';
 
 function App() {
   return (
     <Routes>
       {/* Các route công khai */}
       <Route path="/login" element={<Login />} />
-      <Route path="/presentation" element={<Presentation />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
@@ -31,7 +29,7 @@ function App() {
           </ProtectedRoute>
         }
       />
-      
+
       {/* Định tuyến bảo vệ theo phân quyền (RBAC) */}
       <Route
         path="/user/dashboard"

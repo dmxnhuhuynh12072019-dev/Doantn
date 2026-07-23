@@ -16,7 +16,7 @@ import NotificationBell from '../../components/notifications/NotificationBell';
 
 const UserDashboard = () => {
   const { user, logout } = useAuth();
-  
+
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -131,7 +131,7 @@ const UserDashboard = () => {
       setLoading(true);
       const data = await vehicleService.getMyVehicles();
       setVehicles(data);
-      
+
       // Update selected detail vehicle info if it is currently open
       if (selectedVehicleForDetail) {
         const updated = data.find(v => v.VehicleID === selectedVehicleForDetail.VehicleID);
@@ -209,7 +209,7 @@ const UserDashboard = () => {
               <p className="text-xs text-slate-500 dark:text-slate-400">AutoCare Office Helper</p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-4">
             <NotificationBell />
             <span className="text-sm text-slate-600 dark:text-slate-300 hidden sm:inline">
@@ -237,7 +237,7 @@ const UserDashboard = () => {
 
       {/* Main Content */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-8">
-        
+
         {/* Detail View của một chiếc xe */}
         {selectedVehicleForDetail ? (
           <div className="space-y-6">
@@ -292,41 +292,37 @@ const UserDashboard = () => {
               <div className="flex border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30 overflow-x-auto">
                 <button
                   onClick={() => setActiveTab('schedules')}
-                  className={`flex-1 sm:flex-initial px-6 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${
-                    activeTab === 'schedules'
+                  className={`flex-1 sm:flex-initial px-6 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${activeTab === 'schedules'
                       ? 'border-indigo-600 text-indigo-600 bg-white dark:bg-slate-800 dark:text-indigo-400'
                       : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white'
-                  }`}
+                    }`}
                 >
                   📅 Kế hoạch bảo dưỡng
                 </button>
                 <button
                   onClick={() => setActiveTab('history')}
-                  className={`flex-1 sm:flex-initial px-6 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${
-                    activeTab === 'history'
+                  className={`flex-1 sm:flex-initial px-6 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${activeTab === 'history'
                       ? 'border-indigo-600 text-indigo-600 bg-white dark:bg-slate-800 dark:text-indigo-400'
                       : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white'
-                  }`}
+                    }`}
                 >
                   🔧 Nhật ký sửa chữa
                 </button>
                 <button
                   onClick={() => setActiveTab('legal')}
-                  className={`flex-1 sm:flex-initial px-6 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${
-                    activeTab === 'legal'
+                  className={`flex-1 sm:flex-initial px-6 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${activeTab === 'legal'
                       ? 'border-indigo-600 text-indigo-600 bg-white dark:bg-slate-800 dark:text-indigo-400'
                       : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white'
-                  }`}
+                    }`}
                 >
                   📄 Giấy tờ & Bảo hiểm
                 </button>
                 <button
                   onClick={() => setActiveTab('appointments')}
-                  className={`flex-1 sm:flex-initial px-6 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${
-                    activeTab === 'appointments'
+                  className={`flex-1 sm:flex-initial px-6 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${activeTab === 'appointments'
                       ? 'border-indigo-600 text-indigo-600 bg-white dark:bg-slate-800 dark:text-indigo-400'
                       : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white'
-                  }`}
+                    }`}
                 >
                   📅 Đặt lịch bảo dưỡng
                 </button>
@@ -398,13 +394,12 @@ const UserDashboard = () => {
                                 </p>
                               </div>
                               <div className="flex items-center gap-2.5">
-                                <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${
-                                  appt.Status === 'Chờ xác nhận' ? 'bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-900/30' :
-                                  appt.Status === 'Đã xác nhận' ? 'bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900/30' :
-                                  appt.Status === 'Đang sửa chữa' ? 'bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400 border-purple-100 dark:border-purple-900/30' :
-                                  appt.Status === 'Hoàn thành' ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30' :
-                                  'bg-slate-50 dark:bg-slate-900/20 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700'
-                                }`}>
+                                <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${appt.Status === 'Chờ xác nhận' ? 'bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-900/30' :
+                                    appt.Status === 'Đã xác nhận' ? 'bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900/30' :
+                                      appt.Status === 'Đang sửa chữa' ? 'bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400 border-purple-100 dark:border-purple-900/30' :
+                                        appt.Status === 'Hoàn thành' ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30' :
+                                          'bg-slate-50 dark:bg-slate-900/20 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                                  }`}>
                                   {appt.Status}
                                 </span>
                               </div>
@@ -498,21 +493,19 @@ const UserDashboard = () => {
               <div className="flex border-b border-slate-200 dark:border-slate-700 mb-6 bg-white dark:bg-slate-800 rounded-2xl shadow-xs overflow-hidden">
                 <button
                   onClick={() => setMainTab('vehicles')}
-                  className={`flex-1 px-6 py-3.5 text-sm font-bold border-b-2 transition ${
-                    mainTab === 'vehicles'
+                  className={`flex-1 px-6 py-3.5 text-sm font-bold border-b-2 transition ${mainTab === 'vehicles'
                       ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 bg-slate-50/50 dark:bg-slate-900/10'
                       : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white'
-                  }`}
+                    }`}
                 >
                   🚗 Xe của tôi ({vehicles.length})
                 </button>
                 <button
                   onClick={() => setMainTab('expenses')}
-                  className={`flex-1 px-6 py-3.5 text-sm font-bold border-b-2 transition ${
-                    mainTab === 'expenses'
+                  className={`flex-1 px-6 py-3.5 text-sm font-bold border-b-2 transition ${mainTab === 'expenses'
                       ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 bg-slate-50/50 dark:bg-slate-900/10'
                       : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white'
-                  }`}
+                    }`}
                 >
                   📊 Phân tích chi tiêu
                 </button>
@@ -559,7 +552,7 @@ const UserDashboard = () => {
                               {vehicle.Brand} {vehicle.Model}
                             </h3>
                           </div>
-                          
+
                           {/* License Plate Plate-like UI */}
                           <div className="border-2 border-slate-850 bg-white dark:bg-slate-900 rounded-md px-3 py-1 text-sm font-black tracking-wider text-slate-850 dark:text-white shadow-sm flex items-center justify-center h-8 shrink-0 whitespace-nowrap">
                             {vehicle.LicensePlate}
@@ -587,7 +580,7 @@ const UserDashboard = () => {
                         <span className="text-xxs text-slate-400 dark:text-slate-500">
                           Cập nhật: {new Date(vehicle.UpdatedAt).toLocaleDateString()}
                         </span>
-                        
+
                         <div className="flex gap-2">
                           <button
                             onClick={() => setSelectedVehicleForDetail(vehicle)}
@@ -667,7 +660,7 @@ const UserDashboard = () => {
                       <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl p-6 shadow-sm">
                         <h3 className="text-lg font-black text-slate-805 dark:text-white mb-1">📅 Chi phí nuôi xe theo tháng (năm nay)</h3>
                         <p className="text-xs text-slate-400 mb-6">Theo dõi tổng tiền bảo dưỡng phát sinh qua các tháng.</p>
-                        
+
                         <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
                           {expensesData.monthlyCost.map((item, idx) => {
                             const maxCost = Math.max(...expensesData.monthlyCost.map(m => m.cost), 1);
@@ -722,7 +715,7 @@ const UserDashboard = () => {
                     <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl p-6 shadow-sm">
                       <h3 className="text-lg font-black text-slate-800 dark:text-white mb-1">📋 Các hạng mục chi tiêu gần nhất</h3>
                       <p className="text-xs text-slate-400 mb-4">Các dịch vụ sửa chữa có phát sinh chi phí bảo dưỡng gần đây.</p>
-                      
+
                       {expensesData.recentHistory.length === 0 ? (
                         <div className="text-center py-6 text-slate-405">Chưa phát sinh chi phí sửa chữa nào.</div>
                       ) : (

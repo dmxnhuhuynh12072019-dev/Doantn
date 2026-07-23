@@ -11,13 +11,13 @@ import NotificationBell from '../../components/notifications/NotificationBell';
 
 const GarageDashboard = () => {
   const { user, logout } = useAuth();
-  
+
   // Tab state: 'appointments' | 'serviced' | 'analytics' | 'quick'
   const [activeTab, setActiveTab] = useState('appointments');
 
   // Modal states
   const [isQuickLogOpen, setIsQuickLogOpen] = useState(false);
-  
+
   // Selected items for detail modals
   const [selectedApptForComplete, setSelectedApptForComplete] = useState(null);
   const [isCompleteOpen, setIsCompleteOpen] = useState(false);
@@ -182,7 +182,7 @@ const GarageDashboard = () => {
   const handleSaveQuickHistoryLog = async (data) => {
     await maintenanceService.createHistoryGarage(data);
     alert('Ghi sổ bảo dưỡng dịch vụ thành công!');
-    
+
     if (foundVehicle && foundVehicle.VehicleID === data.vehicleId) {
       fetchQuickVehicleHistory(data.vehicleId);
       if (data.executionOdometer > foundVehicle.CurrentOdometer) {
@@ -213,7 +213,7 @@ const GarageDashboard = () => {
               <p className="text-xs text-slate-500 dark:text-slate-400">Hệ thống quản lý Gara đối tác</p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-4">
             <NotificationBell />
             <span className="text-sm text-slate-600 dark:text-slate-300 hidden sm:inline">
@@ -244,41 +244,37 @@ const GarageDashboard = () => {
         <div className="max-w-7xl mx-auto px-6 flex space-x-1 sm:space-x-4 overflow-x-auto">
           <button
             onClick={() => setActiveTab('appointments')}
-            className={`px-4 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${
-              activeTab === 'appointments'
+            className={`px-4 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${activeTab === 'appointments'
                 ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
                 : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white'
-            }`}
+              }`}
           >
             📅 Lịch hẹn khách hàng
           </button>
           <button
             onClick={() => setActiveTab('serviced')}
-            className={`px-4 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${
-              activeTab === 'serviced'
+            className={`px-4 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${activeTab === 'serviced'
                 ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
                 : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white'
-            }`}
+              }`}
           >
             🚗 Quản lý xe đã bảo dưỡng
           </button>
           <button
             onClick={() => setActiveTab('analytics')}
-            className={`px-4 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${
-              activeTab === 'analytics'
+            className={`px-4 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${activeTab === 'analytics'
                 ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
                 : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white'
-            }`}
+              }`}
           >
             📊 Thống kê & Báo cáo
           </button>
           <button
             onClick={() => setActiveTab('quick')}
-            className={`px-4 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${
-              activeTab === 'quick'
+            className={`px-4 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${activeTab === 'quick'
                 ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
                 : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white'
-            }`}
+              }`}
           >
             🔍 Tra cứu & Ghi nhận nhanh
           </button>
@@ -287,7 +283,7 @@ const GarageDashboard = () => {
 
       {/* Main Content */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-8">
-        
+
         {/* TAB 1: APPOINTMENTS */}
         {activeTab === 'appointments' && (
           <div className="space-y-6">
@@ -358,13 +354,12 @@ const GarageDashboard = () => {
                     </div>
 
                     <div className="flex justify-between items-center pt-3 border-t border-slate-100 dark:border-slate-700/60 mt-auto">
-                      <span className={`px-2.5 py-1 rounded-full text-xxs font-bold border ${
-                        appt.Status === 'Chờ xác nhận' ? 'bg-amber-50 dark:bg-amber-955/20 text-amber-600 dark:text-amber-400 border-amber-100' :
-                        appt.Status === 'Đã xác nhận' ? 'bg-blue-50 dark:bg-blue-955/20 text-blue-600 dark:text-blue-400 border-blue-100' :
-                        appt.Status === 'Đang sửa chữa' ? 'bg-purple-50 dark:bg-purple-955/20 text-purple-600 dark:text-purple-400 border-purple-100' :
-                        appt.Status === 'Hoàn thành' ? 'bg-emerald-50 dark:bg-emerald-955/20 text-emerald-600 dark:text-emerald-400 border-emerald-100' :
-                        'bg-slate-55 dark:bg-slate-900/20 text-slate-500 border-slate-200'
-                      }`}>
+                      <span className={`px-2.5 py-1 rounded-full text-xxs font-bold border ${appt.Status === 'Chờ xác nhận' ? 'bg-amber-50 dark:bg-amber-955/20 text-amber-600 dark:text-amber-400 border-amber-100' :
+                          appt.Status === 'Đã xác nhận' ? 'bg-blue-50 dark:bg-blue-955/20 text-blue-600 dark:text-blue-400 border-blue-100' :
+                            appt.Status === 'Đang sửa chữa' ? 'bg-purple-50 dark:bg-purple-955/20 text-purple-600 dark:text-purple-400 border-purple-100' :
+                              appt.Status === 'Hoàn thành' ? 'bg-emerald-50 dark:bg-emerald-955/20 text-emerald-600 dark:text-emerald-400 border-emerald-100' :
+                                'bg-slate-55 dark:bg-slate-900/20 text-slate-500 border-slate-200'
+                        }`}>
                         {appt.Status}
                       </span>
 
@@ -577,7 +572,7 @@ const GarageDashboard = () => {
                       <h3 className="text-lg font-black text-slate-800 dark:text-white mb-1">📈 Lượng xe đến xưởng 15 ngày qua</h3>
                       <p className="text-xs text-slate-400 mb-6">Thống kê số lượt bảo dưỡng thực hiện mỗi ngày.</p>
                     </div>
-                    
+
                     <div className="flex items-end gap-1.5 sm:gap-2 h-48 pt-6 border-b border-l border-slate-100 dark:border-slate-750 px-2 sm:px-4">
                       {analyticsData.dailyVisits.map((item, idx) => {
                         const maxCount = Math.max(...analyticsData.dailyVisits.map(d => d.count), 1);
@@ -607,7 +602,7 @@ const GarageDashboard = () => {
                       <h3 className="text-lg font-black text-slate-800 dark:text-white mb-1">📊 Doanh thu dịch vụ theo tháng</h3>
                       <p className="text-xs text-slate-400 mb-6">Doanh thu tích lũy hàng tháng trong năm hiện tại.</p>
                     </div>
-                    
+
                     <div className="space-y-3 overflow-y-auto max-h-48 pr-1">
                       {analyticsData.monthlyRevenue.map((item, idx) => {
                         const maxRevenue = Math.max(...analyticsData.monthlyRevenue.map(m => m.revenue), 1);
@@ -635,7 +630,7 @@ const GarageDashboard = () => {
                 <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl p-6 shadow-sm">
                   <h3 className="text-lg font-black text-slate-800 dark:text-white mb-1">⭐ Top 5 khách hàng thân thiết nhất</h3>
                   <p className="text-xs text-slate-400 mb-4">Các đầu xe thực hiện bảo dưỡng nhiều lần nhất tại xưởng của bạn.</p>
-                  
+
                   {analyticsData.frequentCustomers.length === 0 ? (
                     <div className="text-center py-6 text-slate-400">Chưa có đủ dữ liệu.</div>
                   ) : (
@@ -682,7 +677,7 @@ const GarageDashboard = () => {
                 <h2 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Bảng quản lý nhanh</h2>
                 <p className="text-slate-500 dark:text-slate-400 text-sm">Tìm kiếm nhanh phương tiện để tra cứu thông tin hoặc ghi nhanh nhật ký bảo dưỡng.</p>
               </div>
-              
+
               <button
                 onClick={() => setIsQuickLogOpen(true)}
                 className="px-6 py-3.5 rounded-2xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md hover:shadow-lg transition flex items-center gap-2"
@@ -812,14 +807,14 @@ const GarageDashboard = () => {
                               </strong>
                             </div>
                           </div>
-                          
+
                           <div className="space-y-1">
                             <span className="text-xxs text-slate-400 dark:text-slate-500 block uppercase font-semibold">Nội dung chi tiết</span>
                             <p className="text-sm text-slate-750 dark:text-slate-300 leading-relaxed whitespace-pre-line">
                               {record.Details}
                             </p>
                           </div>
-                          
+
                           {record.GarageName && (
                             <div className="text-xxs text-slate-400 dark:text-slate-500 flex justify-between items-center pt-2 bg-white/40 dark:bg-slate-800/40 px-2.5 py-1.5 rounded-lg border border-slate-100 dark:border-slate-750">
                               <span>🔧 Nơi thực hiện: <strong>{record.GarageName}</strong></span>
