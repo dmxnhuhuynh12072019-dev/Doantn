@@ -131,7 +131,8 @@ const AdminDashboard = () => {
 
   // Formatting utilities
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+    if (amount === undefined || amount === null) return '0 đ';
+    return new Intl.NumberFormat('vi-VN').format(amount) + ' đ';
   };
 
   const formatDate = (dateStr) => {
@@ -169,7 +170,7 @@ const AdminDashboard = () => {
           <div className="flex items-center gap-2">
             <span className="text-2xl">🛡️</span>
             <div>
-              <h1 className="text-lg font-black tracking-tight leading-none text-white">ACOH SYSTEM</h1>
+              <div className="text-lg font-black tracking-tight leading-none text-white">ACOH SYSTEM</div>
               <span className="text-[10px] text-violet-400 font-bold uppercase tracking-wider">Administration</span>
             </div>
           </div>
@@ -264,7 +265,7 @@ const AdminDashboard = () => {
               )}
 
               {loadingStats ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 animate-pulse">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 lg:gap-6 animate-pulse">
                   {[...Array(5)].map((_, i) => (
                     <div key={i} className="h-28 bg-slate-200 dark:bg-slate-800 rounded-3xl"></div>
                   ))}
@@ -272,68 +273,68 @@ const AdminDashboard = () => {
               ) : stats ? (
                 <>
                   {/* Stats Cards */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 lg:gap-6">
                     {/* Users count */}
-                    <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl p-6 shadow-xs flex items-center justify-between">
-                      <div>
+                    <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl p-6 shadow-xs flex items-center justify-between min-w-0">
+                      <div className="min-w-0">
                         <span className="text-[10px] font-bold text-slate-450 dark:text-slate-500 uppercase tracking-wider block mb-1">Người dùng</span>
-                        <p className="text-3xl font-black text-slate-800 dark:text-white leading-none">
+                        <p className="text-3xl font-black text-slate-800 dark:text-white leading-none truncate">
                           {stats.totalUsers}
                         </p>
                       </div>
-                      <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 text-xl flex items-center justify-center rounded-2xl border border-indigo-100/30">
+                      <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 text-xl flex items-center justify-center rounded-2xl border border-indigo-100/30 shrink-0">
                         👥
                       </div>
                     </div>
 
                     {/* Vehicles count */}
-                    <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl p-6 shadow-xs flex items-center justify-between">
-                      <div>
+                    <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl p-6 shadow-xs flex items-center justify-between min-w-0">
+                      <div className="min-w-0">
                         <span className="text-[10px] font-bold text-slate-450 dark:text-slate-500 uppercase tracking-wider block mb-1">Phương tiện</span>
-                        <p className="text-3xl font-black text-slate-800 dark:text-white leading-none">
+                        <p className="text-3xl font-black text-slate-800 dark:text-white leading-none truncate">
                           {stats.totalVehicles}
                         </p>
                       </div>
-                      <div className="w-12 h-12 bg-sky-50 dark:bg-sky-950/20 text-sky-600 dark:text-sky-400 text-xl flex items-center justify-center rounded-2xl border border-sky-100/30">
+                      <div className="w-12 h-12 bg-sky-50 dark:bg-sky-950/20 text-sky-600 dark:text-sky-400 text-xl flex items-center justify-center rounded-2xl border border-sky-100/30 shrink-0">
                         🚗
                       </div>
                     </div>
 
                     {/* Garages count */}
-                    <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl p-6 shadow-xs flex items-center justify-between">
-                      <div>
+                    <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl p-6 shadow-xs flex items-center justify-between min-w-0">
+                      <div className="min-w-0">
                         <span className="text-[10px] font-bold text-slate-450 dark:text-slate-500 uppercase tracking-wider block mb-1">Gara liên kết</span>
-                        <p className="text-3xl font-black text-slate-800 dark:text-white leading-none">
+                        <p className="text-3xl font-black text-slate-800 dark:text-white leading-none truncate">
                           {stats.totalGarages}
                         </p>
                       </div>
-                      <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 text-xl flex items-center justify-center rounded-2xl border border-emerald-100/30">
+                      <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 text-xl flex items-center justify-center rounded-2xl border border-emerald-100/30 shrink-0">
                         🏬
                       </div>
                     </div>
 
                     {/* Appointments count */}
-                    <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl p-6 shadow-xs flex items-center justify-between">
-                      <div>
+                    <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl p-6 shadow-xs flex items-center justify-between min-w-0">
+                      <div className="min-w-0">
                         <span className="text-[10px] font-bold text-slate-450 dark:text-slate-500 uppercase tracking-wider block mb-1">Lịch hẹn sửa</span>
-                        <p className="text-3xl font-black text-slate-800 dark:text-white leading-none">
+                        <p className="text-3xl font-black text-slate-800 dark:text-white leading-none truncate">
                           {stats.totalAppointments}
                         </p>
                       </div>
-                      <div className="w-12 h-12 bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 text-xl flex items-center justify-center rounded-2xl border border-amber-100/30">
+                      <div className="w-12 h-12 bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 text-xl flex items-center justify-center rounded-2xl border border-amber-100/30 shrink-0">
                         📅
                       </div>
                     </div>
 
                     {/* Revenue count */}
-                    <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl p-6 shadow-xs flex items-center justify-between sm:col-span-2 lg:col-span-1">
-                      <div>
+                    <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl p-6 shadow-xs flex items-center justify-between sm:col-span-2 lg:col-span-1 min-w-0">
+                      <div className="min-w-0 flex-1">
                         <span className="text-[10px] font-bold text-slate-450 dark:text-slate-500 uppercase tracking-wider block mb-1">Tổng doanh thu</span>
-                        <p className="text-lg font-black text-slate-800 dark:text-white leading-none mt-1">
+                        <p className="text-xl font-black text-slate-800 dark:text-white leading-tight mt-1 truncate" title={formatCurrency(stats.totalRevenue)}>
                           {formatCurrency(stats.totalRevenue)}
                         </p>
                       </div>
-                      <div className="w-12 h-12 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 text-xl flex items-center justify-center rounded-2xl border border-rose-100/30">
+                      <div className="w-12 h-12 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 text-xl flex items-center justify-center rounded-2xl border border-rose-100/30 shrink-0">
                         💰
                       </div>
                     </div>

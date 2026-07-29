@@ -1,0 +1,152 @@
+# TÀI LIỆU KIẾN TRÚC VÀ ĐẶC TẢ KỸ THUẬT HỆ THỐNG ACOH (BẢN BỔ SUNG CẢI TIẾN DỰ ÁN)
+
+## 1. THÔNG TIN CHUNG & MỤC TIÊU CẢI TIẾN
+* **Tên dự án:** AutoCare Office Helper (ACOH) - Tài liệu Đề xuất & Cải tiến Nâng cấp
+* **Tài liệu tham chiếu:** [module.md](file:///d:/DOANTOTNGHIEP/module.md)
+* **Mục tiêu:** Định hướng tái cấu trúc, mở rộng tính năng nghiệp vụ, tối ưu hóa giao diện di động (Mobile First), nâng cấp hạ tầng thông báo thời gian thực (Real-time Socket.IO) và ứng dụng công nghệ AI OCR nhận diện biển số xe.
+
+---
+
+## 2. LỘ TRÌNH VÀ THỨ TỰ TRIỂN KHAI (5 GIAI ĐOẠN)
+
+1. **Giai đoạn 1 (Ưu tiên #1):** Chuẩn hóa Khung/Bộ thông số Bảo dưỡng (Core Business Data)
+2. **Giai đoạn 2 (Ưu tiên #2):** Mở rộng Quản lý Pháp lý, Bảo hiểm & Xe Dịch vụ (Feature Completeness)
+3. **Giai đoạn 3 (Ưu tiên #3 & #4):** Tối ưu Giao diện Mobile First & Chế độ nền tối Dark Mode (Mobile First & Dark Mode UI/UX)
+4. **Giai đoạn 4 (Ưu tiên #5):** Hạ tầng Thông báo Thời gian thực với Socket.IO (Real-time Notification Engine)
+5. **Giai đoạn 5 (Ưu tiên #6):** Nhận diện Biển số xe bằng OCR/AI (License Plate OCR & AI Integration)
+
+---
+
+## 3. CÔNG NGHỆ BỔ SUNG (TECH STACK ADDONS)
+
+* **Front-end (FE):**
+  * Mobile First Layout, Responsive Design với Tailwind CSS Breakpoints & Custom Variables (Dark Mode).
+  * Socket.IO Client (`socket.io-client`) cho kết nối thông báo thời gian thực.
+  * Tích hợp Camera/Webcam Component phục vụ quét biển số xe OCR.
+* **Back-end (BE):**
+  * Nest.js WebSockets Gateway (`@nestjs/websockets`, `@nestjs/platform-socket.io`).
+  * Module xử lý nhận diện hình ảnh OCR (Tesseract.js hoặc Google Cloud Vision / Custom AI Service).
+* **Database (MS SQL Server 2014):**
+  * Cập nhật Bảng `Vehicles`: Bổ sung thông tin Xe dịch vụ (`isCommercial`, `htxCode`, `badgeNumber`).
+  * Bổ sung Bảng `MaintenanceCategories` & `MaintenanceItems` quản lý bộ danh mục bảo dưỡng chuẩn theo mốc kilomet.
+
+---
+
+## 4. CHI TIẾT TỪNG MODULE CẢI TIẾN (TÁCH BIỆT FE, BE, CHỨC NĂNG & API)
+
+### MODULE 1: CHUẨN HÓA KHUNG BỘ THÔNG SỐ BẢO DƯỠNG (MAINTENANCE MATRIX STANDARDIZATION)
+
+#### A. Mô tả chức năng & Chi tiết quy trình nghiệp vụ
+* **Khảo sát & Chuẩn hóa bộ khung bảo dưỡng:** Phân nhóm các hạng mục bảo dưỡng theo mốc cố định (ví dụ: mốc 1.000 km, 5.000 km, 10.000 km, 75.000 km...).
+* **Chi tiết hóa danh mục công việc:** Chia rõ các hạng mục kỹ thuật (Thay dầu nhớt, kiểm tra khe hở van, kiểm tra cảm biến động cơ, áp suất lốp, nắp cao su chân máy, sục rửa bình xăng/dòng nhiên liệu...).
+* **Cơ chế chọn linh hoạt:** Tránh việc gom tất cả hạng mục làm một lần. Người dùng hoặc Chủ Gara chỉ cần tích chọn đúng các mục cần bảo dưỡng để nhập thông tin và theo dõi.
+
+#### B. Thành phần Front-end (FE Interface)
+* Form/Modal chọn mốc bảo dưỡng (`Preset Odometer Checklist`) với bộ lọc danh mục trực quan.
+* Bảng ma trận bảo dưỡng (`Maintenance Matrix View`) hiển thị lịch sử và kế hoạch các mốc bảo dưỡng tiếp theo của xe.
+
+#### C. Thành phần Back-end (BE Logic)
+* Xây dựng bảng `MaintenanceCategories` và `MaintenanceItems` trên DB.
+* Logic BE tự động đối chiếu số Odometer thực tế của xe với bộ khung mốc km để đưa ra gợi ý checklist phù hợp.
+
+#### D. Hệ thống API Endpoints (`/api/maintenances/matrix`)
+* `GET /api/maintenances/categories` -> Lấy danh sách nhóm và hạng mục bảo dưỡng chuẩn phân theo mốc km.
+* `POST /api/maintenances/matrix-check` -> Body: `{ vehicleId, odometer, selectedItemIds, notes }` (Lưu lịch sử checklist mốc bảo dưỡng).
+
+#### E. Hướng dẫn Kiểm thử Module 1
+* **FE:** Mở trang Bảo dưỡng -> Chọn mốc 5.000 km -> Kiểm tra danh sách hiển thị các mục (Thay nhớt, kiểm tra cảm biến) -> Chọn mục và bấm lưu -> Kiểm tra dữ liệu được ghi nhận.
+* **API:** Gọi `GET /api/maintenances/categories` xác nhận kết quả trả về đúng cấu trúc mốc km và danh mục.
+
+---
+
+### MODULE 2: MỞ RỘNG QUẢN LÝ PHÁP LÝ & XE DỊCH VỤ (EXTENDED LEGAL & COMMERCIAL VEHICLE MANAGEMENT)
+
+#### A. Mô tả chức năng & Chi tiết quy trình nghiệp vụ
+* **Quản lý Giấy tờ & Lịch nhắc mở rộng:** Thêm tính năng quản lý và nhắc nhở thời hạn đối với: Đăng kiểm, Bảo hiểm vật chất xe (thân vỏ), Giấy tờ xe / Bằng lái xe cá nhân (tránh tình trạng quá hạn bị phạt hoặc phải thi lại).
+* **Bổ sung quản lý Xe dịch vụ:** Cho phép quản lý các thông tin chuyên biệt dành cho xe chạy dịch vụ (Grab, Be, Xe hợp đồng, Xe tải dịch vụ) như: Mã số Hợp tác xã (HTX), Số phù hiệu xe.
+
+#### B. Thành phần Front-end (FE Interface)
+* Form Quản lý Giấy tờ: Bổ sung loại giấy tờ "Bảo hiểm vật chất" và "Giấy phép lái xe".
+* Form Thêm/Sửa Phương tiện: Khi tích chọn "Xe dịch vụ", tự động hiển thị thêm trường nhập "Mã số Hợp tác xã (HTX)" và "Số phù hiệu".
+
+#### C. Thành phần Back-end (BE Logic)
+* Cập nhật SQL Schema bảng `Vehicles`: Thêm cột `IsCommercial` (BIT), `HTXCode` (NVARCHAR), `BadgeNumber` (NVARCHAR).
+* Cập nhật logic phân loại trạng thái giấy tờ trong bảng `LegalDocuments`.
+
+#### D. Hệ thống API Endpoints (`/api/legal` và `/api/vehicles`)
+* `POST /api/legal/documents` -> Body: `{ vehicleId, documentType, issueDate, expiryDate, documentNumber }`
+* `PATCH /api/vehicles/:id/commercial-info` -> Body: `{ isCommercial, htxCode, badgeNumber }`
+
+#### E. Hướng dẫn Kiểm thử Module 2
+* **FE:** Đăng ký xe mới với lựa chọn "Xe dịch vụ" -> Nhập mã HTX -> Thêm hạn Bảo hiểm vật chất -> Xác nhận hiển thị đúng trạng thái cảnh báo trên Dashboard.
+
+---
+
+### MODULE 3: TỐI ƯU GIAO DIỆN MOBILE FIRST & CHẾ ĐỘ NỀN TỐI (MOBILE FIRST & DARK MODE UI/UX)
+
+#### A. Mô tả chức năng & Chi tiết quy trình nghiệp vụ
+* **Tối ưu hóa Giao diện Mobile (Mobile First):** Ưu tiên các thao tác mượt mà, tiện lợi trên thiết bị di động cho các chức năng sử dụng thường xuyên (xem nhanh lịch, cập nhật km, tra cứu gara). Các phần thống kê, báo cáo phức tạp hơn sẽ đẩy sang giao diện Web/Desktop.
+* **Bổ sung Chế độ nền tối (Dark Mode):** Nâng cao trải nghiệm người dùng, giúp sử dụng thoải mái trong điều kiện ánh sáng yếu (ban đêm, trong xưởng sửa xe).
+
+#### B. Thành phần Front-end (FE Interface)
+* Layout Responsive chuẩn Mobile First với Bottom Navigation Bar (`Trang chủ`, `Danh sách xe`, `Đặt lịch`, `Tài khoản`).
+* Bộ chuyển đổi Giao diện (Dark / Light Mode Toggle) trên Header hoặc Trang cài đặt cá nhân.
+* Đẩy các biểu đồ Recharts/Chart.js phức tạp vào chế độ xem Desktop View hoặc tab Báo cáo riêng biệt.
+
+#### C. Thành phần Back-end (BE Logic)
+* Thêm trường `themePreference` ('light' | 'dark' | 'system') trong tài khoản người dùng để lưu vết cấu hình giao diện.
+
+#### D. Hệ thống API Endpoints (`/api/users`)
+* `PUT /api/users/preferences` -> Body: `{ themePreference }` (Cập nhật tùy chọn giao diện).
+
+#### E. Hướng dẫn Kiểm thử Module 3
+* **FE:** Chuyển Viewport sang di động (Responsive 375px) -> Kiểm tra thanh điều hướng dưới hiển thị mượt mà -> Bật Dark Mode -> Xác nhận màu sắc toàn ứng dụng chuyển đổi chính xác.
+
+---
+
+### MODULE 4: HỆ THỐNG THÔNG BÁO THỜI GIAN THỰC (SOCKET.IO NOTIFICATION ENGINE)
+
+#### A. Mô tả chức năng & Chi tiết quy trình nghiệp vụ
+* **Tích hợp Real-time với Socket.IO:** Thay thế cơ chế tự refresh trang hoặc polling thụ động. Hệ thống chủ động đẩy thông báo tức thì (In-app Push Notification) đến người dùng ngay khi có sự kiện phát sinh:
+  * Gara hoàn thành bảo dưỡng xe cho khách.
+  * Hệ thống quét thấy mốc hạn đăng kiểm / bảo hiểm / bảo dưỡng sắp đến.
+
+#### B. Thành phần Front-end (FE Interface)
+* Socket Client Provider tích hợp vào ứng dụng React (`SocketContext`).
+* Hiển thị Popup Toast Notification ở góc màn hình kèm âm thanh báo hiệu khi nhận sự kiện real-time.
+* Quả chuông thông báo nhảy số đếm tin chưa đọc tức thì mà không cần F5.
+
+#### C. Thành phần Back-end (BE Logic)
+* Tích hợp Nest.js WebSocket Gateway (`@WebSocketGateway()`).
+* Quản lý danh sách User đang online (`SocketId` mapping với `UserId`).
+* Bắn sự kiện `notification_received` tới phòng (room) riêng của User khi API sửa chữa hoàn tất hoặc Cron job kích hoạt.
+
+#### D. Hệ thống API & Event Endpoints (`/api/notifications` & Socket Events)
+* **Socket Event:** `connection`, `join_room`, `notification_received`.
+* `PATCH /api/notifications/mark-all-read` -> Đánh dấu tất cả thông báo là đã đọc.
+
+#### E. Hướng dẫn Kiểm thử Module 4
+* **FE/BE Test:** Đăng nhập 2 tài khoản trên 2 trình duyệt khác nhau (Chủ xe & Gara). Gara bấm "Hoàn tất bảo dưỡng" -> Trình duyệt Chủ xe lập tức hiển thị Toast thông báo và nảy số quả chuông real-time.
+
+---
+
+### MODULE 5: NHẬN DIỆN BIỂN SỐ XE BẰNG OCR/AI (LICENSE PLATE OCR & AI SEARCH)
+
+#### A. Mô tả chức năng & Chi tiết quy trình nghiệp vụ
+* **Trợ lý quét biển số thông minh cho Gara:** Cho phép nhân viên/thợ sửa xe dùng camera thiết bị di động hoặc tải ảnh lên để nhận diện biển số xe bằng công nghệ OCR (Optical Character Recognition).
+* **Tra cứu nhanh lịch sử bảo dưỡng:** Sau khi AI trích xuất được biển số xe (VD: `59A-123.45`), hệ thống tự động tìm kiếm và hiển thị ngay hồ sơ chiếc xe và toàn bộ lịch sử bảo dưỡng ở các garage mà không cần gõ tay.
+
+#### B. Thành phần Front-end (FE Interface)
+* Component nút Camera / Scan Biển số tại thanh tìm kiếm của Gara.
+* Modal giao diện Camera Scanner (hỗ trợ bật Flash, chụp hình trực tiếp hoặc chọn ảnh từ bộ nhớ).
+* Giao diện xem nhanh kết quả OCR kèm ô cho phép thợ xe sửa lại nếu ảnh chụp bị mờ/bẩn.
+
+#### C. Thành phần Back-end (BE Logic)
+* Tích hợp thư viện OCR (Tesseract.js hoặc Google Cloud Vision API / Custom Model).
+* Logic tiền xử lý ảnh (cắt khung biển số, băm độ tương phản) -> Trích xuất văn bản -> Chuẩn hóa chuỗi biển số -> Truy vấn SQL tra cứu xe.
+
+#### D. Hệ thống API Endpoints (`/api/extensions/ocr`)
+* `POST /api/extensions/ocr/scan-plate` -> Header: `Content-Type: multipart/form-data` (Upload file ảnh biển số) -> Trả về: `{ licensePlate: "59A-123.45", vehicleId: 10, vehicleProfile: { ... } }`.
+
+#### E. Hướng dẫn Kiểm thử Module 5
+* **FE:** Gara mở tính năng "Quét biển số" -> Upload ảnh biển số xe `59A-123.45` -> Hệ thống nhận diện chính xác chuỗi biển số và chuyển thẳng đến trang lịch sử bảo dưỡng của chiếc xe đó.
