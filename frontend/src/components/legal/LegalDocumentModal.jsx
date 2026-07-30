@@ -108,6 +108,7 @@ const LegalDocumentModal = ({ isOpen, onClose, onSave, vehicleId, document = nul
               <option value="Đăng kiểm">Đăng kiểm</option>
               <option value="Bảo hiểm dân sự">Bảo hiểm dân sự (Bắt buộc)</option>
               <option value="Bảo hiểm vật chất">Bảo hiểm vật chất (Thân vỏ)</option>
+              <option value="Giấy phép lái xe">Giấy phép lái xe (GPLX)</option>
             </select>
           </div>
 

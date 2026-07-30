@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsIn, IsInt, Min, IsOptional, IsDateString } from 'class-validator';
+import { IsNotEmpty, IsString, IsIn, IsInt, Min, IsOptional, IsDateString, IsBoolean } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateVehicleDto {
@@ -60,4 +60,28 @@ export class CreateVehicleDto {
   @IsInt({ message: 'Số km phải là số nguyên' })
   @Min(0, { message: 'Số km không được âm' })
   currentOdometer: number;
+
+  @ApiPropertyOptional({
+    description: 'Có phải là xe chạy dịch vụ (Grab, Be, Xe hợp đồng...) hay không',
+    example: false,
+  })
+  @IsOptional()
+  @IsBoolean({ message: 'isCommercial phải là giá trị boolean (true/false)' })
+  isCommercial?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Mã số Hợp tác xã (HTX)',
+    example: 'HTX-SAIGON-01',
+  })
+  @IsOptional()
+  @IsString({ message: 'Mã HTX phải là chuỗi ký tự' })
+  htxCode?: string;
+
+  @ApiPropertyOptional({
+    description: 'Số phù hiệu xe',
+    example: 'PH-889911',
+  })
+  @IsOptional()
+  @IsString({ message: 'Số phù hiệu phải là chuỗi ký tự' })
+  badgeNumber?: string;
 }

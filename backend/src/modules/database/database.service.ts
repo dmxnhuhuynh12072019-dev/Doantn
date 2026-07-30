@@ -16,9 +16,11 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       server: this.configService.get<string>('DB_HOST') || 'localhost',
       database: this.configService.get<string>('DB_NAME') || 'ACOH_DB',
       port: parseInt(this.configService.get<string>('DB_PORT') || '1433', 10),
+      requestTimeout: parseInt(this.configService.get<string>('DB_REQUEST_TIMEOUT') || '30000', 10),
       options: {
         encrypt: false,
         trustServerCertificate: true,
+        requestTimeout: parseInt(this.configService.get<string>('DB_REQUEST_TIMEOUT') || '30000', 10),
       },
     };
 

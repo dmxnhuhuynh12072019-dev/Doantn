@@ -33,6 +33,9 @@ CREATE TABLE Vehicles (
     ManufactureYear INT NULL,
     PurchaseDate DATE NULL,
     CurrentOdometer INT NOT NULL DEFAULT 0,
+    IsCommercial BIT NOT NULL DEFAULT 0,
+    HTXCode NVARCHAR(100) NULL,
+    BadgeNumber NVARCHAR(100) NULL,
     UpdatedAt DATETIME NOT NULL DEFAULT GETDATE(),
     
     CONSTRAINT PK_Vehicles PRIMARY KEY (VehicleID),
@@ -54,7 +57,7 @@ CREATE TABLE LegalDocuments (
     
     CONSTRAINT PK_LegalDocuments PRIMARY KEY (DocumentID),
     CONSTRAINT FK_LegalDocuments_Vehicles FOREIGN KEY (VehicleID) REFERENCES Vehicles(VehicleID) ON DELETE CASCADE,
-    CONSTRAINT CHK_LegalDocuments_Type CHECK (DocumentType IN (N'Đăng kiểm', N'Bảo hiểm dân sự', N'Bảo hiểm vật chất')),
+    CONSTRAINT CHK_LegalDocuments_Type CHECK (DocumentType IN (N'Đăng kiểm', N'Bảo hiểm dân sự', N'Bảo hiểm vật chất', N'Giấy phép lái xe')),
     CONSTRAINT CHK_LegalDocuments_Status CHECK (Status IN (N'Còn hạn', N'Sắp hết hạn', N'Quá hạn'))
 );
 
@@ -140,10 +143,35 @@ CREATE TABLE Notifications (
     CONSTRAINT FK_Notifications_Users FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE,
     CONSTRAINT CHK_Notifications_Type CHECK (NotificationType IN ('Email', 'InApp', 'All'))
 );
+
+-- 9. Bảng Khung/Bộ mốc bảo dưỡng (MaintenanceCategories)
+CREATE TABLE MaintenanceCategories (
+    CategoryID INT IDENTITY(1,1),
+    CategoryName NVARCHAR(150) NOT NULL,
+    TargetOdometer INT NOT NULL,
+    VehicleType NVARCHAR(20) NOT NULL DEFAULT N'Ô tô',
+    Description NVARCHAR(MAX) NULL,
+    
+    CONSTRAINT PK_MaintenanceCategories PRIMARY KEY (CategoryID),
+    CONSTRAINT CHK_MaintenanceCategories_Type CHECK (VehicleType IN (N'Ô tô', N'Xe máy'))
+);
+
+-- 10. Bảng Chi tiết hạng mục kiểm tra/thay thế (MaintenanceItems)
+CREATE TABLE MaintenanceItems (
+    ItemID INT IDENTITY(1,1),
+    CategoryID INT NOT NULL,
+    ItemName NVARCHAR(200) NOT NULL,
+    Description NVARCHAR(MAX) NULL,
+    IsRequired BIT NOT NULL DEFAULT 1,
+    
+    CONSTRAINT PK_MaintenanceItems PRIMARY KEY (ItemID),
+    CONSTRAINT FK_MaintenanceItems_Categories FOREIGN KEY (CategoryID) REFERENCES MaintenanceCategories(CategoryID) ON DELETE CASCADE
+);
 GO
 
 -- TẠO CHỈ MỤC TỐI ƯU (INDEXES)
 CREATE NONCLUSTERED INDEX IX_Vehicles_UserID ON Vehicles(UserID);
 CREATE NONCLUSTERED INDEX IX_MaintenanceHistory_GarageID ON MaintenanceHistory(GarageID);
 CREATE NONCLUSTERED INDEX IX_Appointments_Status_Date ON Appointments(Status, AppointmentDate);
+CREATE NONCLUSTERED INDEX IX_MaintenanceCategories_Odometer ON MaintenanceCategories(TargetOdometer, VehicleType);
 GO

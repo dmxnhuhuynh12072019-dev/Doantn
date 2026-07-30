@@ -341,4 +341,123 @@ export class MaintenancesService {
     }
     return result.recordset[0];
   }
+
+  // Lấy bộ khung các mốc bảo dưỡng và danh mục công việc kỹ thuật chuẩn
+  async getMaintenanceCategories(vehicleType?: string) {
+    let queryStr = `
+      SELECT c.CategoryID, c.CategoryName, c.TargetOdometer, c.VehicleType, c.Description AS CategoryDescription,
+             i.ItemID, i.ItemName, i.Description AS ItemDescription, i.IsRequired
+      FROM MaintenanceCategories c
+      LEFT JOIN MaintenanceItems i ON c.CategoryID = i.CategoryID
+    `;
+    const params: { name: string; type: any; value: any }[] = [];
+
+    if (vehicleType) {
+      queryStr += ` WHERE c.VehicleType = @vehicleType`;
+      params.push({ name: 'vehicleType', type: sql.NVarChar, value: vehicleType });
+    }
+
+    queryStr += ` ORDER BY c.TargetOdometer ASC, c.CategoryID ASC, i.ItemID ASC`;
+
+    const result = await this.dbService.query(queryStr, params);
+
+    const categoriesMap = new Map<number, any>();
+    for (const row of result.recordset) {
+      if (!categoriesMap.has(row.CategoryID)) {
+        categoriesMap.set(row.CategoryID, {
+          categoryId: row.CategoryID,
+          categoryName: row.CategoryName,
+          targetOdometer: row.TargetOdometer,
+          vehicleType: row.VehicleType,
+          description: row.CategoryDescription,
+          items: [],
+        });
+      }
+
+      if (row.ItemID) {
+        categoriesMap.get(row.CategoryID).items.push({
+          itemId: row.ItemID,
+          itemName: row.ItemName,
+          description: row.ItemDescription,
+          isRequired: !!row.IsRequired,
+        });
+      }
+    }
+
+    return Array.from(categoriesMap.values());
+  }
+
+  // Lưu bảo dưỡng theo mốc km chuẩn hóa (Matrix Checklist)
+  async saveMatrixChecklist(userId: number, role: string, dto: any) {
+    await this.checkVehicleAccess(dto.vehicleId, userId, role);
+
+    if (!dto.selectedItemIds || dto.selectedItemIds.length === 0) {
+      throw new NotFoundException('Phải chọn ít nhất một hạng mục bảo dưỡng');
+    }
+
+    const itemsResult = await this.dbService.query(
+      `SELECT i.ItemName, c.CategoryName 
+       FROM MaintenanceItems i 
+       JOIN MaintenanceCategories c ON i.CategoryID = c.CategoryID
+       WHERE i.ItemID IN (${dto.selectedItemIds.map((_: any, index: number) => `@id${index}`).join(',')})`,
+      dto.selectedItemIds.map((id: number, index: number) => ({ name: `id${index}`, type: sql.Int, value: id }))
+    );
+
+    if (itemsResult.recordset.length === 0) {
+      throw new NotFoundException('Không tìm thấy các hạng mục bảo dưỡng được chọn.');
+    }
+
+    const itemNames = itemsResult.recordset.map((r: any) => r.ItemName).join(', ');
+    const details = `Bảo dưỡng mốc ${dto.odometer.toLocaleString()} km - Hạng mục: ${itemNames}.${dto.notes ? ' Ghi chú: ' + dto.notes : ''}`;
+
+    let garageId: number | null = null;
+    if (role === 'Garage') {
+      const gRes = await this.dbService.query(
+        'SELECT GarageID FROM Garages WHERE UserID = @userId',
+        [{ name: 'userId', type: sql.Int, value: userId }]
+      );
+      if (gRes.recordset.length > 0) {
+        garageId = gRes.recordset[0].GarageID;
+      }
+    }
+
+    await this.dbService.query(
+      `INSERT INTO MaintenanceHistory (VehicleID, GarageID, ExecutionDate, ExecutionOdometer, TotalCost, Details)
+       VALUES (@vehicleId, @garageId, GETDATE(), @odometer, 0, @details)`,
+      [
+        { name: 'vehicleId', type: sql.Int, value: dto.vehicleId },
+        { name: 'garageId', type: sql.Int, value: garageId },
+        { name: 'odometer', type: sql.Int, value: dto.odometer },
+        { name: 'details', type: sql.NVarChar, value: details },
+      ]
+    );
+
+    await this.dbService.query(
+      `UPDATE Vehicles 
+       SET CurrentOdometer = CASE WHEN @odometer > CurrentOdometer THEN @odometer ELSE CurrentOdometer END,
+           UpdatedAt = GETDATE()
+       WHERE VehicleID = @vehicleId`,
+      [
+        { name: 'odometer', type: sql.Int, value: dto.odometer },
+        { name: 'vehicleId', type: sql.Int, value: dto.vehicleId },
+      ]
+    );
+
+    await this.dbService.query(
+      `UPDATE MaintenanceSchedules
+       SET Status = N'Đã hoàn thành'
+       WHERE VehicleID = @vehicleId 
+         AND Status = N'Chưa thực hiện'
+         AND TargetOdometer <= @odometer`,
+      [
+        { name: 'vehicleId', type: sql.Int, value: dto.vehicleId },
+        { name: 'odometer', type: sql.Int, value: dto.odometer },
+      ]
+    );
+
+    return {
+      message: 'Lưu bảo dưỡng theo mốc km thành công!',
+      details,
+    };
+  }
 }

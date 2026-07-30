@@ -4,6 +4,7 @@ import { DatabaseService } from '../database/database.service';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { UpdateOdometerDto } from './dto/update-odometer.dto';
+import { UpdateCommercialInfoDto } from './dto/update-commercial-info.dto';
 
 @Injectable()
 export class VehiclesService {
@@ -57,9 +58,9 @@ export class VehiclesService {
 
     // 2. Thêm xe mới vào database
     const insertResult = await this.dbService.query(
-      `INSERT INTO Vehicles (UserID, LicensePlate, VehicleType, Brand, Model, ManufactureYear, PurchaseDate, CurrentOdometer, UpdatedAt)
+      `INSERT INTO Vehicles (UserID, LicensePlate, VehicleType, Brand, Model, ManufactureYear, PurchaseDate, CurrentOdometer, IsCommercial, HTXCode, BadgeNumber, UpdatedAt)
        OUTPUT INSERTED.VehicleID
-       VALUES (@userId, @licensePlate, @vehicleType, @brand, @model, @manufactureYear, @purchaseDate, @currentOdometer, GETDATE())`,
+       VALUES (@userId, @licensePlate, @vehicleType, @brand, @model, @manufactureYear, @purchaseDate, @currentOdometer, @isCommercial, @htxCode, @badgeNumber, GETDATE())`,
       [
         { name: 'userId', type: sql.Int, value: userId },
         { name: 'licensePlate', type: sql.VarChar, value: dto.licensePlate },
@@ -69,6 +70,9 @@ export class VehiclesService {
         { name: 'manufactureYear', type: sql.Int, value: dto.manufactureYear || null },
         { name: 'purchaseDate', type: sql.Date, value: dto.purchaseDate || null },
         { name: 'currentOdometer', type: sql.Int, value: dto.currentOdometer },
+        { name: 'isCommercial', type: sql.Bit, value: dto.isCommercial ? 1 : 0 },
+        { name: 'htxCode', type: sql.NVarChar, value: dto.htxCode || null },
+        { name: 'badgeNumber', type: sql.NVarChar, value: dto.badgeNumber || null },
       ]
     );
 
@@ -94,6 +98,9 @@ export class VehiclesService {
            Model = @model,
            ManufactureYear = @manufactureYear,
            PurchaseDate = @purchaseDate,
+           IsCommercial = @isCommercial,
+           HTXCode = @htxCode,
+           BadgeNumber = @badgeNumber,
            UpdatedAt = GETDATE()
        WHERE VehicleID = @id`,
       [
@@ -102,10 +109,38 @@ export class VehiclesService {
         { name: 'model', type: sql.NVarChar, value: dto.model },
         { name: 'manufactureYear', type: sql.Int, value: dto.manufactureYear || null },
         { name: 'purchaseDate', type: sql.Date, value: dto.purchaseDate || null },
+        { name: 'isCommercial', type: sql.Bit, value: dto.isCommercial ? 1 : 0 },
+        { name: 'htxCode', type: sql.NVarChar, value: dto.htxCode || null },
+        { name: 'badgeNumber', type: sql.NVarChar, value: dto.badgeNumber || null },
       ]
     );
 
     return { message: 'Cập nhật thông tin phương tiện thành công!' };
+  }
+
+  async updateCommercialInfo(id: number, userId: number, role: string, dto: UpdateCommercialInfoDto) {
+    const vehicle = await this.findOne(id, userId, role);
+
+    if (role !== 'Admin' && vehicle.UserID !== userId) {
+      throw new ForbiddenException('Bạn không có quyền cập nhật xe này');
+    }
+
+    await this.dbService.query(
+      `UPDATE Vehicles
+       SET IsCommercial = @isCommercial,
+           HTXCode = @htxCode,
+           BadgeNumber = @badgeNumber,
+           UpdatedAt = GETDATE()
+       WHERE VehicleID = @id`,
+      [
+        { name: 'id', type: sql.Int, value: id },
+        { name: 'isCommercial', type: sql.Bit, value: dto.isCommercial !== undefined ? (dto.isCommercial ? 1 : 0) : vehicle.IsCommercial },
+        { name: 'htxCode', type: sql.NVarChar, value: dto.htxCode !== undefined ? dto.htxCode : vehicle.HTXCode },
+        { name: 'badgeNumber', type: sql.NVarChar, value: dto.badgeNumber !== undefined ? dto.badgeNumber : vehicle.BadgeNumber },
+      ]
+    );
+
+    return { message: 'Cập nhật thông tin xe dịch vụ thành công!' };
   }
 
   async updateOdometer(id: number, userId: number, role: string, dto: UpdateOdometerDto) {

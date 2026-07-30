@@ -53,3 +53,12 @@ export const deleteVehicle = async (id) => {
     throw error.response?.data || { message: 'Không thể xóa phương tiện' };
   }
 };
+
+export const updateCommercialInfo = async (id, commercialData) => {
+  try {
+    const res = await api.patch(`/api/vehicles/${id}/commercial-info`, commercialData);
+    return res.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Không thể cập nhật thông tin xe dịch vụ' };
+  }
+};

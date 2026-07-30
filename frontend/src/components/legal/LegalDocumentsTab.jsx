@@ -75,8 +75,8 @@ const LegalDocumentsTab = ({ vehicleId, vehicleType }) => {
 
   // Xác định những loại giấy tờ cần hiển thị theo loại xe
   const allowedDocTypes = vehicleType === 'Ô tô' 
-    ? ['Đăng kiểm', 'Bảo hiểm dân sự', 'Bảo hiểm vật chất']
-    : ['Bảo hiểm dân sự', 'Bảo hiểm vật chất'];
+    ? ['Đăng kiểm', 'Bảo hiểm dân sự', 'Bảo hiểm vật chất', 'Giấy phép lái xe']
+    : ['Bảo hiểm dân sự', 'Bảo hiểm vật chất', 'Giấy phép lái xe'];
 
   const docMetaData = {
     'Đăng kiểm': {
@@ -93,6 +93,11 @@ const LegalDocumentsTab = ({ vehicleId, vehicleType }) => {
       title: 'Bảo hiểm vật chất',
       description: 'Bảo hiểm tự nguyện cho thiệt hại vật chất (thân vỏ, máy móc) của phương tiện.',
       icon: '🚗'
+    },
+    'Giấy phép lái xe': {
+      title: 'Giấy phép lái xe (GPLX)',
+      description: 'Quản lý thời hạn Giấy phép lái xe cá nhân để đảm bảo hợp pháp khi lưu thông.',
+      icon: '🪪'
     }
   };
 

@@ -4,6 +4,7 @@ import { MaintenancesService } from './maintenances.service';
 import { CreateScheduleDto } from './dto/create-schedule.dto';
 import { UpdateScheduleDto } from './dto/update-schedule.dto';
 import { CreateHistoryGarageDto } from './dto/create-history-garage.dto';
+import { SaveMatrixChecklistDto } from './dto/save-matrix-checklist.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -76,5 +77,20 @@ export class MaintenancesController {
   @ApiResponse({ status: 200, description: 'Trả về thông tin xe.' })
   async searchVehicle(@Query('licensePlate') licensePlate: string) {
     return this.maintenancesService.searchVehicleByLicensePlate(licensePlate);
+  }
+
+  @Get('categories')
+  @ApiOperation({ summary: 'Lấy bộ khung mốc bảo dưỡng và danh mục hạng mục chuẩn hóa' })
+  @ApiQuery({ name: 'vehicleType', description: 'Loại phương tiện (Ô tô / Xe máy)', required: false, type: String })
+  @ApiResponse({ status: 200, description: 'Trả về danh sách danh mục theo mốc km.' })
+  async getCategories(@Query('vehicleType') vehicleType?: string) {
+    return this.maintenancesService.getMaintenanceCategories(vehicleType);
+  }
+
+  @Post('matrix-check')
+  @ApiOperation({ summary: 'Lưu lịch sử bảo dưỡng theo mốc km và checklist được chọn' })
+  @ApiResponse({ status: 201, description: 'Lưu bảo dưỡng theo mốc km thành công.' })
+  async saveMatrixChecklist(@User() user: any, @Body() dto: SaveMatrixChecklistDto) {
+    return this.maintenancesService.saveMatrixChecklist(user.userId, user.role, dto);
   }
 }

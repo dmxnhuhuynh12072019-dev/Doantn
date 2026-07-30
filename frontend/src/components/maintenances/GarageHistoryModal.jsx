@@ -221,9 +221,23 @@ const GarageHistoryModal = ({ isOpen, onClose, onSave }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-750 dark:text-slate-300 mb-1">
-              Nội dung dịch vụ thực hiện <span className="text-rose-500">*</span>
-            </label>
+            <div className="flex justify-between items-center mb-1">
+              <label className="block text-sm font-semibold text-slate-750 dark:text-slate-300">
+                Nội dung dịch vụ thực hiện <span className="text-rose-500">*</span>
+              </label>
+            </div>
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {['Thay nhớt máy', 'Thay lọc nhớt', 'Kiểm tra van & cảm biến', 'Áp suất lốp', 'Sục rửa bình xăng', 'Thay nắp cao su'].map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => setDetails(prev => prev ? `${prev}, ${tag}` : tag)}
+                  className="px-2 py-1 text-[11px] font-medium rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 transition"
+                >
+                  + {tag}
+                </button>
+              ))}
+            </div>
             <textarea
               value={details}
               onChange={(e) => setDetails(e.target.value)}

@@ -12,12 +12,12 @@ export class CreateDocumentDto {
 
   @ApiProperty({
     description: 'Loại giấy tờ',
-    enum: ['Đăng kiểm', 'Bảo hiểm dân sự', 'Bảo hiểm vật chất'],
+    enum: ['Đăng kiểm', 'Bảo hiểm dân sự', 'Bảo hiểm vật chất', 'Giấy phép lái xe'],
     example: 'Bảo hiểm dân sự',
   })
   @IsNotEmpty({ message: 'Loại giấy tờ không được để trống' })
-  @IsIn(['Đăng kiểm', 'Bảo hiểm dân sự', 'Bảo hiểm vật chất'], {
-    message: 'Loại giấy tờ phải là "Đăng kiểm", "Bảo hiểm dân sự" hoặc "Bảo hiểm vật chất"',
+  @IsIn(['Đăng kiểm', 'Bảo hiểm dân sự', 'Bảo hiểm vật chất', 'Giấy phép lái xe'], {
+    message: 'Loại giấy tờ phải là "Đăng kiểm", "Bảo hiểm dân sự", "Bảo hiểm vật chất" hoặc "Giấy phép lái xe"',
   })
   documentType: string;
 

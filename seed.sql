@@ -13,6 +13,8 @@ DELETE FROM MaintenanceSchedules;
 DELETE FROM LegalDocuments;
 DELETE FROM Vehicles;
 DELETE FROM Users;
+DELETE FROM MaintenanceItems;
+DELETE FROM MaintenanceCategories;
 GO
 
 -- Reset IDENTITY values
@@ -24,6 +26,8 @@ DBCC CHECKIDENT ('Garages', RESEED, 0);
 DBCC CHECKIDENT ('Appointments', RESEED, 0);
 DBCC CHECKIDENT ('MaintenanceHistory', RESEED, 0);
 DBCC CHECKIDENT ('Notifications', RESEED, 0);
+DBCC CHECKIDENT ('MaintenanceCategories', RESEED, 0);
+DBCC CHECKIDENT ('MaintenanceItems', RESEED, 0);
 GO
 
 -- 1. Thêm Người dùng (Users)
@@ -99,6 +103,40 @@ VALUES
 (3, N'Cảnh báo giấy tờ hết hạn', N'Bảo hiểm vật chất của xe 59A-123.45 đã hết hạn từ ngày 10/05/2025. Vui lòng gia hạn gấp!', 'All', 0, GETDATE() - 1);
 GO
 
+-- 9. Thêm Khung/Bộ mốc bảo dưỡng (MaintenanceCategories)
+INSERT INTO MaintenanceCategories (CategoryName, TargetOdometer, VehicleType, Description)
+VALUES 
+(N'Bảo dưỡng cấp 1 (Mốc 5.000 km)', 5000, N'Ô tô', N'Kiểm tra định kỳ nhanh, thay dầu động cơ và bổ sung nước rửa kính/nước làm mát.'),
+(N'Bảo dưỡng cấp 2 (Mốc 10.000 km)', 10000, N'Ô tô', N'Thay dầu máy, thay lọc dầu, kiểm tra hệ thống phanh và cảm biến.'),
+(N'Bảo dưỡng cấp 3 (Mốc 20.000 km)', 20000, N'Ô tô', N'Thay lọc gió động cơ, lọc gió điều hòa, đảo lốp và sục rửa bình xăng/béc phun.'),
+(N'Bảo dưỡng cấp cao (Mốc 75.000 km)', 75000, N'Ô tô', N'Bảo dưỡng toàn diện hệ thống khung gầm, nắp cao su chân máy, nắp cao su thước lái, kiểm tra van và cảm biến nâng cao.');
+GO
+
+-- 10. Thêm Chi tiết hạng mục kiểm tra/thay thế (MaintenanceItems)
+INSERT INTO MaintenanceItems (CategoryID, ItemName, Description, IsRequired)
+VALUES 
+-- Category 1 (5.000 km)
+(1, N'Thay dầu nhớt động cơ', N'Khuyên dùng nhớt tổng hợp hoặc bán tổng hợp', 1),
+(1, N'Kiểm tra áp suất lốp & bổ sung khí', N'Áp suất tiêu chuẩn 2.2 - 2.4 bar', 1),
+(1, N'Bổ sung nước rửa kính & nước làm mát', N'Kiểm tra rò rỉ dung dịch làm mát', 0),
+
+-- Category 2 (10.000 km)
+(2, N'Thay dầu nhớt động cơ & Lọc dầu', N'Thay lọc dầu để bảo vệ động cơ', 1),
+(2, N'Kiểm tra khe hở van & Cảm biến động cơ', N'Đo đọc mã lỗi cảm biến qua cổng OBD-II', 1),
+(2, N'Bảo dưỡng hệ thống phanh 4 bánh', N'Vệ sinh má phanh và đĩa phanh', 1),
+
+-- Category 3 (20.000 km)
+(3, N'Thay lọc gió động cơ & Lọc gió điều hòa', N'Giúp không khí cabin sạch và tiết kiệm nhiên liệu', 1),
+(3, N'Đảo lốp xe & Cân mâm điện tử', N'Đảm bảo mòn lốp đều và vận hành êm ái', 1),
+(3, N'Sục rửa bình xăng & Béc phun nhiên liệu', N'Tẩy cặn bẩn kim phun và bình chứa nhiên liệu', 1),
+
+-- Category 4 (75.000 km)
+(4, N'Thay nắp cao su chân máy & Cao su thước lái', N'Giảm chấn động động cơ và hệ thống lái', 1),
+(4, N'Kiểm tra & Cân chỉnh khe hở van', N'Đảm bảo chu kỳ nạp xả động cơ tối ưu', 1),
+(4, N'Kiểm tra toàn bộ cảm biến & Nắp cao su', N'Cảm biến oxy, cảm biến lưu lượng khí nạp MAP/MAF', 1),
+(4, N'Thay dung dịch làm mát & Dầu phanh', N'Xả sạch dung dịch cũ và chèn dịch mới', 1);
+GO
+
 -- XÁC NHẬN DỮ LIỆU ĐÃ SEED
 SELECT 'Users' AS TableName, COUNT(*) AS TotalRows FROM Users UNION ALL
 SELECT 'Garages', COUNT(*) FROM Garages UNION ALL
@@ -107,5 +145,7 @@ SELECT 'LegalDocuments', COUNT(*) FROM LegalDocuments UNION ALL
 SELECT 'MaintenanceSchedules', COUNT(*) FROM MaintenanceSchedules UNION ALL
 SELECT 'Appointments', COUNT(*) FROM Appointments UNION ALL
 SELECT 'MaintenanceHistory', COUNT(*) FROM MaintenanceHistory UNION ALL
-SELECT 'Notifications', COUNT(*) FROM Notifications;
+SELECT 'Notifications', COUNT(*) FROM Notifications UNION ALL
+SELECT 'MaintenanceCategories', COUNT(*) FROM MaintenanceCategories UNION ALL
+SELECT 'MaintenanceItems', COUNT(*) FROM MaintenanceItems;
 GO

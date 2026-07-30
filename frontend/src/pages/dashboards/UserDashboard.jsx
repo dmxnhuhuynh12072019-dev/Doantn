@@ -11,6 +11,7 @@ import ReviewModal from '../../components/extensions/ReviewModal';
 import AiAssistantChat from '../../components/extensions/AiAssistantChat';
 import MaintenanceSchedulesTab from '../../components/maintenances/MaintenanceSchedulesTab';
 import MaintenanceHistoryTab from '../../components/maintenances/MaintenanceHistoryTab';
+import MaintenanceMatrixView from '../../components/maintenances/MaintenanceMatrixView';
 import LegalDocumentsTab from '../../components/legal/LegalDocumentsTab';
 import NotificationBell from '../../components/notifications/NotificationBell';
 
@@ -256,10 +257,15 @@ const UserDashboard = () => {
             {/* Thông tin nhanh xe */}
             <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 p-6 shadow-sm flex flex-col md:flex-row justify-between gap-6">
               <div className="space-y-3">
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-700 text-slate-650 dark:text-slate-300">
                     {selectedVehicleForDetail.VehicleType === 'Ô tô' ? '🚗 Ô tô' : '🏍️ Xe máy'}
                   </span>
+                  {selectedVehicleForDetail.IsCommercial ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900/40">
+                      🚕 Xe dịch vụ
+                    </span>
+                  ) : null}
                   <div className="border-2 border-slate-850 bg-white dark:bg-slate-900 rounded-md px-3 py-1 text-sm font-black tracking-wider text-slate-850 dark:text-white shadow-sm shrink-0 whitespace-nowrap">
                     {selectedVehicleForDetail.LicensePlate}
                   </div>
@@ -267,9 +273,15 @@ const UserDashboard = () => {
                 <h2 className="text-3xl font-black text-slate-800 dark:text-white">
                   {selectedVehicleForDetail.Brand} {selectedVehicleForDetail.Model}
                 </h2>
-                <div className="flex gap-6 text-sm text-slate-500 dark:text-slate-400">
+                <div className="flex flex-wrap gap-6 text-sm text-slate-500 dark:text-slate-400">
                   <p>Năm sản xuất: <strong className="text-slate-700 dark:text-slate-350">{selectedVehicleForDetail.ManufactureYear || 'Không rõ'}</strong></p>
                   <p>Ngày mua: <strong className="text-slate-700 dark:text-slate-350">{selectedVehicleForDetail.PurchaseDate ? new Date(selectedVehicleForDetail.PurchaseDate).toLocaleDateString() : 'Không rõ'}</strong></p>
+                  {selectedVehicleForDetail.IsCommercial && selectedVehicleForDetail.HTXCode && (
+                    <p>Mã HTX: <strong className="text-amber-700 dark:text-amber-400">{selectedVehicleForDetail.HTXCode}</strong></p>
+                  )}
+                  {selectedVehicleForDetail.IsCommercial && selectedVehicleForDetail.BadgeNumber && (
+                    <p>Số phù hiệu: <strong className="text-amber-700 dark:text-amber-400">{selectedVehicleForDetail.BadgeNumber}</strong></p>
+                  )}
                 </div>
               </div>
 
@@ -331,10 +343,16 @@ const UserDashboard = () => {
 
               <div className="p-6 sm:p-8">
                 {activeTab === 'schedules' && (
-                  <MaintenanceSchedulesTab
-                    vehicleId={selectedVehicleForDetail.VehicleID}
-                    currentOdometer={selectedVehicleForDetail.CurrentOdometer}
-                  />
+                  <div className="space-y-6">
+                    <MaintenanceMatrixView
+                      vehicle={selectedVehicleForDetail}
+                      onRefresh={fetchVehicles}
+                    />
+                    <MaintenanceSchedulesTab
+                      vehicleId={selectedVehicleForDetail.VehicleID}
+                      currentOdometer={selectedVehicleForDetail.CurrentOdometer}
+                    />
+                  </div>
                 )}
                 {activeTab === 'history' && (
                   <MaintenanceHistoryTab vehicleId={selectedVehicleForDetail.VehicleID} />
@@ -546,12 +564,25 @@ const UserDashboard = () => {
                       <div>
                         <div className="flex justify-between items-start mb-4">
                           <div>
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-700 text-slate-650 dark:text-slate-300">
-                              {vehicle.VehicleType === 'Ô tô' ? '🚗 Ô tô' : '🏍️ Xe máy'}
-                            </span>
-                            <h3 className="text-xl font-black text-slate-800 dark:text-white mt-2">
+                            <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-700 text-slate-650 dark:text-slate-300">
+                                {vehicle.VehicleType === 'Ô tô' ? '🚗 Ô tô' : '🏍️ Xe máy'}
+                              </span>
+                              {vehicle.IsCommercial ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900/40">
+                                  🚕 Xe dịch vụ
+                                </span>
+                              ) : null}
+                            </div>
+                            <h3 className="text-xl font-black text-slate-800 dark:text-white mt-1">
                               {vehicle.Brand} {vehicle.Model}
                             </h3>
+                            {vehicle.IsCommercial && (vehicle.HTXCode || vehicle.BadgeNumber) && (
+                              <p className="text-xs font-medium text-amber-700 dark:text-amber-400 mt-1">
+                                {vehicle.HTXCode && <span>HTX: <strong>{vehicle.HTXCode}</strong> </span>}
+                                {vehicle.BadgeNumber && <span>| Phù hiệu: <strong>{vehicle.BadgeNumber}</strong></span>}
+                              </p>
+                            )}
                           </div>
 
                           {/* License Plate Plate-like UI */}

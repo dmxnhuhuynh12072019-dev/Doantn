@@ -4,6 +4,7 @@ import { VehiclesService } from './vehicles.service';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { UpdateOdometerDto } from './dto/update-odometer.dto';
+import { UpdateCommercialInfoDto } from './dto/update-commercial-info.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { User } from '../auth/decorators/user.decorator';
 
@@ -44,7 +45,7 @@ export class VehiclesController {
   }
 
   @Put(':id')
-  @ApiOperation({ summary: 'Cập nhật thông tin cố định của phương tiện (Hãng xe, dòng xe, năm, ngày mua)' })
+  @ApiOperation({ summary: 'Cập nhật thông tin cố định của phương tiện (Hãng xe, dòng xe, năm, ngày mua, xe dịch vụ)' })
   @ApiParam({ name: 'id', description: 'ID của phương tiện', type: Number })
   @ApiResponse({ status: 200, description: 'Cập nhật xe thành công.' })
   @ApiResponse({ status: 401, description: 'Chưa xác thực.' })
@@ -56,6 +57,20 @@ export class VehiclesController {
     @Body() dto: UpdateVehicleDto,
   ) {
     return this.vehiclesService.update(id, user.userId, user.role, dto);
+  }
+
+  @Patch(':id/commercial-info')
+  @ApiOperation({ summary: 'Cập nhật thông tin xe dịch vụ (Mã HTX, số phù hiệu, cờ xe dịch vụ)' })
+  @ApiParam({ name: 'id', description: 'ID của phương tiện', type: Number })
+  @ApiResponse({ status: 200, description: 'Cập nhật thông tin xe dịch vụ thành công.' })
+  @ApiResponse({ status: 401, description: 'Chưa xác thực.' })
+  @ApiResponse({ status: 403, description: 'Không có quyền cập nhật xe này.' })
+  async updateCommercialInfo(
+    @Param('id', ParseIntPipe) id: number,
+    @User() user: any,
+    @Body() dto: UpdateCommercialInfoDto,
+  ) {
+    return this.vehiclesService.updateCommercialInfo(id, user.userId, user.role, dto);
   }
 
   @Patch(':id/odometer')

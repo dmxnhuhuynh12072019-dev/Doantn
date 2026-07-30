@@ -62,3 +62,23 @@ export const searchVehicle = async (licensePlate) => {
     throw error.response?.data || { message: 'Không tìm thấy phương tiện' };
   }
 };
+
+export const getMaintenanceCategories = async (vehicleType) => {
+  try {
+    const url = vehicleType ? `/api/maintenances/categories?vehicleType=${encodeURIComponent(vehicleType)}` : '/api/maintenances/categories';
+    const res = await api.get(url);
+    return res.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Không thể tải khung mốc bảo dưỡng' };
+  }
+};
+
+export const saveMatrixChecklist = async (checklistData) => {
+  try {
+    const res = await api.post('/api/maintenances/matrix-check', checklistData);
+    return res.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Không thể lưu bảo dưỡng theo mốc km' };
+  }
+};
+
