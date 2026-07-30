@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useModal } from '../../context/ModalContext';
 import * as adminService from '../../services/adminService';
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
+  const { confirm, toast } = useModal();
 
   // Navigation: 'overview' | 'users' | 'garages' | 'profile'
   const [activeTab, setActiveTab] = useState('overview');
@@ -19,11 +21,14 @@ const AdminDashboard = () => {
   const [usersError, setUsersError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
 
   // Garages States
   const [garages, setGarages] = useState([]);
   const [loadingGarages, setLoadingGarages] = useState(false);
   const [garagesError, setGaragesError] = useState('');
+  const [garageSearch, setGarageSearch] = useState('');
+  const [garageStatusFilter, setGarageStatusFilter] = useState('');
 
   // --- FETCHERS ---
   const fetchStats = async () => {
@@ -84,47 +89,67 @@ const AdminDashboard = () => {
   // --- ACTIONS ---
   const handleToggleUserStatus = async (targetUser) => {
     const nextStatus = targetUser.Status === 'Hoạt động' ? 'Bị khóa' : 'Hoạt động';
-    const confirmMessage = `Bạn có chắc chắn muốn ${nextStatus === 'Bị khóa' ? 'khóa' : 'mở khóa'} tài khoản của "${targetUser.FullName}"?`;
+    const isLocking = nextStatus === 'Bị khóa';
+    const isConfirmed = await confirm({
+      title: isLocking ? 'Khóa tài khoản' : 'Mở khóa tài khoản',
+      message: `Bạn có chắc chắn muốn ${isLocking ? 'khóa' : 'mở khóa'} tài khoản của "${targetUser.FullName}"?`,
+      confirmText: isLocking ? 'Khóa tài khoản' : 'Mở khóa',
+      cancelText: 'Hủy',
+      type: isLocking ? 'danger' : 'warning',
+    });
 
-    if (window.confirm(confirmMessage)) {
+    if (isConfirmed) {
       try {
         await adminService.updateUserStatus(targetUser.UserID, nextStatus);
-        alert(`Đã cập nhật trạng thái tài khoản thành công!`);
+        toast.success(`Đã cập nhật trạng thái tài khoản thành công!`);
         fetchUsers();
         // If we are showing overview, refresh stats as well
         if (activeTab === 'overview') fetchStats();
       } catch (err) {
-        alert(err.message || 'Cập nhật trạng thái tài khoản thất bại.');
+        toast.error(err.message || 'Cập nhật trạng thái tài khoản thất bại.');
       }
     }
   };
 
   const handleChangeUserRole = async (targetUser, newRole) => {
     if (targetUser.Role === newRole) return;
-    const confirmMessage = `Bạn có chắc chắn muốn thay đổi vai trò của "${targetUser.FullName}" thành "${newRole}"?`;
+    const isConfirmed = await confirm({
+      title: 'Đổi vai trò người dùng',
+      message: `Bạn có chắc chắn muốn thay đổi vai trò của "${targetUser.FullName}" thành "${newRole}"?`,
+      confirmText: 'Cập nhật vai trò',
+      cancelText: 'Hủy',
+      type: 'warning',
+    });
 
-    if (window.confirm(confirmMessage)) {
+    if (isConfirmed) {
       try {
         await adminService.updateUserRole(targetUser.UserID, newRole);
-        alert(`Đã cập nhật vai trò người dùng thành công!`);
+        toast.success(`Đã cập nhật vai trò người dùng thành công!`);
         fetchUsers();
       } catch (err) {
-        alert(err.message || 'Cập nhật vai trò người dùng thất bại.');
+        toast.error(err.message || 'Cập nhật vai trò người dùng thất bại.');
       }
     }
   };
 
   const handleToggleGarageStatus = async (garage) => {
     const nextActive = !garage.IsActive;
-    const confirmMessage = `Bạn có chắc chắn muốn ${nextActive ? 'kích hoạt' : 'tạm dừng'} hoạt động của Gara "${garage.GarageName}"?`;
+    const isDeactivating = !nextActive;
+    const isConfirmed = await confirm({
+      title: isDeactivating ? 'Tạm dừng Gara' : 'Kích hoạt Gara',
+      message: `Bạn có chắc chắn muốn ${nextActive ? 'kích hoạt' : 'tạm dừng'} hoạt động của Gara "${garage.GarageName}"?`,
+      confirmText: isDeactivating ? 'Tạm dừng' : 'Kích hoạt',
+      cancelText: 'Hủy',
+      type: isDeactivating ? 'danger' : 'success',
+    });
 
-    if (window.confirm(confirmMessage)) {
+    if (isConfirmed) {
       try {
         await adminService.updateGarageStatus(garage.GarageID, nextActive);
-        alert(`Đã cập nhật trạng thái Gara thành công!`);
+        toast.success(`Đã cập nhật trạng thái Gara thành công!`);
         fetchGarages();
       } catch (err) {
-        alert(err.message || 'Cập nhật trạng thái Gara thất bại.');
+        toast.error(err.message || 'Cập nhật trạng thái Gara thất bại.');
       }
     }
   };

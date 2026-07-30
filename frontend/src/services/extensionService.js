@@ -55,6 +55,6 @@ export const downloadFileWithAuth = async (url, filename) => {
     window.URL.revokeObjectURL(blobUrl);
   } catch (error) {
     console.error('Lỗi tải file:', error);
-    alert('Tải file thất bại. Vui lòng thử lại sau.');
+    throw new Error(error.response?.data?.message || 'Tải file thất bại. Vui lòng thử lại sau.');
   }
 };

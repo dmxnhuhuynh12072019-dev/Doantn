@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useModal } from '../../context/ModalContext';
 import * as legalService from '../../services/legalService';
 import LegalDocumentModal from './LegalDocumentModal';
 
 const LegalDocumentsTab = ({ vehicleId, vehicleType }) => {
+  const { confirm, toast } = useModal();
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -14,21 +16,23 @@ const LegalDocumentsTab = ({ vehicleId, vehicleType }) => {
   const fetchDocs = async () => {
     try {
       setLoading(true);
+      setError('');
       const data = await legalService.getDocuments(vehicleId);
       setDocuments(data);
-      setError('');
     } catch (err) {
-      setError(err.message || 'Không thể tải danh sách giấy tờ của xe');
+      setError(err.message || 'Không thể tải thông tin giấy tờ xe.');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchDocs();
+    if (vehicleId) {
+      fetchDocs();
+    }
   }, [vehicleId]);
 
-  const handleAddClick = (docType) => {
+  const handleOpenAddModal = (docType) => {
     setSelectedDoc(null);
     setIsModalOpen(true);
     // Có thể truyền loại giấy tờ mặc định vào modal khi mở form tạo mới
@@ -44,17 +48,19 @@ const LegalDocumentsTab = ({ vehicleId, vehicleType }) => {
     }, 50);
   };
 
-  const handleEditClick = (doc) => {
+  const handleOpenEditModal = (doc) => {
     setSelectedDoc(doc);
     setIsModalOpen(true);
   };
 
-  const handleSave = async (docId, payload) => {
+  const handleSaveDoc = async (docId, payload) => {
     try {
       if (docId) {
         await legalService.updateDocument(docId, payload);
+        toast.success('Đã cập nhật thông tin giấy tờ!');
       } else {
         await legalService.createDocument(payload);
+        toast.success('Đã thêm giấy tờ xe thành công!');
       }
       fetchDocs();
     } catch (err) {
@@ -63,12 +69,21 @@ const LegalDocumentsTab = ({ vehicleId, vehicleType }) => {
   };
 
   const handleDelete = async (docId) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa thông tin giấy tờ này?')) {
+    const isConfirmed = await confirm({
+      title: 'Xóa giấy tờ xe',
+      message: 'Bạn có chắc chắn muốn xóa thông tin giấy tờ này?',
+      confirmText: 'Xóa ngay',
+      cancelText: 'Hủy',
+      type: 'danger',
+    });
+
+    if (isConfirmed) {
       try {
         await legalService.deleteDocument(docId);
+        toast.success('Đã xóa thông tin giấy tờ!');
         fetchDocs();
       } catch (err) {
-        alert(err.message || 'Xóa giấy tờ thất bại');
+        toast.error(err.message || 'Xóa giấy tờ thất bại');
       }
     }
   };

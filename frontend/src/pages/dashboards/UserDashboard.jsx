@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useModal } from '../../context/ModalContext';
 import * as vehicleService from '../../services/vehicleService';
 import * as appointmentService from '../../services/appointmentService';
 import * as garageService from '../../services/garageService';
@@ -17,6 +18,7 @@ import NotificationBell from '../../components/notifications/NotificationBell';
 
 const UserDashboard = () => {
   const { user, logout } = useAuth();
+  const { confirm, toast } = useModal();
 
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -111,20 +113,28 @@ const UserDashboard = () => {
   }, [selectedVehicleForDetail, activeTab]);
 
   const handleCancelAppointment = async (apptId) => {
-    if (window.confirm('Bạn có chắc chắn muốn hủy lịch đặt hẹn này?')) {
+    const isConfirmed = await confirm({
+      title: 'Hủy lịch hẹn',
+      message: 'Bạn có chắc chắn muốn hủy lịch đặt hẹn này?',
+      confirmText: 'Hủy lịch ngay',
+      cancelText: 'Giữ lại',
+      type: 'danger',
+    });
+
+    if (isConfirmed) {
       try {
         await appointmentService.updateAppointmentStatus(apptId, 'Hủy lịch');
-        alert('Đã hủy lịch hẹn thành công!');
+        toast.success('Đã hủy lịch hẹn thành công!');
         fetchAppointments();
       } catch (err) {
-        alert(err.message || 'Không thể hủy lịch hẹn');
+        toast.error(err.message || 'Không thể hủy lịch hẹn');
       }
     }
   };
 
   const handleSaveAppointment = async (data) => {
     await appointmentService.createAppointment(data);
-    alert('Đặt lịch hẹn bảo dưỡng thành công!');
+    toast.success('Đặt lịch hẹn bảo dưỡng thành công!');
     fetchAppointments();
   };
 
@@ -187,12 +197,21 @@ const UserDashboard = () => {
   };
 
   const handleDeleteClick = async (id) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa phương tiện này? Mọi dữ liệu liên quan sẽ bị xóa!')) {
+    const isConfirmed = await confirm({
+      title: 'Xóa phương tiện',
+      message: 'Bạn có chắc chắn muốn xóa phương tiện này? Mọi dữ liệu liên quan sẽ bị xóa vĩnh viễn!',
+      confirmText: 'Xóa ngay',
+      cancelText: 'Hủy',
+      type: 'danger',
+    });
+
+    if (isConfirmed) {
       try {
         await vehicleService.deleteVehicle(id);
+        toast.success('Đã xóa phương tiện thành công!');
         fetchVehicles();
       } catch (err) {
-        alert(err.message || 'Xóa phương tiện thất bại');
+        toast.error(err.message || 'Xóa phương tiện thất bại');
       }
     }
   };

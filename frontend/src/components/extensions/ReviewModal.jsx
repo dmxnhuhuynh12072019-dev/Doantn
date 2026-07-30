@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useModal } from '../../context/ModalContext';
 import { createReview } from '../../services/extensionService';
 
 const ReviewModal = ({ isOpen, onClose, garageId, garageName, onSaveSuccess }) => {
+  const { toast } = useModal();
   const [rating, setRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState('');
@@ -24,7 +26,7 @@ const ReviewModal = ({ isOpen, onClose, garageId, garageName, onSaveSuccess }) =
     setError('');
     try {
       await createReview(garageId, { rating, comment });
-      alert('Cảm ơn bạn đã gửi đánh giá cho Gara!');
+      toast.success('Cảm ơn bạn đã gửi đánh giá cho Gara!');
       if (onSaveSuccess) onSaveSuccess();
       onClose();
     } catch (err) {

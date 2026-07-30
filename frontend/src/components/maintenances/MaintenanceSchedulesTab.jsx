@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useModal } from '../../context/ModalContext';
 import * as maintenanceService from '../../services/maintenanceService';
 import ScheduleModal from './ScheduleModal';
 
 const MaintenanceSchedulesTab = ({ vehicleId, currentOdometer }) => {
+  const { confirm, toast } = useModal();
   const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -43,30 +45,50 @@ const MaintenanceSchedulesTab = ({ vehicleId, currentOdometer }) => {
   const handleSaveSchedule = async (data) => {
     if (selectedSchedule) {
       await maintenanceService.updateSchedule(selectedSchedule.ScheduleID, data);
+      toast.success('Đã cập nhật lịch bảo dưỡng!');
     } else {
       await maintenanceService.createSchedule(data);
+      toast.success('Đã tạo lịch bảo dưỡng mới!');
     }
     fetchSchedules();
   };
 
   const handleMarkAsCompleted = async (scheduleId) => {
-    if (window.confirm('Đánh dấu lịch nhắc bảo dưỡng này là ĐÃ HOÀN THÀNH?')) {
+    const isConfirmed = await confirm({
+      title: 'Hoàn thành bảo dưỡng',
+      message: 'Đánh dấu lịch nhắc bảo dưỡng này là ĐÃ HOÀN THÀNH?',
+      confirmText: 'Xác nhận hoàn thành',
+      cancelText: 'Hủy',
+      type: 'success',
+    });
+
+    if (isConfirmed) {
       try {
         await maintenanceService.updateSchedule(scheduleId, { status: 'Đã hoàn thành' });
+        toast.success('Đã hoàn thành lịch bảo dưỡng!');
         fetchSchedules();
       } catch (err) {
-        alert(err.message || 'Thao tác thất bại');
+        toast.error(err.message || 'Thao tác thất bại');
       }
     }
   };
 
   const handleDeleteClick = async (scheduleId) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa lịch nhắc bảo dưỡng này?')) {
+    const isConfirmed = await confirm({
+      title: 'Xóa lịch nhắc bảo dưỡng',
+      message: 'Bạn có chắc chắn muốn xóa lịch nhắc bảo dưỡng này?',
+      confirmText: 'Xóa ngay',
+      cancelText: 'Hủy',
+      type: 'danger',
+    });
+
+    if (isConfirmed) {
       try {
         await maintenanceService.deleteSchedule(scheduleId);
+        toast.success('Đã xóa lịch nhắc bảo dưỡng!');
         fetchSchedules();
       } catch (err) {
-        alert(err.message || 'Xóa lịch nhắc thất bại');
+        toast.error(err.message || 'Xóa lịch nhắc thất bại');
       }
     }
   };

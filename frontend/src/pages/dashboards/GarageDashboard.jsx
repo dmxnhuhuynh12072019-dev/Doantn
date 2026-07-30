@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useModal } from '../../context/ModalContext';
 import * as maintenanceService from '../../services/maintenanceService';
 import * as garageService from '../../services/garageService';
 import * as appointmentService from '../../services/appointmentService';
@@ -11,6 +12,7 @@ import NotificationBell from '../../components/notifications/NotificationBell';
 
 const GarageDashboard = () => {
   const { user, logout } = useAuth();
+  const { toast } = useModal();
 
   // Tab state: 'appointments' | 'serviced' | 'analytics' | 'quick'
   const [activeTab, setActiveTab] = useState('appointments');
@@ -106,10 +108,10 @@ const GarageDashboard = () => {
   const handleUpdateStatus = async (apptId, newStatus) => {
     try {
       await appointmentService.updateAppointmentStatus(apptId, newStatus);
-      alert(`Đã chuyển trạng thái lịch hẹn sang: "${newStatus}"!`);
+      toast.success(`Đã chuyển trạng thái lịch hẹn sang: "${newStatus}"!`);
       fetchAppointments();
     } catch (err) {
-      alert(err.message || 'Thay đổi trạng thái lịch hẹn thất bại.');
+      toast.error(err.message || 'Thay đổi trạng thái lịch hẹn thất bại.');
     }
   };
 
@@ -120,7 +122,7 @@ const GarageDashboard = () => {
 
   const handleSaveCompleteAppointment = async (apptId, data) => {
     await appointmentService.completeAppointment(apptId, data);
-    alert('Xác nhận hoàn thành sửa chữa & gửi thông báo thành công!');
+    toast.success('Xác nhận hoàn thành sửa chữa & gửi thông báo thành công!');
     fetchAppointments();
   };
 
@@ -181,7 +183,7 @@ const GarageDashboard = () => {
 
   const handleSaveQuickHistoryLog = async (data) => {
     await maintenanceService.createHistoryGarage(data);
-    alert('Ghi sổ bảo dưỡng dịch vụ thành công!');
+    toast.success('Ghi sổ bảo dưỡng dịch vụ thành công!');
 
     if (foundVehicle && foundVehicle.VehicleID === data.vehicleId) {
       fetchQuickVehicleHistory(data.vehicleId);

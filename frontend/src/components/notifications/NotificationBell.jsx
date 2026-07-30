@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
+import { useModal } from '../../context/ModalContext';
 import * as notificationService from '../../services/notificationService';
 
 const NotificationBell = () => {
+  const { toast } = useModal();
   const [notifications, setNotifications] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -18,10 +20,16 @@ const NotificationBell = () => {
   useEffect(() => {
     fetchNotifications();
 
-    // Thiết lập tự động quét thông báo mỗi 15 giây để tạo cảm giác thời gian thực (real-time)
-    const interval = setInterval(fetchNotifications, 15000);
+    // Thiết lập tự động quét thông báo mỗi 60 giây để tạo cảm giác thời gian thực (real-time)
+    const interval = setInterval(fetchNotifications, 60000);
 
-    // Lắng nghe click bên ngoài để tự đóng dropdown
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Lắng nghe click bên ngoài để tự đóng dropdown
+  useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsOpen(false);
@@ -30,7 +38,6 @@ const NotificationBell = () => {
     document.addEventListener('mousedown', handleClickOutside);
 
     return () => {
-      clearInterval(interval);
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
@@ -66,10 +73,10 @@ const NotificationBell = () => {
   const handleTriggerTestScan = async () => {
     try {
       const res = await notificationService.triggerCron();
-      alert(`Đã kích hoạt quét hệ thống! Phát hiện & tạo thêm ${res.newNotificationsCount} thông báo.`);
+      toast.success(`Đã kích hoạt quét hệ thống! Phát hiện & tạo thêm ${res.newNotificationsCount} thông báo.`);
       fetchNotifications();
     } catch (err) {
-      alert('Không thể kích hoạt quét thử: ' + err.message);
+      toast.error('Không thể kích hoạt quét thử: ' + err.message);
     }
   };
 
