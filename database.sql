@@ -14,12 +14,14 @@ CREATE TABLE Users (
     PasswordHash VARCHAR(255) NOT NULL,
     Role VARCHAR(20) NOT NULL DEFAULT 'User', 
     Status NVARCHAR(20) NOT NULL DEFAULT N'Hoạt động',
+    ThemePreference VARCHAR(20) NOT NULL DEFAULT 'light',
     CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
     
     CONSTRAINT PK_Users PRIMARY KEY (UserID),
     CONSTRAINT UC_Users_Email UNIQUE (Email),
     CONSTRAINT CHK_Users_Role CHECK (Role IN ('User', 'Garage', 'Admin')),
-    CONSTRAINT CHK_Users_Status CHECK (Status IN (N'Hoạt động', N'Bị khóa'))
+    CONSTRAINT CHK_Users_Status CHECK (Status IN (N'Hoạt động', N'Bị khóa')),
+    CONSTRAINT CHK_Users_Theme CHECK (ThemePreference IN ('light', 'dark', 'system'))
 );
 
 -- 2. Bảng Phương tiện (Vehicles)

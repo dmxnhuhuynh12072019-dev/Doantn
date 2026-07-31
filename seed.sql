@@ -36,11 +36,11 @@ GO
 -- garage123 -> $2b$10$.Nt6MXwxG2Qh52IDWLI.HObbb4WVZWSGaWCrl28h3P4XjegFbpH6.
 -- user123   -> $2b$10$wItV.oHvW7Gr8M2iMf.rPuhEeleGM8nrzBOxGCJUVFkL7UJwyZbAS
 
-INSERT INTO Users (FullName, Email, PhoneNumber, PasswordHash, Role, Status, CreatedAt)
+INSERT INTO Users (FullName, Email, PhoneNumber, PasswordHash, Role, Status, ThemePreference, CreatedAt)
 VALUES 
-(N'Nguyễn Văn Admin', 'admin@acoh.com', '0901112222', '$2b$10$9PtIahocBCw/1axmuwS2hOYUAJ0h7eIqtzvRaF.oO516f8DSTAefG', 'Admin', N'Hoạt động', GETDATE()),
-(N'Trần Thị Garage', 'garage@acoh.com', '0903334444', '$2b$10$.Nt6MXwxG2Qh52IDWLI.HObbb4WVZWSGaWCrl28h3P4XjegFbpH6.', 'Garage', N'Hoạt động', GETDATE()),
-(N'Lê Văn User', 'user@acoh.com', '0905556666', '$2b$10$wItV.oHvW7Gr8M2iMf.rPuhEeleGM8nrzBOxGCJUVFkL7UJwyZbAS', 'User', N'Hoạt động', GETDATE());
+(N'Nguyễn Văn Admin', 'admin@acoh.com', '0901112222', '$2b$10$9PtIahocBCw/1axmuwS2hOYUAJ0h7eIqtzvRaF.oO516f8DSTAefG', 'Admin', N'Hoạt động', 'light', GETDATE()),
+(N'Trần Thị Garage', 'garage@acoh.com', '0903334444', '$2b$10$.Nt6MXwxG2Qh52IDWLI.HObbb4WVZWSGaWCrl28h3P4XjegFbpH6.', 'Garage', N'Hoạt động', 'dark', GETDATE()),
+(N'Lê Văn User', 'user@acoh.com', '0905556666', '$2b$10$wItV.oHvW7Gr8M2iMf.rPuhEeleGM8nrzBOxGCJUVFkL7UJwyZbAS', 'User', N'Hoạt động', 'light', GETDATE());
 GO
 
 -- 2. Thêm Garage đối tác (Garages)

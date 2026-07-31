@@ -11,7 +11,7 @@ import VehicleProfileModal from '../../components/garages/VehicleProfileModal';
 import NotificationBell from '../../components/notifications/NotificationBell';
 
 const GarageDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, themePreference, updateThemePreference } = useAuth();
   const { toast } = useModal();
 
   // Tab state: 'appointments' | 'serviced' | 'analytics' | 'quick'
@@ -219,6 +219,16 @@ const GarageDashboard = () => {
 
           <div className="flex items-center gap-4">
             <NotificationBell />
+            <button
+              onClick={() => {
+                const nextTheme = themePreference === 'light' ? 'dark' : themePreference === 'dark' ? 'system' : 'light';
+                updateThemePreference(nextTheme);
+              }}
+              className="w-10 h-10 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-355 border border-slate-200 dark:border-slate-600 flex items-center justify-center transition cursor-pointer"
+              title={`Giao diện: ${themePreference === 'light' ? 'Sáng' : themePreference === 'dark' ? 'Tối' : 'Hệ thống'}. Nhấn để đổi.`}
+            >
+              {themePreference === 'light' ? '☀️' : themePreference === 'dark' ? '🌙' : '💻'}
+            </button>
             <span className="text-sm text-slate-600 dark:text-slate-300 hidden sm:inline">
               Garage: <span className="font-bold text-slate-800 dark:text-white">{user?.fullName}</span>
             </span>

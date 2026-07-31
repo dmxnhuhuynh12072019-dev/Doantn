@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
-const LegalDocumentModal = ({ isOpen, onClose, onSave, vehicleId, document = null }) => {
-  const [documentType, setDocumentType] = useState('Đăng kiểm');
+const LegalDocumentModal = ({ isOpen, onClose, onSave, vehicleId, document = null, defaultDocType = 'Đăng kiểm' }) => {
+  const [documentType, setDocumentType] = useState(defaultDocType || 'Đăng kiểm');
   const [issueDate, setIssueDate] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const [alertThresholdDays, setAlertThresholdDays] = useState(30);
@@ -20,13 +20,13 @@ const LegalDocumentModal = ({ isOpen, onClose, onSave, vehicleId, document = nul
       setExpiryDate(formatDate(document.ExpiryDate));
       setAlertThresholdDays(document.AlertThresholdDays || 30);
     } else {
-      setDocumentType('Đăng kiểm');
+      setDocumentType(defaultDocType || 'Đăng kiểm');
       setIssueDate('');
       setExpiryDate('');
       setAlertThresholdDays(30);
     }
     setError('');
-  }, [document, isOpen]);
+  }, [document, isOpen, defaultDocType]);
 
   if (!isOpen) return null;
 

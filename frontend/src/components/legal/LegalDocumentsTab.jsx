@@ -12,6 +12,7 @@ const LegalDocumentsTab = ({ vehicleId, vehicleType }) => {
   // Modals state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
+  const [selectedDocType, setSelectedDocType] = useState('Đăng kiểm');
 
   const fetchDocs = async () => {
     try {
@@ -34,22 +35,15 @@ const LegalDocumentsTab = ({ vehicleId, vehicleType }) => {
 
   const handleOpenAddModal = (docType) => {
     setSelectedDoc(null);
+    setSelectedDocType(docType || 'Đăng kiểm');
     setIsModalOpen(true);
-    // Có thể truyền loại giấy tờ mặc định vào modal khi mở form tạo mới
-    // Bằng cách set state tạm cho modal
-    setTimeout(() => {
-      const typeSelect = document.querySelector('select');
-      if (typeSelect && !typeSelect.disabled) {
-        typeSelect.value = docType;
-        // Trigger onChange event in React
-        const event = new Event('change', { bubbles: true });
-        typeSelect.dispatchEvent(event);
-      }
-    }, 50);
   };
 
   const handleOpenEditModal = (doc) => {
     setSelectedDoc(doc);
+    if (doc?.DocumentType) {
+      setSelectedDocType(doc.DocumentType);
+    }
     setIsModalOpen(true);
   };
 
@@ -229,7 +223,7 @@ const LegalDocumentsTab = ({ vehicleId, vehicleType }) => {
 
                 <div className="flex gap-2 pt-3 border-t border-slate-100 dark:border-slate-700/60 mt-2">
                   <button
-                    onClick={() => handleEditClick(doc)}
+                    onClick={() => handleOpenEditModal(doc)}
                     className="flex-1 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5"
                   >
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -275,7 +269,7 @@ const LegalDocumentsTab = ({ vehicleId, vehicleType }) => {
                 </div>
 
                 <button
-                  onClick={() => handleAddClick(docType)}
+                  onClick={() => handleOpenAddModal(docType)}
                   className="w-full py-3 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-350 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-black transition flex items-center justify-center gap-1.5"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -292,9 +286,10 @@ const LegalDocumentsTab = ({ vehicleId, vehicleType }) => {
       <LegalDocumentModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSave={handleSave}
+        onSave={handleSaveDoc}
         vehicleId={vehicleId}
         document={selectedDoc}
+        defaultDocType={selectedDocType}
       />
     </div>
   );

@@ -17,7 +17,7 @@ import LegalDocumentsTab from '../../components/legal/LegalDocumentsTab';
 import NotificationBell from '../../components/notifications/NotificationBell';
 
 const UserDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, themePreference, updateThemePreference } = useAuth();
   const { confirm, toast } = useModal();
 
   const [vehicles, setVehicles] = useState([]);
@@ -233,6 +233,16 @@ const UserDashboard = () => {
 
           <div className="flex items-center gap-4">
             <NotificationBell />
+            <button
+              onClick={() => {
+                const nextTheme = themePreference === 'light' ? 'dark' : themePreference === 'dark' ? 'system' : 'light';
+                updateThemePreference(nextTheme);
+              }}
+              className="w-10 h-10 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-355 border border-slate-200 dark:border-slate-600 flex items-center justify-center transition cursor-pointer"
+              title={`Giao diện: ${themePreference === 'light' ? 'Sáng' : themePreference === 'dark' ? 'Tối' : 'Hệ thống'}. Nhấn để đổi.`}
+            >
+              {themePreference === 'light' ? '☀️' : themePreference === 'dark' ? '🌙' : '💻'}
+            </button>
             <span className="text-sm text-slate-600 dark:text-slate-300 hidden sm:inline">
               Chào, <span className="font-bold text-slate-800 dark:text-white">{user?.fullName}</span>
             </span>
@@ -257,7 +267,7 @@ const UserDashboard = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-8 pb-24 md:pb-8">
 
         {/* Detail View của một chiếc xe */}
         {selectedVehicleForDetail ? (
@@ -842,6 +852,65 @@ const UserDashboard = () => {
       />
 
       <AiAssistantChat />
+
+      {/* Bottom Navigation for Mobile */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 shadow-lg px-4 py-2 z-40 flex justify-around items-center">
+        <button
+          onClick={() => {
+            setSelectedVehicleForDetail(null);
+            setMainTab('expenses');
+          }}
+          className={`flex flex-col items-center gap-1 text-xxs font-bold cursor-pointer ${
+            !selectedVehicleForDetail && mainTab === 'expenses'
+              ? 'text-indigo-600 dark:text-indigo-400'
+              : 'text-slate-500 dark:text-slate-400'
+          }`}
+        >
+          <span className="text-xl">🏠</span>
+          Trang chủ
+        </button>
+        <button
+          onClick={() => {
+            setSelectedVehicleForDetail(null);
+            setMainTab('vehicles');
+          }}
+          className={`flex flex-col items-center gap-1 text-xxs font-bold cursor-pointer ${
+            !selectedVehicleForDetail && mainTab === 'vehicles'
+              ? 'text-indigo-600 dark:text-indigo-400'
+              : 'text-slate-500 dark:text-slate-400'
+          }`}
+        >
+          <span className="text-xl">🚗</span>
+          Danh sách xe
+        </button>
+        <button
+          onClick={() => {
+            if (selectedVehicleForDetail) {
+              setActiveTab('appointments');
+            } else if (vehicles.length > 0) {
+              setSelectedVehicleForDetail(vehicles[0]);
+              setActiveTab('appointments');
+            } else {
+              setIsFormOpen(true);
+            }
+          }}
+          className={`flex flex-col items-center gap-1 text-xxs font-bold cursor-pointer ${
+            selectedVehicleForDetail && activeTab === 'appointments'
+              ? 'text-indigo-600 dark:text-indigo-400'
+              : 'text-slate-500 dark:text-slate-400'
+          }`}
+        >
+          <span className="text-xl">📅</span>
+          Đặt lịch
+        </button>
+        <a
+          href="/profile"
+          className="flex flex-col items-center gap-1 text-xxs font-bold text-slate-500 dark:text-slate-400 cursor-pointer"
+        >
+          <span className="text-xl">👤</span>
+          Tài khoản
+        </a>
+      </div>
     </div>
   );
 };

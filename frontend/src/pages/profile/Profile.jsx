@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 const Profile = () => {
-  const { user, updateProfile, changePassword, logout } = useAuth();
+  const { user, updateProfile, changePassword, logout, themePreference, updateThemePreference } = useAuth();
   const navigate = useNavigate();
 
   // State thông tin hồ sơ
@@ -238,6 +238,48 @@ const Profile = () => {
             </form>
           </div>
 
+        </div>
+
+        {/* Tùy chọn giao diện */}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xl p-8 mt-6">
+          <h2 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Tùy chọn giao diện</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Thay đổi giao diện hiển thị của ứng dụng theo sở thích của bạn.</p>
+          
+          <div className="grid grid-cols-3 gap-4">
+            <button
+              onClick={() => updateThemePreference('light')}
+              className={`p-4 rounded-xl border flex flex-col items-center justify-center gap-2 font-bold text-xs sm:text-sm transition-all cursor-pointer ${
+                themePreference === 'light'
+                  ? 'border-indigo-650 bg-indigo-50/50 text-indigo-600 dark:border-indigo-500 dark:bg-indigo-950/20 dark:text-indigo-400 shadow-xs'
+                  : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300'
+              }`}
+            >
+              <span className="text-2xl">☀️</span>
+              Giao diện sáng
+            </button>
+            <button
+              onClick={() => updateThemePreference('dark')}
+              className={`p-4 rounded-xl border flex flex-col items-center justify-center gap-2 font-bold text-xs sm:text-sm transition-all cursor-pointer ${
+                themePreference === 'dark'
+                  ? 'border-indigo-650 bg-indigo-50/50 text-indigo-600 dark:border-indigo-500 dark:bg-indigo-950/20 dark:text-indigo-400 shadow-xs'
+                  : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300'
+              }`}
+            >
+              <span className="text-2xl">🌙</span>
+              Giao diện tối
+            </button>
+            <button
+              onClick={() => updateThemePreference('system')}
+              className={`p-4 rounded-xl border flex flex-col items-center justify-center gap-2 font-bold text-xs sm:text-sm transition-all cursor-pointer ${
+                themePreference === 'system'
+                  ? 'border-indigo-650 bg-indigo-50/50 text-indigo-600 dark:border-indigo-500 dark:bg-indigo-950/20 dark:text-indigo-400 shadow-xs'
+                  : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300'
+              }`}
+            >
+              <span className="text-2xl">💻</span>
+              Hệ thống (System)
+            </button>
+          </div>
         </div>
 
       </div>

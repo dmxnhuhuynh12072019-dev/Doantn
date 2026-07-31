@@ -82,7 +82,7 @@ export class AuthService {
     }
 
     // 4. Sinh JWT Token
-    const payload = { userId: user.UserID, email: user.Email, role: user.Role };
+    const payload = { userId: user.UserID, email: user.Email, role: user.Role ? user.Role.trim() : '' };
     const token = await this.jwtService.signAsync(payload);
 
     return {
@@ -93,15 +93,16 @@ export class AuthService {
         fullName: user.FullName,
         email: user.Email,
         phoneNumber: user.PhoneNumber,
-        role: user.Role,
+        role: user.Role ? user.Role.trim() : '',
         status: user.Status,
+        themePreference: user.ThemePreference || 'light',
       },
     };
   }
 
   async getProfile(userId: number) {
     const result = await this.dbService.query(
-      'SELECT UserID, FullName, Email, PhoneNumber, Role, Status, CreatedAt FROM Users WHERE UserID = @userId',
+      'SELECT UserID, FullName, Email, PhoneNumber, Role, Status, ThemePreference, CreatedAt FROM Users WHERE UserID = @userId',
       [{ name: 'userId', type: sql.Int, value: userId }]
     );
 
@@ -115,8 +116,9 @@ export class AuthService {
       fullName: user.FullName,
       email: user.Email,
       phoneNumber: user.PhoneNumber,
-      role: user.Role,
+      role: user.Role ? user.Role.trim() : '',
       status: user.Status,
+      themePreference: user.ThemePreference || 'light',
     };
   }
 
@@ -235,5 +237,21 @@ export class AuthService {
     this.otpMap.delete(email);
 
     return { message: 'Đặt lại mật khẩu thành công! Bạn có thể đăng nhập bằng mật khẩu mới.' };
+  }
+
+  async updateThemePreference(userId: number, themePreference: string) {
+    if (!['light', 'dark', 'system'].includes(themePreference)) {
+      throw new BadRequestException('Tùy chọn giao diện không hợp lệ (light, dark, system)');
+    }
+
+    await this.dbService.query(
+      'UPDATE Users SET ThemePreference = @themePreference WHERE UserID = @userId',
+      [
+        { name: 'userId', type: sql.Int, value: userId },
+        { name: 'themePreference', type: sql.VarChar, value: themePreference },
+      ]
+    );
+
+    return { message: 'Cập nhật tùy chọn giao diện thành công!', themePreference };
   }
 }

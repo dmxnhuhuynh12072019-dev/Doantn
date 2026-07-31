@@ -4,7 +4,7 @@ import { useModal } from '../../context/ModalContext';
 import * as adminService from '../../services/adminService';
 
 const AdminDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, themePreference, updateThemePreference } = useAuth();
   const { confirm, toast } = useModal();
 
   // Navigation: 'overview' | 'users' | 'garages' | 'profile'
@@ -273,8 +273,18 @@ const AdminDashboard = () => {
               {activeTab === 'profile' && 'Hồ sơ & Tiện ích'}
             </h2>
           </div>
-          <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
-            Hôm nay: <span className="font-bold text-slate-700 dark:text-white">{new Date().toLocaleDateString('vi-VN')}</span>
+          <div className="flex items-center gap-4 text-xs font-medium text-slate-500 dark:text-slate-400">
+            <button
+              onClick={() => {
+                const nextTheme = themePreference === 'light' ? 'dark' : themePreference === 'dark' ? 'system' : 'light';
+                updateThemePreference(nextTheme);
+              }}
+              className="w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-750 text-slate-655 dark:text-slate-350 border border-slate-200 dark:border-slate-700 flex items-center justify-center transition cursor-pointer"
+              title={`Giao diện: ${themePreference === 'light' ? 'Sáng' : themePreference === 'dark' ? 'Tối' : 'Hệ thống'}. Nhấn để đổi.`}
+            >
+              {themePreference === 'light' ? '☀️' : themePreference === 'dark' ? '🌙' : '💻'}
+            </button>
+            <span>Hôm nay: <span className="font-bold text-slate-700 dark:text-white">{new Date().toLocaleDateString('vi-VN')}</span></span>
           </div>
         </header>
 
