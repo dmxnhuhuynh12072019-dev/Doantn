@@ -1,32 +1,85 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useModal } from '../../context/ModalContext';
+import { useSocket } from '../../context/SocketContext';
 import * as notificationService from '../../services/notificationService';
 
 const NotificationBell = () => {
   const { toast } = useModal();
+  const { socket, isConnected } = useSocket();
   const [notifications, setNotifications] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const dropdownRef = useRef(null);
+  const audioRef = useRef(null);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     try {
       const data = await notificationService.getNotifications();
       setNotifications(data);
+      setUnreadCount(data.filter(n => !n.IsRead).length);
     } catch (err) {
       console.error('Không thể tải thông báo:', err.message);
     }
-  };
+  }, []);
 
+  // Fetch lần đầu khi mount
   useEffect(() => {
     fetchNotifications();
+  }, [fetchNotifications]);
 
-    // Thiết lập tự động quét thông báo mỗi 60 giây để tạo cảm giác thời gian thực (real-time)
-    const interval = setInterval(fetchNotifications, 60000);
+  // === SOCKET.IO: Lắng nghe sự kiện real-time ===
+  useEffect(() => {
+    if (!socket) return;
+
+    // Nhận thông báo mới real-time
+    const handleNotificationReceived = (notification) => {
+      console.log('[Socket.IO] 📨 Nhận thông báo real-time:', notification);
+
+      // Thêm notification mới vào đầu danh sách
+      setNotifications(prev => [
+        {
+          ...notification,
+          NotificationID: Date.now(), // Temporary ID cho đến khi fetch lại
+          IsRead: false,
+        },
+        ...prev,
+      ]);
+
+      // Hiển thị Toast popup
+      toast.success(
+        notification.Title || 'Bạn có thông báo mới!',
+        { duration: 6000 }
+      );
+
+      // Phát âm thanh thông báo
+      playNotificationSound();
+
+      // Fetch lại danh sách đầy đủ sau 1 giây để đồng bộ ID thực
+      setTimeout(fetchNotifications, 1000);
+    };
+
+    // Nhận cập nhật unread count
+    const handleUnreadCountUpdated = (data) => {
+      console.log('[Socket.IO] 🔢 Cập nhật unread count:', data.unreadCount);
+      setUnreadCount(data.unreadCount);
+    };
+
+    socket.on('notification_received', handleNotificationReceived);
+    socket.on('unread_count_updated', handleUnreadCountUpdated);
 
     return () => {
-      clearInterval(interval);
+      socket.off('notification_received', handleNotificationReceived);
+      socket.off('unread_count_updated', handleUnreadCountUpdated);
     };
-  }, []);
+  }, [socket, toast, fetchNotifications]);
+
+  // Polling fallback: mỗi 60s nếu Socket.IO mất kết nối
+  useEffect(() => {
+    if (isConnected) return; // Không cần polling nếu socket đang kết nối
+
+    const interval = setInterval(fetchNotifications, 60000);
+    return () => clearInterval(interval);
+  }, [isConnected, fetchNotifications]);
 
   // Lắng nghe click bên ngoài để tự đóng dropdown
   useEffect(() => {
@@ -42,7 +95,33 @@ const NotificationBell = () => {
     };
   }, []);
 
-  const unreadCount = notifications.filter(n => !n.IsRead).length;
+  // === Âm thanh thông báo ===
+  const playNotificationSound = () => {
+    try {
+      // Tạo âm thanh notification bằng Web Audio API
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      
+      // Tạo tone nhẹ nhàng (2 nốt)
+      const playTone = (frequency, startTime, duration) => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        oscillator.frequency.value = frequency;
+        oscillator.type = 'sine';
+        gainNode.gain.setValueAtTime(0.15, startTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+        oscillator.start(startTime);
+        oscillator.stop(startTime + duration);
+      };
+
+      const now = audioContext.currentTime;
+      playTone(880, now, 0.15);        // Nốt A5
+      playTone(1108.73, now + 0.15, 0.2); // Nốt C#6
+    } catch (err) {
+      console.warn('Không thể phát âm thanh thông báo:', err.message);
+    }
+  };
 
   const handleToggle = () => {
     setIsOpen(!isOpen);
@@ -54,7 +133,11 @@ const NotificationBell = () => {
   const handleMarkAsRead = async (id) => {
     try {
       await notificationService.markAsRead(id);
-      fetchNotifications();
+      // Cập nhật local state ngay lập tức (optimistic update)
+      setNotifications(prev =>
+        prev.map(n => n.NotificationID === id ? { ...n, IsRead: true } : n)
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (err) {
       console.error(err.message);
     }
@@ -63,7 +146,11 @@ const NotificationBell = () => {
   const handleMarkAllAsRead = async () => {
     try {
       await notificationService.markAllAsRead();
-      fetchNotifications();
+      // Cập nhật local state ngay lập tức (optimistic update)
+      setNotifications(prev =>
+        prev.map(n => ({ ...n, IsRead: true }))
+      );
+      setUnreadCount(0);
     } catch (err) {
       console.error(err.message);
     }
@@ -102,7 +189,7 @@ const NotificationBell = () => {
         className="relative p-2.5 rounded-xl text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-350 dark:hover:bg-slate-600 transition"
         title="Thông báo"
       >
-        <svg className="w-5 h-5 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className={`w-5 h-5 ${unreadCount > 0 ? 'animate-pulse' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -112,9 +199,17 @@ const NotificationBell = () => {
         </svg>
         {unreadCount > 0 && (
           <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-rose-600 text-xxs font-black text-white ring-2 ring-white dark:ring-slate-800 animate-bounce">
-            {unreadCount}
+            {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
+
+        {/* Chỉ báo trạng thái kết nối Socket.IO */}
+        <span
+          className={`absolute bottom-0 right-0 h-2 w-2 rounded-full ring-1 ring-white dark:ring-slate-800 ${
+            isConnected ? 'bg-emerald-500' : 'bg-amber-500'
+          }`}
+          title={isConnected ? 'Kết nối real-time đang hoạt động' : 'Đang dùng chế độ polling'}
+        />
       </button>
 
       {/* Notifications Dropdown Panel */}
@@ -122,7 +217,14 @@ const NotificationBell = () => {
         <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-3 duration-200">
           {/* Header Panel */}
           <div className="flex justify-between items-center px-6 py-4 bg-slate-50/50 dark:bg-slate-900/30 border-b border-slate-100 dark:border-slate-700">
-            <h3 className="font-black text-slate-850 dark:text-white text-base">Thông báo</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-black text-slate-850 dark:text-white text-base">Thông báo</h3>
+              {isConnected && (
+                <span className="text-xxxs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-400 px-1.5 py-0.5 rounded-md">
+                  ⚡ Live
+                </span>
+              )}
+            </div>
             <div className="flex gap-2">
               <button
                 onClick={handleTriggerTestScan}

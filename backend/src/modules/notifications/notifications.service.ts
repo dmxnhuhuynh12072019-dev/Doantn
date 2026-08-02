@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Logger, Inject, forwardRef } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
 import { Cron } from '@nestjs/schedule';
 import * as sql from 'mssql';
 import { DatabaseService } from '../database/database.service';
 import { SendCompletionDto } from './dto/send-completion.dto';
+import { NotificationsGateway } from './notifications.gateway';
 
 @Injectable()
 export class NotificationsService {
@@ -12,6 +13,8 @@ export class NotificationsService {
   constructor(
     private dbService: DatabaseService,
     private mailerService: MailerService,
+    @Inject(forwardRef(() => NotificationsGateway))
+    private notificationsGateway: NotificationsGateway,
   ) {}
 
   // 1. Tạo thông báo mới (In-app và/hoặc Email)
@@ -28,6 +31,27 @@ export class NotificationsService {
           { name: 'type', type: sql.VarChar, value: type },
         ]
       );
+
+      // === SOCKET.IO: Push thông báo real-time tới user ===
+      try {
+        this.notificationsGateway.sendNotificationToUser(userId, {
+          Title: title,
+          Message: message,
+          NotificationType: type,
+          IsRead: false,
+          CreatedAt: new Date().toISOString(),
+        });
+
+        // Cập nhật unread count
+        const unreadResult = await this.dbService.query(
+          'SELECT COUNT(*) AS cnt FROM Notifications WHERE UserID = @userId AND IsRead = 0',
+          [{ name: 'userId', type: sql.Int, value: userId }]
+        );
+        const unreadCount = unreadResult.recordset[0]?.cnt || 0;
+        this.notificationsGateway.sendUnreadCount(userId, unreadCount);
+      } catch (socketErr) {
+        this.logger.warn(`[Socket.IO] Không thể push real-time cho User ${userId}: ${socketErr.message}`);
+      }
     }
 
     // Gửi email nếu loại thông báo là Email hoặc All
@@ -86,6 +110,18 @@ export class NotificationsService {
       [{ name: 'id', type: sql.Int, value: id }]
     );
 
+    // === SOCKET.IO: Cập nhật unread count sau khi đánh dấu đọc ===
+    try {
+      const unreadResult = await this.dbService.query(
+        'SELECT COUNT(*) AS cnt FROM Notifications WHERE UserID = @userId AND IsRead = 0',
+        [{ name: 'userId', type: sql.Int, value: userId }]
+      );
+      const unreadCount = unreadResult.recordset[0]?.cnt || 0;
+      this.notificationsGateway.sendUnreadCount(userId, unreadCount);
+    } catch (socketErr) {
+      this.logger.warn(`[Socket.IO] Không thể cập nhật unread count: ${socketErr.message}`);
+    }
+
     return { message: 'Đã đánh dấu đọc thông báo!' };
   }
 
@@ -95,6 +131,14 @@ export class NotificationsService {
       'UPDATE Notifications SET IsRead = 1 WHERE UserID = @userId AND IsRead = 0',
       [{ name: 'userId', type: sql.Int, value: userId }]
     );
+
+    // === SOCKET.IO: Reset unread count về 0 ===
+    try {
+      this.notificationsGateway.sendUnreadCount(userId, 0);
+    } catch (socketErr) {
+      this.logger.warn(`[Socket.IO] Không thể reset unread count: ${socketErr.message}`);
+    }
+
     return { message: 'Đã đánh dấu đọc tất cả thông báo!' };
   }
 

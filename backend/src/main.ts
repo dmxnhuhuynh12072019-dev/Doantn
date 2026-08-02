@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -12,6 +13,9 @@ async function bootstrap() {
   
   // Enable CORS
   app.enableCors();
+  
+  // Enable Socket.IO WebSocket Adapter
+  app.useWebSocketAdapter(new IoAdapter(app));
   
   // Enable validation globally
   app.useGlobalPipes(new ValidationPipe({
@@ -47,6 +51,7 @@ async function bootstrap() {
   await app.listen(port);
   console.log(`Application is running on: http://localhost:${port}`);
   console.log(`Swagger documentation is available at: http://localhost:${port}/api/docs`);
+  console.log(`Socket.IO WebSocket Gateway is active on: ws://localhost:${port}`);
 }
 bootstrap();
 
