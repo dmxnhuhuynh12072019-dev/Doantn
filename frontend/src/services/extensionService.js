@@ -58,3 +58,20 @@ export const downloadFileWithAuth = async (url, filename) => {
     throw new Error(error.response?.data?.message || 'Tải file thất bại. Vui lòng thử lại sau.');
   }
 };
+
+// 5. Quét nhận diện biển số xe (OCR)
+export const scanPlate = async (file) => {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const res = await api.post('/api/extensions/ocr/scan-plate', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return res.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Không thể nhận diện biển số xe' };
+  }
+};

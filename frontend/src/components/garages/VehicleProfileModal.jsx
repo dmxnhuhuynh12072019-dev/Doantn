@@ -116,12 +116,12 @@ const VehicleProfileModal = ({ isOpen, onClose, vehicleId }) => {
 
             {/* Service History at Gara */}
             <div className="space-y-4">
-              <h4 className="text-lg font-black text-slate-805 dark:text-white">
+              <h4 className="text-lg font-black text-slate-800 dark:text-white">
                 🔧 Nhật ký sửa chữa tại Gara của bạn ({profile.history.length})
               </h4>
 
               {profile.history.length === 0 ? (
-                <div className="text-center py-8 text-slate-400 dark:text-slate-500 border border-dashed border-slate-200 dark:border-slate-750 rounded-2xl bg-slate-50/10">
+                <div className="text-center py-8 text-slate-400 dark:text-slate-500 border border-dashed border-slate-200 dark:border-slate-700 rounded-2xl bg-slate-50/10">
                   <span className="text-2xl mb-1 block">📝</span>
                   <p className="text-sm">Chưa có bản ghi lịch sử sửa chữa nào của xe tại xưởng bạn.</p>
                 </div>

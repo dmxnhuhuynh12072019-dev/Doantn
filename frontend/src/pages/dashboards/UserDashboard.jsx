@@ -275,7 +275,7 @@ const UserDashboard = () => {
             {/* Nút Back */}
             <button
               onClick={() => setSelectedVehicleForDetail(null)}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-650 hover:text-slate-850 dark:text-slate-350 dark:hover:text-white bg-white dark:bg-slate-805 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm transition"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800 dark:text-slate-300 dark:hover:text-white bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm transition"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -706,11 +706,11 @@ const UserDashboard = () => {
                       <div className="flex items-center gap-3">
                         <button
                           onClick={handleExportExpenses}
-                          className="px-4 py-2.5 rounded-2xl text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/20 dark:text-indigo-400 dark:hover:bg-indigo-950/40 border border-indigo-100/30 transition flex items-center gap-1.5"
+                          className="px-4 py-2.5 rounded-2xl text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-400 dark:hover:bg-indigo-900/40 border border-indigo-100/30 transition flex items-center gap-1.5"
                         >
                           📥 Xuất báo cáo (CSV)
                         </button>
-                        <div className="w-14 h-14 bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 text-2xl flex items-center justify-center rounded-2xl border border-indigo-100/30 shrink-0">
+                        <div className="w-14 h-14 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 text-2xl flex items-center justify-center rounded-2xl border border-indigo-100/30 shrink-0">
                           💳
                         </div>
                       </div>
@@ -719,7 +719,7 @@ const UserDashboard = () => {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       {/* Monthly Costs */}
                       <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl p-6 shadow-sm">
-                        <h3 className="text-lg font-black text-slate-805 dark:text-white mb-1">📅 Chi phí nuôi xe theo tháng (năm nay)</h3>
+                        <h3 className="text-lg font-black text-slate-800 dark:text-white mb-1">📅 Chi phí nuôi xe theo tháng (năm nay)</h3>
                         <p className="text-xs text-slate-400 mb-6">Theo dõi tổng tiền bảo dưỡng phát sinh qua các tháng.</p>
 
                         <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
@@ -728,14 +728,14 @@ const UserDashboard = () => {
                             const widthPercent = (item.cost / maxCost) * 100;
                             return (
                               <div key={idx} className="flex items-center gap-4 text-xs">
-                                <span className="w-16 text-slate-500 dark:text-slate-450 font-bold shrink-0">{item.month}</span>
-                                <div className="flex-1 bg-slate-100 dark:bg-slate-750 h-3 rounded-full overflow-hidden">
+                                <span className="w-16 text-slate-500 dark:text-slate-400 font-bold shrink-0">{item.month}</span>
+                                <div className="flex-1 bg-slate-100 dark:bg-slate-700 h-3 rounded-full overflow-hidden">
                                   <div
                                     className="bg-indigo-500 h-full rounded-full transition-all duration-500"
                                     style={{ width: `${widthPercent}%` }}
                                   ></div>
                                 </div>
-                                <span className="w-20 text-right text-slate-750 dark:text-slate-200 font-bold shrink-0">
+                                <span className="w-20 text-right text-slate-700 dark:text-slate-200 font-bold shrink-0">
                                   {item.cost > 0 ? formatCurrency(item.cost) : '0 ₫'}
                                 </span>
                               </div>
@@ -746,7 +746,7 @@ const UserDashboard = () => {
 
                       {/* Cost by Vehicle */}
                       <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl p-6 shadow-sm">
-                        <h3 className="text-lg font-black text-slate-805 dark:text-white mb-1">🚗 Chi phí theo đầu phương tiện</h3>
+                        <h3 className="text-lg font-black text-slate-800 dark:text-white mb-1">🚗 Chi phí theo đầu phương tiện</h3>
                         <p className="text-xs text-slate-400 mb-6">So sánh chi phí bảo dưỡng giữa các xe của bạn.</p>
 
                         <div className="space-y-4 max-h-60 overflow-y-auto pr-1">

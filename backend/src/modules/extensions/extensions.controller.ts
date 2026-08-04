@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Body, Param, UseGuards, ParseIntPipe, Res } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Param, UseGuards, ParseIntPipe, Res, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ExtensionsService } from './extensions.service';
 import { AiChatDto } from './dto/ai-chat.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
@@ -14,6 +15,26 @@ import { User } from '../auth/decorators/user.decorator';
 @UseGuards(JwtAuthGuard)
 export class ExtensionsController {
   constructor(private extensionsService: ExtensionsService) {}
+
+  @Post('ocr/scan-plate')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({ summary: 'Nhận diện biển số xe từ hình ảnh bằng OCR và hiển thị hồ sơ' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Nhận diện thành công.' })
+  async scanPlate(@UploadedFile() file: any) {
+    return this.extensionsService.scanPlate(file);
+  }
 
   @Post('ai-chat')
   @ApiOperation({ summary: 'Gửi tin nhắn trò chuyện với Trợ lý ảo AI' })

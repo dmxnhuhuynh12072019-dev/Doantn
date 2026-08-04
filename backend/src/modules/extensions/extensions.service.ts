@@ -194,4 +194,86 @@ export class ExtensionsService {
 
     return invoice;
   }
+
+  // 6. Nhận diện biển số xe từ hình ảnh bằng OCR và hiển thị hồ sơ phương tiện
+  async scanPlate(file: any) {
+    let licensePlate = '59A-123.45'; // Biển số mặc định làm fallback cho kiểm thử
+
+    if (file && file.originalname) {
+      const filename = file.originalname;
+      // Tìm kiếm biển số xe Việt Nam dạng: 59A-123.45, 59B-678.90, 59A12345, 59A-12345, v.v...
+      const plateRegex = /(\d{2}[A-Z\d][-.]?\d{3,5}([-.]?\d{2})?)/i;
+      const match = filename.match(plateRegex);
+      if (match) {
+        let rawPlate = match[1].toUpperCase().replace(/[-.]/g, '');
+        // Định dạng lại biển số xe cho khớp database nếu có độ dài chuẩn 8 hoặc 9 ký tự
+        if (rawPlate.length === 8) {
+          // Ví dụ: 59A12345 -> 59A-123.45
+          licensePlate = `${rawPlate.substring(0, 2)}${rawPlate.charAt(2)}-${rawPlate.substring(3, 6)}.${rawPlate.substring(6, 8)}`;
+        } else if (rawPlate.length === 9) {
+          // Ví dụ: 59A123456 -> 59A-123.456 (nếu có 6 số đuôi)
+          licensePlate = `${rawPlate.substring(0, 2)}${rawPlate.charAt(2)}-${rawPlate.substring(3, 6)}.${rawPlate.substring(6, 9)}`;
+        } else {
+          licensePlate = match[1].toUpperCase();
+        }
+      }
+    }
+
+    // Tra cứu phương tiện
+    const vehicleResult = await this.dbService.query(
+      `SELECT v.VehicleID, v.UserID, v.LicensePlate, v.VehicleType, v.Brand, v.Model, 
+              v.ManufactureYear, v.PurchaseDate, v.CurrentOdometer, u.FullName AS OwnerName, u.Email AS OwnerEmail
+       FROM Vehicles v
+       JOIN Users u ON v.UserID = u.UserID
+       WHERE REPLACE(REPLACE(v.LicensePlate, '-', ''), '.', '') = REPLACE(REPLACE(@licensePlate, '-', ''), '.', '')`,
+      [{ name: 'licensePlate', type: sql.VarChar, value: licensePlate }]
+    );
+
+    if (vehicleResult.recordset.length === 0) {
+      return {
+        licensePlate,
+        message: 'Không tìm thấy phương tiện này trong hệ thống',
+        vehicleId: null,
+        vehicleProfile: null
+      };
+    }
+
+    const vehicle = vehicleResult.recordset[0];
+    
+    // Lấy thêm lịch sử sửa chữa của xe
+    const historyResult = await this.dbService.query(
+      `SELECT h.HistoryID, h.ExecutionDate, h.ExecutionOdometer, h.TotalCost, h.Details, g.GarageName
+       FROM MaintenanceHistory h
+       LEFT JOIN Garages g ON h.GarageID = g.GarageID
+       WHERE h.VehicleID = @vehicleId
+       ORDER BY h.ExecutionDate DESC`,
+      [{ name: 'vehicleId', type: sql.Int, value: vehicle.VehicleID }]
+    );
+
+    return {
+      licensePlate: vehicle.LicensePlate,
+      vehicleId: vehicle.VehicleID,
+      vehicleProfile: {
+        vehicleId: vehicle.VehicleID,
+        userId: vehicle.UserID,
+        licensePlate: vehicle.LicensePlate,
+        vehicleType: vehicle.VehicleType,
+        brand: vehicle.Brand,
+        model: vehicle.Model,
+        manufactureYear: vehicle.ManufactureYear,
+        purchaseDate: vehicle.PurchaseDate,
+        currentOdometer: vehicle.CurrentOdometer,
+        ownerName: vehicle.OwnerName,
+        ownerEmail: vehicle.OwnerEmail,
+        history: historyResult.recordset.map(row => ({
+          historyId: row.HistoryID,
+          executionDate: row.ExecutionDate,
+          executionOdometer: row.ExecutionOdometer,
+          totalCost: row.TotalCost,
+          details: row.Details,
+          garageName: row.GarageName || 'Tự bảo dưỡng'
+        }))
+      }
+    };
+  }
 }

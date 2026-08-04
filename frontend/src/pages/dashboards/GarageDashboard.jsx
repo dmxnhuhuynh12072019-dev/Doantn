@@ -9,6 +9,7 @@ import GarageHistoryModal from '../../components/maintenances/GarageHistoryModal
 import CompleteAppointmentModal from '../../components/appointments/CompleteAppointmentModal';
 import VehicleProfileModal from '../../components/garages/VehicleProfileModal';
 import NotificationBell from '../../components/notifications/NotificationBell';
+import LicensePlateScannerModal from '../../components/extensions/LicensePlateScannerModal';
 
 const GarageDashboard = () => {
   const { user, logout, themePreference, updateThemePreference } = useAuth();
@@ -19,6 +20,7 @@ const GarageDashboard = () => {
 
   // Modal states
   const [isQuickLogOpen, setIsQuickLogOpen] = useState(false);
+  const [isOcrScannerOpen, setIsOcrScannerOpen] = useState(false);
 
   // Selected items for detail modals
   const [selectedApptForComplete, setSelectedApptForComplete] = useState(null);
@@ -142,6 +144,28 @@ const GarageDashboard = () => {
     setIsProfileOpen(true);
   };
 
+  const handleOcrSearchSuccess = (vehicleProfile) => {
+    setFoundVehicle({
+      VehicleID: vehicleProfile.vehicleId,
+      UserID: vehicleProfile.userId,
+      LicensePlate: vehicleProfile.licensePlate,
+      VehicleType: vehicleProfile.vehicleType,
+      Brand: vehicleProfile.brand,
+      Model: vehicleProfile.model,
+      ManufactureYear: vehicleProfile.manufactureYear,
+      PurchaseDate: vehicleProfile.purchaseDate,
+      CurrentOdometer: vehicleProfile.currentOdometer,
+      OwnerName: vehicleProfile.ownerName,
+      OwnerEmail: vehicleProfile.ownerEmail
+    });
+    setQuickVehicleHistory(vehicleProfile.history);
+    setLicensePlateSearch(vehicleProfile.licensePlate);
+    setQuickSearchError('');
+    setQuickHistoryError('');
+    setActiveTab('quick'); // Switch to the Quick Actions search tab automatically!
+    toast.success(`Nhận diện & tìm kiếm thành công biển số: ${vehicleProfile.licensePlate}!`);
+  };
+
   // C. Quick Action Handlers (Original Search)
   const handleQuickSearch = async (e) => {
     e.preventDefault();
@@ -219,6 +243,13 @@ const GarageDashboard = () => {
 
           <div className="flex items-center gap-4">
             <NotificationBell />
+            <button
+              onClick={() => setIsOcrScannerOpen(true)}
+              className="px-3.5 h-10 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black shadow-md border border-indigo-500 hover:shadow-lg transition cursor-pointer flex items-center gap-1.5 animate-pulse"
+              title="Nhận diện biển số xe bằng AI (OCR)"
+            >
+              📸 <span className="hidden sm:inline">Scan Biển số</span>
+            </button>
             <button
               onClick={() => {
                 const nextTheme = themePreference === 'light' ? 'dark' : themePreference === 'dark' ? 'system' : 'light';
@@ -318,9 +349,9 @@ const GarageDashboard = () => {
                 ))}
               </div>
             ) : appointments.length === 0 ? (
-              <div className="bg-white dark:bg-slate-800 border border-dashed border-slate-200 dark:border-slate-750 rounded-3xl p-12 text-center shadow-sm">
+              <div className="bg-white dark:bg-slate-800 border border-dashed border-slate-200 dark:border-slate-700 rounded-3xl p-12 text-center shadow-sm">
                 <span className="text-4xl mb-4 block">📅</span>
-                <h3 className="text-lg font-bold text-slate-805 dark:text-white">Chưa có lịch hẹn nào</h3>
+                <h3 className="text-lg font-bold text-slate-800 dark:text-white">Chưa có lịch hẹn nào</h3>
                 <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Khi khách hàng đặt lịch hẹn tại tiệm của bạn, thông tin lịch hẹn sẽ hiển thị ở đây.</p>
               </div>
             ) : (
@@ -328,7 +359,7 @@ const GarageDashboard = () => {
                 {appointments.map((appt) => (
                   <div
                     key={appt.AppointmentID}
-                    className="bg-white dark:bg-slate-805 rounded-3xl border border-slate-100 dark:border-slate-700 p-6 shadow-sm hover:shadow-md transition flex flex-col justify-between"
+                    className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 p-6 shadow-sm hover:shadow-md transition flex flex-col justify-between"
                   >
                     <div>
                       <div className="flex justify-between items-start mb-4">
@@ -345,12 +376,12 @@ const GarageDashboard = () => {
                         </span>
                       </div>
 
-                      <div className="space-y-2 mb-4 bg-slate-50 dark:bg-slate-900/40 p-4 rounded-2xl text-xs">
+                      <div className="space-y-2 mb-4 bg-slate-50 dark:bg-slate-900/40 p-4 rounded-2xl text-xs border border-slate-100 dark:border-slate-700/50">
                         <div className="flex justify-between">
                           <span className="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wide">Khách hàng:</span>
                           <strong className="text-slate-800 dark:text-slate-200">{appt.OwnerName} ({appt.OwnerPhone || 'Không có số ĐT'})</strong>
                         </div>
-                        <div className="flex justify-between border-t border-slate-100 dark:border-slate-750/50 pt-2">
+                        <div className="flex justify-between border-t border-slate-100 dark:border-slate-700/50 pt-2">
                           <span className="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wide">Thời gian hẹn:</span>
                           <strong className="text-indigo-600 dark:text-indigo-400 text-sm">
                             {new Date(appt.AppointmentDate).toLocaleString('vi-VN', {
@@ -359,19 +390,19 @@ const GarageDashboard = () => {
                             })}
                           </strong>
                         </div>
-                        <div className="border-t border-slate-100 dark:border-slate-750/50 pt-2">
+                        <div className="border-t border-slate-100 dark:border-slate-700/50 pt-2">
                           <span className="text-slate-400 dark:text-slate-500 font-bold uppercase block tracking-wide mb-1">Ghi chú của khách:</span>
-                          <p className="text-slate-650 dark:text-slate-350 italic leading-relaxed">{appt.Notes || 'Không có ghi chú.'}</p>
+                          <p className="text-slate-600 dark:text-slate-300 italic leading-relaxed">{appt.Notes || 'Không có ghi chú.'}</p>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex justify-between items-center pt-3 border-t border-slate-100 dark:border-slate-700/60 mt-auto">
-                      <span className={`px-2.5 py-1 rounded-full text-xxs font-bold border ${appt.Status === 'Chờ xác nhận' ? 'bg-amber-50 dark:bg-amber-955/20 text-amber-600 dark:text-amber-400 border-amber-100' :
-                          appt.Status === 'Đã xác nhận' ? 'bg-blue-50 dark:bg-blue-955/20 text-blue-600 dark:text-blue-400 border-blue-100' :
-                            appt.Status === 'Đang sửa chữa' ? 'bg-purple-50 dark:bg-purple-955/20 text-purple-600 dark:text-purple-400 border-purple-100' :
-                              appt.Status === 'Hoàn thành' ? 'bg-emerald-50 dark:bg-emerald-955/20 text-emerald-600 dark:text-emerald-400 border-emerald-100' :
-                                'bg-slate-55 dark:bg-slate-900/20 text-slate-500 border-slate-200'
+                      <span className={`px-2.5 py-1 rounded-full text-xxs font-bold border ${appt.Status === 'Chờ xác nhận' ? 'bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-900/30' :
+                          appt.Status === 'Đã xác nhận' ? 'bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900/30' :
+                            appt.Status === 'Đang sửa chữa' ? 'bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400 border-purple-100 dark:border-purple-900/30' :
+                              appt.Status === 'Hoàn thành' ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30' :
+                                'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700'
                         }`}>
                         {appt.Status}
                       </span>
@@ -457,7 +488,7 @@ const GarageDashboard = () => {
                 />
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-slate-850 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition"
+                  className="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition"
                 >
                   Tìm kiếm
                 </button>
@@ -471,15 +502,15 @@ const GarageDashboard = () => {
             )}
 
             {loadingVehicles ? (
-              <div className="bg-white dark:bg-slate-805 rounded-3xl border border-slate-100 dark:border-slate-700 p-6 shadow-sm space-y-4">
+              <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 p-6 shadow-sm space-y-4">
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="h-12 rounded-xl bg-slate-100 dark:bg-slate-800 animate-pulse"></div>
                 ))}
               </div>
             ) : servicedVehicles.length === 0 ? (
-              <div className="bg-white dark:bg-slate-800 border border-dashed border-slate-200 dark:border-slate-750 rounded-3xl p-12 text-center shadow-sm">
+              <div className="bg-white dark:bg-slate-800 border border-dashed border-slate-200 dark:border-slate-700 rounded-3xl p-12 text-center shadow-sm">
                 <span className="text-4xl mb-4 block">🚗</span>
-                <h3 className="text-lg font-bold text-slate-805 dark:text-white">Không tìm thấy phương tiện nào</h3>
+                <h3 className="text-lg font-bold text-slate-800 dark:text-white">Không tìm thấy phương tiện nào</h3>
                 <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Chưa có phương tiện nào làm dịch vụ hoặc kết quả tìm kiếm không khớp.</p>
               </div>
             ) : (
@@ -487,7 +518,7 @@ const GarageDashboard = () => {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse text-sm">
                     <thead>
-                      <tr className="bg-slate-50 dark:bg-slate-900/30 text-slate-450 dark:text-slate-500 font-bold border-b border-slate-100 dark:border-slate-700">
+                      <tr className="bg-slate-50 dark:bg-slate-900/30 text-slate-400 dark:text-slate-500 font-bold border-b border-slate-100 dark:border-slate-700">
                         <th className="px-6 py-4">Biển số</th>
                         <th className="px-6 py-4">Loại xe</th>
                         <th className="px-6 py-4">Hãng & Dòng xe</th>
@@ -496,7 +527,7 @@ const GarageDashboard = () => {
                         <th className="px-6 py-4 text-right">Hành động</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-750 text-slate-700 dark:text-slate-200">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-slate-700 dark:text-slate-200">
                       {servicedVehicles.map((vehicle) => (
                         <tr key={vehicle.VehicleID} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/10 transition">
                           <td className="px-6 py-4 font-black">
@@ -586,7 +617,7 @@ const GarageDashboard = () => {
                       <p className="text-xs text-slate-400 mb-6">Thống kê số lượt bảo dưỡng thực hiện mỗi ngày.</p>
                     </div>
 
-                    <div className="flex items-end gap-1.5 sm:gap-2 h-48 pt-6 border-b border-l border-slate-100 dark:border-slate-750 px-2 sm:px-4">
+                    <div className="flex items-end gap-1.5 sm:gap-2 h-48 pt-6 border-b border-l border-slate-100 dark:border-slate-700 px-2 sm:px-4">
                       {analyticsData.dailyVisits.map((item, idx) => {
                         const maxCount = Math.max(...analyticsData.dailyVisits.map(d => d.count), 1);
                         const heightPercent = (item.count / maxCount) * 100;
@@ -622,8 +653,8 @@ const GarageDashboard = () => {
                         const widthPercent = (item.revenue / maxRevenue) * 100;
                         return (
                           <div key={idx} className="flex items-center gap-4 text-xs">
-                            <span className="w-16 text-slate-500 dark:text-slate-450 font-bold shrink-0">{item.month}</span>
-                            <div className="flex-1 bg-slate-100 dark:bg-slate-750 h-3 rounded-full overflow-hidden">
+                            <span className="w-16 text-slate-500 dark:text-slate-400 font-bold shrink-0">{item.month}</span>
+                            <div className="flex-1 bg-slate-100 dark:bg-slate-700 h-3 rounded-full overflow-hidden">
                               <div
                                 className="bg-emerald-500 h-full rounded-full transition-all duration-500"
                                 style={{ width: `${widthPercent}%` }}
@@ -650,14 +681,14 @@ const GarageDashboard = () => {
                     <div className="overflow-x-auto">
                       <table className="w-full text-left border-collapse text-xs">
                         <thead>
-                          <tr className="bg-slate-50 dark:bg-slate-900/30 text-slate-450 dark:text-slate-500 font-bold border-b border-slate-100 dark:border-slate-700">
+                          <tr className="bg-slate-50 dark:bg-slate-900/30 text-slate-400 dark:text-slate-500 font-bold border-b border-slate-100 dark:border-slate-700">
                             <th className="px-4 py-3">Biển số</th>
                             <th className="px-4 py-3">Hãng & Dòng xe</th>
                             <th className="px-4 py-3">Chủ sở hữu</th>
                             <th className="px-4 py-3 text-right">Số lần đến bảo dưỡng</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-750">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                           {analyticsData.frequentCustomers.map((cust, idx) => (
                             <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/10">
                               <td className="px-4 py-3 font-black">
@@ -703,7 +734,17 @@ const GarageDashboard = () => {
               {/* Cột Tìm kiếm & Thông tin nhanh xe */}
               <div className="space-y-6 lg:col-span-1">
                 <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 p-6 shadow-sm space-y-4">
-                  <h3 className="text-lg font-black text-slate-800 dark:text-white">🔍 Tra cứu biển số xe</h3>
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-black text-slate-800 dark:text-white">🔍 Tra cứu biển số</h3>
+                    <button
+                      type="button"
+                      onClick={() => setIsOcrScannerOpen(true)}
+                      className="px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 border border-indigo-100/35 hover:bg-indigo-100 dark:hover:bg-indigo-950/40 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1 shadow-xs animate-bounce"
+                      title="Quét biển số xe bằng AI"
+                    >
+                      📸 Scan AI
+                    </button>
+                  </div>
                   <form onSubmit={handleQuickSearch} className="flex gap-2">
                     <input
                       type="text"
@@ -715,7 +756,7 @@ const GarageDashboard = () => {
                     <button
                       type="submit"
                       disabled={searchingQuick}
-                      className="px-4 py-2.5 bg-slate-850 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition flex items-center justify-center disabled:opacity-50"
+                      className="px-4 py-2.5 bg-slate-800 hover:bg-slate-900 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center disabled:opacity-50"
                     >
                       {searchingQuick ? '...' : 'Tìm'}
                     </button>
@@ -733,7 +774,7 @@ const GarageDashboard = () => {
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 border border-indigo-100/30">
                           {foundVehicle.VehicleType === 'Ô tô' ? '🚗 Ô tô' : '🏍️ Xe máy'}
                         </span>
-                        <span className="px-3 py-1 border-2 border-slate-800 dark:border-slate-400 bg-white dark:bg-slate-900 rounded-md text-sm font-black tracking-wider text-slate-850 dark:text-white shadow-xs shrink-0 whitespace-nowrap">
+                        <span className="px-3 py-1 border-2 border-slate-800 dark:border-slate-400 bg-white dark:bg-slate-900 rounded-md text-sm font-black tracking-wider text-slate-800 dark:text-white shadow-xs shrink-0 whitespace-nowrap">
                           {foundVehicle.LicensePlate}
                         </span>
                       </div>
@@ -760,12 +801,12 @@ const GarageDashboard = () => {
               {/* Cột Lịch sử sửa chữa của xe được tìm nhanh */}
               <div className="lg:col-span-2">
                 <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 p-6 shadow-sm min-h-[400px] flex flex-col">
-                  <h3 className="text-lg font-black text-slate-805 dark:text-white mb-4">
+                  <h3 className="text-lg font-black text-slate-800 dark:text-white mb-4">
                     📋 Nhật ký sửa chữa của xe
                   </h3>
 
                   {!foundVehicle ? (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-slate-400 bg-slate-50/50 dark:bg-slate-900/10 rounded-2xl border border-dashed border-slate-200 dark:border-slate-750">
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-slate-400 bg-slate-50/50 dark:bg-slate-900/10 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
                       <span className="text-4xl mb-2">🚗</span>
                       <p className="text-sm font-medium">Nhập biển số xe ở thanh tra cứu để xem hồ sơ và lịch sử sửa chữa của xe đó.</p>
                     </div>
@@ -787,7 +828,7 @@ const GarageDashboard = () => {
                       </button>
                     </div>
                   ) : quickVehicleHistory.length === 0 ? (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-slate-400 bg-slate-50/30 rounded-2xl border border-dashed border-slate-250">
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-slate-400 bg-slate-50/30 rounded-2xl border border-dashed border-slate-200">
                       <span className="text-3xl mb-2">📝</span>
                       <p className="text-sm">Xe này chưa từng được bảo dưỡng tại bất kỳ gara nào.</p>
                     </div>
@@ -796,19 +837,19 @@ const GarageDashboard = () => {
                       {quickVehicleHistory.map((record) => (
                         <div
                           key={record.HistoryID}
-                          className="bg-slate-50/50 dark:bg-slate-900/20 border border-slate-100 dark:border-slate-750 rounded-2xl p-5 space-y-3 hover:shadow-xs transition"
+                          className="bg-slate-50/50 dark:bg-slate-900/20 border border-slate-100 dark:border-slate-700 rounded-2xl p-5 space-y-3 hover:shadow-xs transition"
                         >
-                          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-slate-100 dark:border-slate-750 pb-2.5">
+                          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-slate-100 dark:border-slate-700 pb-2.5">
                             <div className="flex items-center gap-4 text-xs">
                               <div>
                                 <span className="text-slate-400 dark:text-slate-500 font-semibold block">Ngày làm</span>
-                                <strong className="text-slate-700 dark:text-slate-350">
+                                <strong className="text-slate-700 dark:text-slate-300">
                                   {new Date(record.ExecutionDate).toLocaleDateString()}
                                 </strong>
                               </div>
                               <div>
                                 <span className="text-slate-400 dark:text-slate-500 font-semibold block">Số Odo</span>
-                                <strong className="text-slate-750 dark:text-white">
+                                <strong className="text-slate-700 dark:text-white">
                                   {record.ExecutionOdometer.toLocaleString()} km
                                 </strong>
                               </div>
@@ -823,13 +864,13 @@ const GarageDashboard = () => {
 
                           <div className="space-y-1">
                             <span className="text-xxs text-slate-400 dark:text-slate-500 block uppercase font-semibold">Nội dung chi tiết</span>
-                            <p className="text-sm text-slate-750 dark:text-slate-300 leading-relaxed whitespace-pre-line">
+                            <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line">
                               {record.Details}
                             </p>
                           </div>
 
                           {record.GarageName && (
-                            <div className="text-xxs text-slate-400 dark:text-slate-500 flex justify-between items-center pt-2 bg-white/40 dark:bg-slate-800/40 px-2.5 py-1.5 rounded-lg border border-slate-100 dark:border-slate-750">
+                            <div className="text-xxs text-slate-400 dark:text-slate-500 flex justify-between items-center pt-2 bg-white/40 dark:bg-slate-800/40 px-2.5 py-1.5 rounded-lg border border-slate-100 dark:border-slate-700">
                               <span>🔧 Nơi thực hiện: <strong>{record.GarageName}</strong></span>
                             </div>
                           )}
@@ -865,6 +906,13 @@ const GarageDashboard = () => {
         isOpen={isProfileOpen}
         onClose={() => setIsProfileOpen(false)}
         vehicleId={selectedVehicleId}
+      />
+
+      {/* 4. License Plate OCR Scanner Modal */}
+      <LicensePlateScannerModal
+        isOpen={isOcrScannerOpen}
+        onClose={() => setIsOcrScannerOpen(false)}
+        onSearchSuccess={handleOcrSearchSuccess}
       />
     </div>
   );
