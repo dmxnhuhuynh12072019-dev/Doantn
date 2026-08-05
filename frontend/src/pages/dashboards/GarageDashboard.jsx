@@ -8,8 +8,8 @@ import * as extensionService from '../../services/extensionService';
 import GarageHistoryModal from '../../components/maintenances/GarageHistoryModal';
 import CompleteAppointmentModal from '../../components/appointments/CompleteAppointmentModal';
 import VehicleProfileModal from '../../components/garages/VehicleProfileModal';
-import NotificationBell from '../../components/notifications/NotificationBell';
 import LicensePlateScannerModal from '../../components/extensions/LicensePlateScannerModal';
+import Header from '../../components/common/Header';
 
 const GarageDashboard = () => {
   const { user, logout, themePreference, updateThemePreference } = useAuth();
@@ -229,59 +229,7 @@ const GarageDashboard = () => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col">
       {/* Header */}
-      <header className="bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 shadow-sm px-6 py-4 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg">
-              A
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-slate-850 dark:text-white leading-tight">ACOH Garage</h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Hệ thống quản lý Gara đối tác</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <NotificationBell />
-            <button
-              onClick={() => setIsOcrScannerOpen(true)}
-              className="px-3.5 h-10 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black shadow-md border border-indigo-500 hover:shadow-lg transition cursor-pointer flex items-center gap-1.5 animate-pulse"
-              title="Nhận diện biển số xe bằng AI (OCR)"
-            >
-              📸 <span className="hidden sm:inline">Scan Biển số</span>
-            </button>
-            <button
-              onClick={() => {
-                const nextTheme = themePreference === 'light' ? 'dark' : themePreference === 'dark' ? 'system' : 'light';
-                updateThemePreference(nextTheme);
-              }}
-              className="w-10 h-10 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-355 border border-slate-200 dark:border-slate-600 flex items-center justify-center transition cursor-pointer"
-              title={`Giao diện: ${themePreference === 'light' ? 'Sáng' : themePreference === 'dark' ? 'Tối' : 'Hệ thống'}. Nhấn để đổi.`}
-            >
-              {themePreference === 'light' ? '☀️' : themePreference === 'dark' ? '🌙' : '💻'}
-            </button>
-            <span className="text-sm text-slate-600 dark:text-slate-300 hidden sm:inline">
-              Garage: <span className="font-bold text-slate-800 dark:text-white">{user?.fullName}</span>
-            </span>
-            <a
-              href="/profile"
-              className="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-750 dark:text-slate-200 flex items-center justify-center font-black border border-slate-200 dark:border-slate-600 hover:shadow-xs transition shrink-0"
-              title="Hồ sơ Gara"
-            >
-              {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'G'}
-            </a>
-            <button
-              onClick={logout}
-              className="w-10 h-10 rounded-full flex items-center justify-center text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 border border-transparent hover:border-rose-100 dark:hover:border-rose-950/40 transition shrink-0"
-              title="Đăng xuất"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </header>
+      <Header dashboardType="garage" onOpenOcrScanner={() => setIsOcrScannerOpen(true)} />
 
       {/* Main Tab bar */}
       <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 shadow-xs shrink-0">

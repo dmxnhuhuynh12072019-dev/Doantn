@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Body, Param, UseGuards, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Body, Param, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { NotificationsService } from './notifications.service';
 import { SendCompletionDto } from './dto/send-completion.dto';
@@ -54,5 +54,35 @@ export class NotificationsController {
   @ApiResponse({ status: 401, description: 'Chưa xác thực.' })
   async triggerCron() {
     return this.notificationsService.runSystemScan();
+  }
+
+  @Get('preferences')
+  @ApiOperation({ summary: 'Lấy cấu hình tùy chọn nhận thông báo Zalo ZNS và SMS' })
+  async getPreferences(@User() user: any) {
+    return this.notificationsService.getPreferences(user.userId);
+  }
+
+  @Put('preferences')
+  @ApiOperation({ summary: 'Cập nhật tùy chọn nhận thông báo Zalo ZNS & SMS (PUT)' })
+  async updatePreferencesPut(@User() user: any, @Body() dto: any) {
+    return this.notificationsService.updatePreferences(user.userId, dto);
+  }
+
+  @Patch('preferences')
+  @ApiOperation({ summary: 'Cập nhật tùy chọn nhận thông báo Zalo ZNS & SMS (PATCH)' })
+  async updatePreferencesPatch(@User() user: any, @Body() dto: any) {
+    return this.notificationsService.updatePreferences(user.userId, dto);
+  }
+
+  @Post('zns/test-send')
+  @ApiOperation({ summary: 'Gửi thử tin nhắn cảnh báo Zalo ZNS / SMS' })
+  async sendTestZns(@User() user: any, @Body() dto: any) {
+    return this.notificationsService.sendTestZns(user.userId, dto?.phoneNumber, dto?.message);
+  }
+
+  @Get('logs')
+  @ApiOperation({ summary: 'Lấy danh sách nhật ký gửi tin nhắn Zalo ZNS / SMS' })
+  async getLogs(@User() user: any) {
+    return this.notificationsService.getNotificationLogs(user.userId);
   }
 }

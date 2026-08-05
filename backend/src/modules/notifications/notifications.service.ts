@@ -5,6 +5,8 @@ import * as sql from 'mssql';
 import { DatabaseService } from '../database/database.service';
 import { SendCompletionDto } from './dto/send-completion.dto';
 import { NotificationsGateway } from './notifications.gateway';
+import { ZaloZnsService } from './zalo-zns.service';
+import { UpdateNotificationPreferencesDto } from './dto/update-preferences.dto';
 
 @Injectable()
 export class NotificationsService {
@@ -15,10 +17,11 @@ export class NotificationsService {
     private mailerService: MailerService,
     @Inject(forwardRef(() => NotificationsGateway))
     private notificationsGateway: NotificationsGateway,
+    private zaloZnsService: ZaloZnsService,
   ) {}
 
-  // 1. Tạo thông báo mới (In-app và/hoặc Email)
-  async create(userId: number, title: string, message: string, type: 'Email' | 'InApp' | 'All') {
+  // 1. Tạo thông báo mới (In-app, Email, Zalo ZNS, SMS)
+  async create(userId: number, title: string, message: string, type: 'Email' | 'InApp' | 'ZaloZNS' | 'SMS' | 'All') {
     // Lưu vào cơ sở dữ liệu nếu loại thông báo là InApp hoặc All
     if (type === 'InApp' || type === 'All') {
       await this.dbService.query(
@@ -73,6 +76,27 @@ export class NotificationsService {
         } catch (err) {
           this.logger.warn(`Không thể gửi email qua SMTP đến ${Email}. Lỗi: ${err.message}`);
         }
+      }
+    }
+
+    // === GỬI TIN NHẮN ZALO ZNS & SMS ===
+    if (type === 'ZaloZNS' || type === 'SMS' || type === 'All') {
+      try {
+        const userResult = await this.dbService.query(
+          'SELECT PhoneNumber, ZaloPhoneNumber, ReceiveZaloNotif, ReceiveSmsNotif FROM Users WHERE UserID = @userId',
+          [{ name: 'userId', type: sql.Int, value: userId }]
+        );
+
+        if (userResult.recordset.length > 0) {
+          const user = userResult.recordset[0];
+          const targetPhone = user.ZaloPhoneNumber || user.PhoneNumber;
+
+          if (targetPhone && (user.ReceiveZaloNotif !== false || user.ReceiveSmsNotif !== false)) {
+            await this.zaloZnsService.sendZnsNotification(userId, targetPhone, title, message);
+          }
+        }
+      } catch (zaloErr) {
+        this.logger.warn(`Lỗi khi dispatch Zalo ZNS / SMS cho User ${userId}: ${zaloErr.message}`);
       }
     }
 
@@ -291,5 +315,73 @@ export class NotificationsService {
       message: 'Đã chạy quét hệ thống thành công!',
       newNotificationsCount: notificationsCount,
     };
+  }
+
+  // 8. Gửi thử tin nhắn Zalo ZNS
+  async sendTestZns(userId: number, customPhone?: string, customMsg?: string) {
+    const userResult = await this.dbService.query(
+      'SELECT FullName, PhoneNumber, ZaloPhoneNumber FROM Users WHERE UserID = @userId',
+      [{ name: 'userId', type: sql.Int, value: userId }]
+    );
+
+    if (userResult.recordset.length === 0) {
+      throw new NotFoundException('Không tìm thấy người dùng');
+    }
+
+    const user = userResult.recordset[0];
+    const phone = customPhone || user.ZaloPhoneNumber || user.PhoneNumber || '0900000000';
+    const title = '[ACOH ZNS Test] Kiểm thử gửi tin nhắn Zalo ZNS';
+    const message = customMsg || `Chào ${user.FullName}, đây là tin nhắn kiểm thử hệ thống cảnh báo Zalo ZNS của ứng dụng ACOH. Chúc bạn một ngày tốt lành!`;
+
+    return this.zaloZnsService.sendZnsNotification(userId, phone, title, message);
+  }
+
+  // 9. Lấy cấu hình tùy chọn nhận thông báo của User
+  async getPreferences(userId: number) {
+    const result = await this.dbService.query(
+      'SELECT UserID, FullName, PhoneNumber, ZaloPhoneNumber, ReceiveZaloNotif, ReceiveSmsNotif FROM Users WHERE UserID = @userId',
+      [{ name: 'userId', type: sql.Int, value: userId }]
+    );
+
+    if (result.recordset.length === 0) {
+      throw new NotFoundException('Không tìm thấy thông tin người dùng');
+    }
+
+    const row = result.recordset[0];
+    return {
+      userId: row.UserID,
+      fullName: row.FullName,
+      phoneNumber: row.PhoneNumber,
+      zaloPhoneNumber: row.ZaloPhoneNumber || row.PhoneNumber,
+      receiveZaloNotif: row.ReceiveZaloNotif !== false,
+      receiveSmsNotif: row.ReceiveSmsNotif !== false,
+    };
+  }
+
+  // 10. Cập nhật cấu hình nhận thông báo Zalo/SMS
+  async updatePreferences(userId: number, dto: UpdateNotificationPreferencesDto) {
+    const receiveZalo = dto.receiveZaloNotif !== undefined ? (dto.receiveZaloNotif ? 1 : 0) : 1;
+    const receiveSms = dto.receiveSmsNotif !== undefined ? (dto.receiveSmsNotif ? 1 : 0) : 1;
+
+    await this.dbService.query(
+      `UPDATE Users 
+       SET ReceiveZaloNotif = @receiveZalo,
+           ReceiveSmsNotif = @receiveSms,
+           ZaloPhoneNumber = ISNULL(@zaloPhone, ZaloPhoneNumber)
+       WHERE UserID = @userId`,
+      [
+        { name: 'userId', type: sql.Int, value: userId },
+        { name: 'receiveZalo', type: sql.Bit, value: receiveZalo },
+        { name: 'receiveSms', type: sql.Bit, value: receiveSms },
+        { name: 'zaloPhone', type: sql.VarChar, value: dto.zaloPhoneNumber || null },
+      ]
+    );
+
+    return { message: 'Đã cập nhật tùy chọn nhận thông báo Zalo ZNS & SMS thành công!' };
+  }
+
+  // 11. Lấy nhật ký gửi tin Zalo/SMS
+  async getNotificationLogs(userId: number) {
+    return this.zaloZnsService.getNotificationLogs(userId);
   }
 }

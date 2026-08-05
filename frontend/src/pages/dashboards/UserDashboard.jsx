@@ -14,7 +14,7 @@ import MaintenanceSchedulesTab from '../../components/maintenances/MaintenanceSc
 import MaintenanceHistoryTab from '../../components/maintenances/MaintenanceHistoryTab';
 import MaintenanceMatrixView from '../../components/maintenances/MaintenanceMatrixView';
 import LegalDocumentsTab from '../../components/legal/LegalDocumentsTab';
-import NotificationBell from '../../components/notifications/NotificationBell';
+import Header from '../../components/common/Header';
 
 const UserDashboard = () => {
   const { user, logout, themePreference, updateThemePreference } = useAuth();
@@ -219,52 +219,7 @@ const UserDashboard = () => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col">
       {/* Header */}
-      <header className="bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 shadow-sm px-6 py-4 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg">
-              A
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-slate-800 dark:text-white leading-tight">ACOH Autocare</h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400">AutoCare Office Helper</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <NotificationBell />
-            <button
-              onClick={() => {
-                const nextTheme = themePreference === 'light' ? 'dark' : themePreference === 'dark' ? 'system' : 'light';
-                updateThemePreference(nextTheme);
-              }}
-              className="w-10 h-10 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-355 border border-slate-200 dark:border-slate-600 flex items-center justify-center transition cursor-pointer"
-              title={`Giao diện: ${themePreference === 'light' ? 'Sáng' : themePreference === 'dark' ? 'Tối' : 'Hệ thống'}. Nhấn để đổi.`}
-            >
-              {themePreference === 'light' ? '☀️' : themePreference === 'dark' ? '🌙' : '💻'}
-            </button>
-            <span className="text-sm text-slate-600 dark:text-slate-300 hidden sm:inline">
-              Chào, <span className="font-bold text-slate-800 dark:text-white">{user?.fullName}</span>
-            </span>
-            <a
-              href="/profile"
-              className="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-750 dark:text-slate-200 flex items-center justify-center font-black border border-slate-200 dark:border-slate-600 hover:shadow-xs transition shrink-0"
-              title="Cài đặt tài khoản"
-            >
-              {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
-            </a>
-            <button
-              onClick={logout}
-              className="w-10 h-10 rounded-full flex items-center justify-center text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 border border-transparent hover:border-rose-100 dark:hover:border-rose-950/40 transition shrink-0"
-              title="Đăng xuất"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </header>
+      <Header dashboardType="user" />
 
       {/* Main Content */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-8 pb-24 md:pb-8">

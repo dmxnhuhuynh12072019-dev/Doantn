@@ -20,7 +20,7 @@ DB_PASSWORD=MậtKhẩuCủaBạn (123456)
 ### 3. Chạy Backend
 ```powershell
 cd backend
-npm run start:dev
+npm run dev
 ```
 ✅ Thành công khi thấy: `Application is running on: http://localhost:3000`
 

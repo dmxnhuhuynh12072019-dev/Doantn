@@ -2,12 +2,14 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useModal } from '../../context/ModalContext';
 import { useSocket } from '../../context/SocketContext';
 import * as notificationService from '../../services/notificationService';
+import NotificationSettingsModal from './NotificationSettingsModal';
 
 const NotificationBell = () => {
   const { toast } = useModal();
   const { socket, isConnected } = useSocket();
   const [notifications, setNotifications] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const dropdownRef = useRef(null);
   const audioRef = useRef(null);
@@ -227,6 +229,16 @@ const NotificationBell = () => {
             </div>
             <div className="flex gap-2">
               <button
+                onClick={() => {
+                  setIsOpen(false);
+                  setIsSettingsOpen(true);
+                }}
+                className="text-xxs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-950/40 px-2 py-1 rounded-lg flex items-center gap-1"
+                title="Cài đặt thông báo Zalo ZNS & SMS"
+              >
+                ⚙️ Zalo/SMS
+              </button>
+              <button
                 onClick={handleTriggerTestScan}
                 className="text-xxs font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/40 px-2 py-1 rounded-lg"
                 title="Kích hoạt quét hệ thống để cập nhật thông báo về lịch và hạn giấy tờ xe"
@@ -290,6 +302,12 @@ const NotificationBell = () => {
           </div>
         </div>
       )}
+
+      {/* Modal Cài đặt Zalo ZNS & SMS */}
+      <NotificationSettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+      />
     </div>
   );
 };

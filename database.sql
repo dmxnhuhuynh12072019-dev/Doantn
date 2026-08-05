@@ -11,6 +11,9 @@ CREATE TABLE Users (
     FullName NVARCHAR(100) NOT NULL,
     Email VARCHAR(100) NOT NULL,
     PhoneNumber VARCHAR(15) NULL,
+    ZaloPhoneNumber VARCHAR(15) NULL,
+    ReceiveZaloNotif BIT NOT NULL DEFAULT 1,
+    ReceiveSmsNotif BIT NOT NULL DEFAULT 1,
     PasswordHash VARCHAR(255) NOT NULL,
     Role VARCHAR(20) NOT NULL DEFAULT 'User', 
     Status NVARCHAR(20) NOT NULL DEFAULT N'Hoạt động',
@@ -143,7 +146,7 @@ CREATE TABLE Notifications (
     
     CONSTRAINT PK_Notifications PRIMARY KEY (NotificationID),
     CONSTRAINT FK_Notifications_Users FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE,
-    CONSTRAINT CHK_Notifications_Type CHECK (NotificationType IN ('Email', 'InApp', 'All'))
+    CONSTRAINT CHK_Notifications_Type CHECK (NotificationType IN ('Email', 'InApp', 'ZaloZNS', 'SMS', 'All'))
 );
 
 -- 9. Bảng Khung/Bộ mốc bảo dưỡng (MaintenanceCategories)

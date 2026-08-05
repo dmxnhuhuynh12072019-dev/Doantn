@@ -35,3 +35,40 @@ export const triggerCron = async () => {
     throw error.response?.data || { message: 'Không thể kích hoạt quét hệ thống' };
   }
 };
+
+export const getPreferences = async () => {
+  try {
+    const res = await api.get('/api/notifications/preferences');
+    return res.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Không thể lấy cấu hình thông báo' };
+  }
+};
+
+export const updatePreferences = async (data) => {
+  try {
+    const res = await api.put('/api/notifications/preferences', data);
+    return res.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Không thể cập nhật cấu hình thông báo' };
+  }
+};
+
+export const sendTestZns = async (data) => {
+  try {
+    const res = await api.post('/api/notifications/zns/test-send', data);
+    return res.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Lỗi khi gửi thử tin nhắn Zalo ZNS' };
+  }
+};
+
+export const getNotificationLogs = async () => {
+  try {
+    const res = await api.get('/api/notifications/logs');
+    return res.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Không thể lấy nhật ký gửi tin nhắn' };
+  }
+};
+
