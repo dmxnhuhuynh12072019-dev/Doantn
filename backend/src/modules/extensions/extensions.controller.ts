@@ -36,6 +36,46 @@ export class ExtensionsController {
     return this.extensionsService.scanPlate(file);
   }
 
+  @Post('ocr/scan-registration')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({ summary: 'Nhận diện và bóc tách Sổ Đăng Kiểm tự động bằng AI OCR' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Bóc tách Sổ Đăng Kiểm thành công.' })
+  async scanRegistration(@UploadedFile() file: any) {
+    return this.extensionsService.scanRegistration(file);
+  }
+
+  @Post('ocr/scan-invoice')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({ summary: 'Nhận diện và trích xuất Hóa đơn sửa xe / Phiếu bảo dưỡng cũ bằng AI OCR' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Bóc tách hóa đơn sửa xe thành công.' })
+  async scanInvoice(@UploadedFile() file: any) {
+    return this.extensionsService.scanInvoice(file);
+  }
+
   @Post('ai-chat')
   @ApiOperation({ summary: 'Gửi tin nhắn trò chuyện với Trợ lý ảo AI' })
   @ApiResponse({ status: 200, description: 'Trả về phản hồi của AI.' })

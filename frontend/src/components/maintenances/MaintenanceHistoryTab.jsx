@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import * as maintenanceService from '../../services/maintenanceService';
+import InvoiceOcrReviewModal from '../extensions/InvoiceOcrReviewModal';
 
 const MaintenanceHistoryTab = ({ vehicleId }) => {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
 
   const fetchHistory = async () => {
     try {
@@ -32,9 +34,24 @@ const MaintenanceHistoryTab = ({ vehicleId }) => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h4 className="text-lg font-bold text-slate-800 dark:text-white">Nhật ký sửa chữa & bảo dưỡng</h4>
-        <p className="text-xs text-slate-500">Lịch sử chi tiết các lần bảo dưỡng, thay thế phụ tùng được Gara liên kết lưu trữ.</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-5 rounded-3xl text-white shadow-xl border border-indigo-700/30">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-full text-xxs font-black bg-indigo-500/30 text-indigo-200 border border-indigo-400/30 uppercase tracking-wider">
+              Module 3 • Repair Invoice OCR
+            </span>
+          </div>
+          <h4 className="text-lg font-black tracking-tight">Nhật ký sửa chữa & Số hóa Hóa đơn cũ</h4>
+          <p className="text-xs text-indigo-200/80">Chụp ảnh hóa đơn tiệm sửa xe để AI tự đọc chi phí, phụ tùng và lưu vào lịch sử</p>
+        </div>
+
+        <button
+          onClick={() => setIsInvoiceModalOpen(true)}
+          className="shrink-0 px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-black text-xs rounded-2xl shadow-lg hover:shadow-indigo-500/25 transition cursor-pointer flex items-center gap-2"
+        >
+          <span>🧾</span>
+          <span>Số hóa hóa đơn cũ bằng AI</span>
+        </button>
       </div>
 
       {error && (
@@ -109,6 +126,13 @@ const MaintenanceHistoryTab = ({ vehicleId }) => {
           ))}
         </div>
       )}
+
+      <InvoiceOcrReviewModal
+        isOpen={isInvoiceModalOpen}
+        onClose={() => setIsInvoiceModalOpen(false)}
+        vehicleId={vehicleId}
+        onSaveSuccess={fetchHistory}
+      />
     </div>
   );
 };

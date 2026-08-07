@@ -75,3 +75,37 @@ export const scanPlate = async (file) => {
     throw error.response?.data || { message: 'Không thể nhận diện biển số xe' };
   }
 };
+
+// 6. Nhận diện và bóc tách Sổ Đăng Kiểm tự động bằng AI OCR
+export const scanRegistration = async (file) => {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const res = await api.post('/api/extensions/ocr/scan-registration', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return res.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Không thể bóc tách Sổ Đăng Kiểm' };
+  }
+};
+
+// 7. Nhận diện và trích xuất Hóa đơn sửa xe / Phiếu bảo dưỡng cũ bằng AI OCR
+export const scanInvoice = async (file) => {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const res = await api.post('/api/extensions/ocr/scan-invoice', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return res.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Không thể bóc tách hóa đơn sửa xe' };
+  }
+};

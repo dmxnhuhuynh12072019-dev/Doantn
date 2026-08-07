@@ -4,6 +4,7 @@ import { DatabaseService } from '../database/database.service';
 import { CreateScheduleDto } from './dto/create-schedule.dto';
 import { UpdateScheduleDto } from './dto/update-schedule.dto';
 import { CreateHistoryGarageDto } from './dto/create-history-garage.dto';
+import { BatchImportInvoiceDto } from './dto/batch-import-invoice.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
@@ -458,6 +459,56 @@ export class MaintenancesService {
     return {
       message: 'Lưu bảo dưỡng theo mốc km thành công!',
       details,
+    };
+  }
+
+  // Batch import lịch sử sửa chữa từ hóa đơn AI OCR
+  async batchImportInvoiceHistory(userId: number, role: string, dto: BatchImportInvoiceDto) {
+    await this.checkVehicleAccess(dto.vehicleId, userId, role);
+
+    const garageHeader = dto.garageName ? `[Gara: ${dto.garageName}]` : '[Tự nhập hóa đơn OCR]';
+    const itemsFormatted = (dto.items || [])
+      .map((it) => `- ${it.item}: ${new Intl.NumberFormat('vi-VN').format(it.cost || 0)} đ`)
+      .join('\n');
+
+    const details = `${garageHeader}\n${itemsFormatted}`.trim();
+    const totalCost = dto.totalCost !== undefined 
+      ? dto.totalCost 
+      : (dto.items || []).reduce((sum, i) => sum + (Number(i.cost) || 0), 0);
+
+    const execDate = dto.executionDate ? new Date(dto.executionDate) : new Date();
+
+    const insertRes = await this.dbService.query(
+      `INSERT INTO MaintenanceHistory (VehicleID, GarageID, ExecutionDate, ExecutionOdometer, TotalCost, Details)
+       OUTPUT INSERTED.HistoryID
+       VALUES (@vehicleId, NULL, @execDate, @odometer, @totalCost, @details)`,
+      [
+        { name: 'vehicleId', type: sql.Int, value: dto.vehicleId },
+        { name: 'execDate', type: sql.Date, value: execDate },
+        { name: 'odometer', type: sql.Int, value: dto.executionOdometer },
+        { name: 'totalCost', type: sql.Decimal, value: totalCost },
+        { name: 'details', type: sql.NVarChar, value: details },
+      ]
+    );
+
+    // Đồng bộ số km của xe nếu cao hơn mốc hiện tại
+    await this.dbService.query(
+      `UPDATE Vehicles 
+       SET CurrentOdometer = CASE WHEN @odometer > CurrentOdometer THEN @odometer ELSE CurrentOdometer END,
+           UpdatedAt = GETDATE()
+       WHERE VehicleID = @vehicleId`,
+      [
+        { name: 'odometer', type: sql.Int, value: dto.executionOdometer },
+        { name: 'vehicleId', type: sql.Int, value: dto.vehicleId },
+      ]
+    );
+
+    return {
+      success: true,
+      message: 'Đã lưu hóa đơn bảo dưỡng vào nhật ký thành công!',
+      historyId: insertRes.recordset[0]?.HistoryID,
+      details,
+      totalCost,
     };
   }
 }

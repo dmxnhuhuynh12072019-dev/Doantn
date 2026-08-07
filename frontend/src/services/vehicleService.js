@@ -62,3 +62,22 @@ export const updateCommercialInfo = async (id, commercialData) => {
     throw error.response?.data || { message: 'Không thể cập nhật thông tin xe dịch vụ' };
   }
 };
+
+export const previewPresetSchedules = async (params) => {
+  try {
+    const res = await api.post('/api/vehicles/preview-presets', params);
+    return res.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Không thể lấy bản xem trước lịch bảo dưỡng mẫu' };
+  }
+};
+
+export const getGeneratedSchedules = async (vehicleId) => {
+  try {
+    const res = await api.get(`/api/vehicles/${vehicleId}/generated-schedules`);
+    return res.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Không thể lấy danh sách lịch nhắc mẫu đã sinh' };
+  }
+};
+

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import * as vehicleService from '../../services/vehicleService';
 
 const VehicleFormModal = ({ isOpen, onClose, onSave, vehicle = null }) => {
   const [licensePlate, setLicensePlate] = useState('');
@@ -12,6 +13,11 @@ const VehicleFormModal = ({ isOpen, onClose, onSave, vehicle = null }) => {
   const [htxCode, setHtxCode] = useState('');
   const [badgeNumber, setBadgeNumber] = useState('');
   
+  // Module 4 State: Auto Preset Generator
+  const [autoGenerateSchedules, setAutoGenerateSchedules] = useState(true);
+  const [presetPreviews, setPresetPreviews] = useState([]);
+  const [loadingPresets, setLoadingPresets] = useState(false);
+
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -22,12 +28,12 @@ const VehicleFormModal = ({ isOpen, onClose, onSave, vehicle = null }) => {
       setBrand(vehicle.Brand || '');
       setModel(vehicle.Model || '');
       setManufactureYear(vehicle.ManufactureYear || '');
-      // Format DATE from SQL Server (YYYY-MM-DDThh:mm:ss.sssZ) to YYYY-MM-DD
       setPurchaseDate(vehicle.PurchaseDate ? vehicle.PurchaseDate.split('T')[0] : '');
       setCurrentOdometer(vehicle.CurrentOdometer || '');
       setIsCommercial(!!vehicle.IsCommercial);
       setHtxCode(vehicle.HTXCode || '');
       setBadgeNumber(vehicle.BadgeNumber || '');
+      setAutoGenerateSchedules(false);
     } else {
       // Clear form for add mode
       setLicensePlate('');
@@ -36,13 +42,42 @@ const VehicleFormModal = ({ isOpen, onClose, onSave, vehicle = null }) => {
       setModel('');
       setManufactureYear('');
       setPurchaseDate('');
-      setCurrentOdometer('');
+      setCurrentOdometer('10000');
       setIsCommercial(false);
       setHtxCode('');
       setBadgeNumber('');
+      setAutoGenerateSchedules(true);
     }
     setError('');
   }, [vehicle, isOpen]);
+
+  // Load preset schedule preview when specs change in Add Mode
+  useEffect(() => {
+    if (!vehicle && isOpen && autoGenerateSchedules) {
+      const fetchPreview = async () => {
+        setLoadingPresets(true);
+        try {
+          const odo = parseInt(currentOdometer, 10) || 0;
+          const data = await vehicleService.previewPresetSchedules({
+            vehicleType,
+            currentOdometer: odo,
+            purchaseDate: purchaseDate || undefined,
+          });
+          setPresetPreviews(data || []);
+        } catch {
+          setPresetPreviews([]);
+        } finally {
+          setLoadingPresets(false);
+        }
+      };
+
+      const timer = setTimeout(() => {
+        fetchPreview();
+      }, 250);
+
+      return () => clearTimeout(timer);
+    }
+  }, [vehicle, isOpen, vehicleType, currentOdometer, purchaseDate, autoGenerateSchedules]);
 
   if (!isOpen) return null;
 
@@ -65,6 +100,7 @@ const VehicleFormModal = ({ isOpen, onClose, onSave, vehicle = null }) => {
       data.licensePlate = licensePlate;
       data.vehicleType = vehicleType;
       data.currentOdometer = currentOdometer ? parseInt(currentOdometer, 10) : 0;
+      data.autoGenerateSchedules = autoGenerateSchedules;
     }
 
     try {
@@ -83,14 +119,19 @@ const VehicleFormModal = ({ isOpen, onClose, onSave, vehicle = null }) => {
       <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose}></div>
 
       {/* Modal Content */}
-      <div className="relative w-full max-w-lg bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 p-8 z-10 animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-xl bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 p-6 md:p-8 z-10 animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-2xl font-black text-slate-800 dark:text-white">
-            {vehicle ? 'Cập nhật phương tiện' : 'Thêm phương tiện mới'}
-          </h3>
+          <div>
+            <h3 className="text-2xl font-black text-slate-850 dark:text-white">
+              {vehicle ? 'Cập nhật phương tiện' : 'Thêm phương tiện mới'}
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {vehicle ? 'Cập nhật thông tin chi tiết xe' : 'Đăng ký xe để quản lý lịch bảo dưỡng & nhắc nhở tự động'}
+            </p>
+          </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-450 dark:text-slate-400 transition"
+            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 dark:text-slate-400 transition cursor-pointer"
           >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -115,7 +156,7 @@ const VehicleFormModal = ({ isOpen, onClose, onSave, vehicle = null }) => {
                 value={vehicleType}
                 onChange={(e) => setVehicleType(e.target.value)}
                 disabled={!!vehicle}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60 transition"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-850 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60 transition"
               >
                 <option value="Ô tô">🚗 Ô tô</option>
                 <option value="Xe máy">🏍️ Xe máy</option>
@@ -131,7 +172,7 @@ const VehicleFormModal = ({ isOpen, onClose, onSave, vehicle = null }) => {
                 required
                 disabled={!!vehicle}
                 placeholder="Ví dụ: 59A-123.45"
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60 transition"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-850 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60 transition font-mono uppercase font-bold"
               />
             </div>
           </div>
@@ -145,7 +186,7 @@ const VehicleFormModal = ({ isOpen, onClose, onSave, vehicle = null }) => {
                 onChange={(e) => setBrand(e.target.value)}
                 required
                 placeholder="Ví dụ: Toyota, Honda"
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-850 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
               />
             </div>
 
@@ -157,7 +198,7 @@ const VehicleFormModal = ({ isOpen, onClose, onSave, vehicle = null }) => {
                 onChange={(e) => setModel(e.target.value)}
                 required
                 placeholder="Ví dụ: Vios, Civic, SH"
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-850 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
               />
             </div>
           </div>
@@ -170,7 +211,7 @@ const VehicleFormModal = ({ isOpen, onClose, onSave, vehicle = null }) => {
                 value={manufactureYear}
                 onChange={(e) => setManufactureYear(e.target.value)}
                 placeholder="Ví dụ: 2020"
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-850 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
               />
             </div>
 
@@ -180,7 +221,7 @@ const VehicleFormModal = ({ isOpen, onClose, onSave, vehicle = null }) => {
                 type="date"
                 value={purchaseDate}
                 onChange={(e) => setPurchaseDate(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-850 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
               />
             </div>
           </div>
@@ -195,8 +236,65 @@ const VehicleFormModal = ({ isOpen, onClose, onSave, vehicle = null }) => {
                 required
                 min="0"
                 placeholder="Ví dụ: 12000"
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-850 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition font-bold"
               />
+            </div>
+          )}
+
+          {/* Module 4: Tùy chọn Tự động khởi tạo Lịch bảo dưỡng mẫu */}
+          {!vehicle && (
+            <div className="p-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200/80 dark:border-indigo-900/50 space-y-3">
+              <label className="flex items-start gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={autoGenerateSchedules}
+                  onChange={(e) => setAutoGenerateSchedules(e.target.checked)}
+                  className="w-4 h-4 mt-0.5 rounded text-indigo-600 focus:ring-indigo-500 dark:bg-slate-800 dark:border-slate-700"
+                />
+                <div>
+                  <span className="text-sm font-black text-indigo-950 dark:text-indigo-200 flex items-center gap-1.5">
+                    ⚡ Tự động khởi tạo trọn bộ lịch bảo dưỡng mẫu theo mốc km
+                  </span>
+                  <p className="text-xs text-indigo-700 dark:text-indigo-300/80 mt-0.5">
+                    Hệ thống sẽ dựa trên mốc Odometer ({parseInt(currentOdometer, 10) || 0} km) và Loại xe ({vehicleType}) để tự động sinh sẵn các mốc thay nhớt, bảo dưỡng phanh & đăng kiểm.
+                  </p>
+                </div>
+              </label>
+
+              {autoGenerateSchedules && (
+                <div className="pt-2 border-t border-indigo-100 dark:border-indigo-900/40 space-y-2 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xxs font-bold text-indigo-900 dark:text-indigo-300 uppercase tracking-wider">
+                      Xem trước {presetPreviews.length} mốc lịch tự động sẽ tạo:
+                    </span>
+                    {loadingPresets && (
+                      <span className="text-xxs text-indigo-600 animate-pulse">Đang tính toán...</span>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-36 overflow-y-auto pr-1">
+                    {presetPreviews.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-indigo-100 dark:border-slate-700 shadow-xs flex items-center justify-between text-xs"
+                      >
+                        <div className="flex items-center gap-1.5 truncate">
+                          <span className="text-base">{item.itemType === 'Legal' ? '📜' : '🔧'}</span>
+                          <div className="truncate">
+                            <p className="font-bold text-slate-800 dark:text-slate-200 truncate">{item.categoryName}</p>
+                            <p className="text-xxs text-slate-500 dark:text-slate-400">
+                              {item.targetOdometer > 0 ? `Mốc ${item.targetOdometer.toLocaleString('vi-VN')} km` : `Hạn: ${item.targetDate}`}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="shrink-0 text-xxs font-bold px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300">
+                          {item.itemType === 'Legal' ? 'Giấy tờ' : 'Mốc km'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -244,17 +342,17 @@ const VehicleFormModal = ({ isOpen, onClose, onSave, vehicle = null }) => {
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-750 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600 transition"
+              className="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-750 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600 transition cursor-pointer"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 transition flex items-center gap-1.5"
+              className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 transition flex items-center gap-1.5 cursor-pointer shadow-md hover:shadow-lg"
             >
               {loading && <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>}
-              {vehicle ? 'Lưu thay đổi' : 'Thêm phương tiện'}
+              {vehicle ? 'Lưu thay đổi' : 'Thêm phương tiện & Khởi tạo'}
             </button>
           </div>
         </form>

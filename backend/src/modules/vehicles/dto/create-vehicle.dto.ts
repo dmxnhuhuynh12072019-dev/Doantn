@@ -84,4 +84,13 @@ export class CreateVehicleDto {
   @IsOptional()
   @IsString({ message: 'Số phù hiệu phải là chuỗi ký tự' })
   badgeNumber?: string;
+
+  @ApiPropertyOptional({
+    description: 'Tự động khởi tạo trọn bộ lịch nhắc bảo dưỡng tiêu chuẩn theo mốc km',
+    example: true,
+  })
+  @IsOptional()
+  @IsBoolean({ message: 'autoGenerateSchedules phải là giá trị boolean (true/false)' })
+  autoGenerateSchedules?: boolean;
 }
+

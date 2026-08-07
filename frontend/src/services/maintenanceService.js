@@ -82,3 +82,12 @@ export const saveMatrixChecklist = async (checklistData) => {
   }
 };
 
+export const batchImportInvoice = async (data) => {
+  try {
+    const res = await api.post('/api/maintenances/history/batch-import', data);
+    return res.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Không thể lưu hóa đơn bảo dưỡng vào nhật ký' };
+  }
+};
+

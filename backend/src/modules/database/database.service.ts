@@ -114,9 +114,29 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  private async ensureConnected() {
+    if (!this.pool || !this.pool.connected) {
+      const config: sql.config = {
+        user: this.configService.get<string>('DB_USER') || 'sa',
+        password: this.configService.get<string>('DB_PASSWORD') || '',
+        server: this.configService.get<string>('DB_HOST') || 'localhost',
+        database: this.configService.get<string>('DB_NAME') || 'ACOH_DB',
+        port: parseInt(this.configService.get<string>('DB_PORT') || '1433', 10),
+        requestTimeout: parseInt(this.configService.get<string>('DB_REQUEST_TIMEOUT') || '30000', 10),
+        options: {
+          encrypt: false,
+          trustServerCertificate: true,
+          requestTimeout: parseInt(this.configService.get<string>('DB_REQUEST_TIMEOUT') || '30000', 10),
+        },
+      };
+      this.logger.log('Re-initializing SQL Server connection pool...');
+      this.pool = await new sql.ConnectionPool(config).connect();
+    }
+  }
+
   async query(queryText: string, params: { name: string; type: any; value: any }[] = []) {
-    if (!this.pool) {
-      throw new Error('Database connection is not initialized');
+    if (!this.pool || !this.pool.connected) {
+      await this.ensureConnected();
     }
     const request = this.pool.request();
     for (const param of params) {

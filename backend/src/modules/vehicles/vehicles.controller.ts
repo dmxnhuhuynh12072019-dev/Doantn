@@ -88,6 +88,21 @@ export class VehiclesController {
     return this.vehiclesService.updateOdometer(id, user.userId, user.role, dto);
   }
 
+  @Post('preview-presets')
+  @ApiOperation({ summary: 'Xem trước bộ lịch bảo dưỡng mẫu tự động khởi tạo theo loại xe và số km' })
+  @ApiResponse({ status: 200, description: 'Trả về mảng danh sách lịch mẫu xem trước.' })
+  async previewPresets(@Body() body: { vehicleType: string; currentOdometer: number; purchaseDate?: string }) {
+    return this.vehiclesService.previewPresetSchedules(body.vehicleType, body.currentOdometer, body.purchaseDate);
+  }
+
+  @Get(':id/generated-schedules')
+  @ApiOperation({ summary: 'Lấy danh sách trọn bộ lịch bảo dưỡng & giấy tờ tự động vừa sinh ra của xe' })
+  @ApiParam({ name: 'id', description: 'ID của phương tiện', type: Number })
+  @ApiResponse({ status: 200, description: 'Trả về danh sách lịch nhắc bảo dưỡng & giấy tờ xe.' })
+  async getGeneratedSchedules(@Param('id', ParseIntPipe) id: number, @User() user: any) {
+    return this.vehiclesService.getGeneratedSchedules(id, user.userId, user.role);
+  }
+
   @Delete(':id')
   @ApiOperation({ summary: 'Xóa phương tiện khỏi hệ thống' })
   @ApiParam({ name: 'id', description: 'ID của phương tiện', type: Number })
@@ -98,3 +113,4 @@ export class VehiclesController {
     return this.vehiclesService.delete(id, user.userId, user.role);
   }
 }
+

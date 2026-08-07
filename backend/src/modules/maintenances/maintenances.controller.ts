@@ -5,6 +5,7 @@ import { CreateScheduleDto } from './dto/create-schedule.dto';
 import { UpdateScheduleDto } from './dto/update-schedule.dto';
 import { CreateHistoryGarageDto } from './dto/create-history-garage.dto';
 import { SaveMatrixChecklistDto } from './dto/save-matrix-checklist.dto';
+import { BatchImportInvoiceDto } from './dto/batch-import-invoice.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -92,5 +93,12 @@ export class MaintenancesController {
   @ApiResponse({ status: 201, description: 'Lưu bảo dưỡng theo mốc km thành công.' })
   async saveMatrixChecklist(@User() user: any, @Body() dto: SaveMatrixChecklistDto) {
     return this.maintenancesService.saveMatrixChecklist(user.userId, user.role, dto);
+  }
+
+  @Post('history/batch-import')
+  @ApiOperation({ summary: 'Lưu toàn bộ danh sách hạng mục hóa đơn sửa xe bóc tách từ OCR vào nhật ký' })
+  @ApiResponse({ status: 201, description: 'Lưu hóa đơn bảo dưỡng vào nhật ký thành công.' })
+  async batchImportInvoice(@User() user: any, @Body() dto: BatchImportInvoiceDto) {
+    return this.maintenancesService.batchImportInvoiceHistory(user.userId, user.role, dto);
   }
 }
