@@ -28,8 +28,8 @@ const Header = ({ dashboardType = 'user', onOpenOcrScanner }) => {
     <header className="w-full flex flex-col z-40 sticky top-0 shadow-md transition-all duration-300 ease-in-out">
       {/* 1. TOP ANNOUNCEMENT BAR (Hidden when scrolled down) */}
       <div
-        className={`bg-indigo-600 dark:bg-indigo-700 text-white text-xs font-semibold px-4 sm:px-6 transition-all duration-300 ease-in-out overflow-hidden ${
-          isScrolled ? 'max-h-0 opacity-0 py-0 border-none' : 'max-h-24 opacity-100 py-2'
+        className={`bg-indigo-600 dark:bg-indigo-700 text-white text-xs font-semibold px-4 sm:px-6 transition-all duration-300 ease-in-out ${
+          isScrolled ? 'max-h-0 opacity-0 py-0 border-none overflow-hidden' : 'max-h-24 opacity-100 py-2'
         }`}
       >
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
@@ -72,8 +72,8 @@ const Header = ({ dashboardType = 'user', onOpenOcrScanner }) => {
 
       {/* 2. MIDDLE BRANDING & CONTACT / USER ACTIONS BAR (Hidden when scrolled down) */}
       <div
-        className={`bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 px-4 sm:px-6 transition-all duration-300 ease-in-out overflow-hidden ${
-          isScrolled ? 'max-h-0 opacity-0 py-0 border-none' : 'max-h-96 opacity-100 py-4'
+        className={`bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 px-4 sm:px-6 transition-all duration-300 ease-in-out ${
+          isScrolled ? 'max-h-0 opacity-0 py-0 border-none overflow-hidden' : 'max-h-96 opacity-100 py-4'
         }`}
       >
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">

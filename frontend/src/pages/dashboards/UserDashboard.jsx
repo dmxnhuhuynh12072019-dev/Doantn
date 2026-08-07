@@ -9,6 +9,7 @@ import VehicleFormModal from '../../components/vehicles/VehicleFormModal';
 import OdometerModal from '../../components/vehicles/OdometerModal';
 import AppointmentModal from '../../components/appointments/AppointmentModal';
 import ReviewModal from '../../components/extensions/ReviewModal';
+import PaymentCheckoutModal from '../../components/payments/PaymentCheckoutModal';
 import AiAssistantChat from '../../components/extensions/AiAssistantChat';
 import MaintenanceSchedulesTab from '../../components/maintenances/MaintenanceSchedulesTab';
 import MaintenanceHistoryTab from '../../components/maintenances/MaintenanceHistoryTab';
@@ -29,6 +30,11 @@ const UserDashboard = () => {
   const [isOdometerOpen, setIsOdometerOpen] = useState(false);
   const [isAppointmentOpen, setIsAppointmentOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
+
+  // Module 5 Payment Modal State
+  const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+  const [selectedPaymentAppt, setSelectedPaymentAppt] = useState(null);
+
 
   // Detail view state
   const [selectedVehicleForDetail, setSelectedVehicleForDetail] = useState(null);
@@ -404,13 +410,15 @@ const UserDashboard = () => {
                                 </p>
                               </div>
                               <div className="flex items-center gap-2.5">
-                                <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${appt.Status === 'Chờ xác nhận' ? 'bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-900/30' :
-                                    appt.Status === 'Đã xác nhận' ? 'bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900/30' :
-                                      appt.Status === 'Đang sửa chữa' ? 'bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400 border-purple-100 dark:border-purple-900/30' :
-                                        appt.Status === 'Hoàn thành' ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30' :
-                                          'bg-slate-50 dark:bg-slate-900/20 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700'
-                                  }`}>
-                                  {appt.Status}
+                                <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${
+                                  appt.Status === 'Chờ xác nhận' ? 'bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-900/30' :
+                                  appt.Status === 'Đã xác nhận' ? 'bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900/30' :
+                                  appt.Status === 'Đã cọc' ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/40 shadow-xs' :
+                                  appt.Status === 'Đang sửa chữa' ? 'bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400 border-purple-100 dark:border-purple-900/30' :
+                                  appt.Status === 'Hoàn thành' ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30' :
+                                  'bg-slate-50 dark:bg-slate-900/20 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                                }`}>
+                                  {appt.Status === 'Đã cọc' ? '💳 Đã cọc thành công' : appt.Status}
                                 </span>
                               </div>
                             </div>
@@ -434,15 +442,39 @@ const UserDashboard = () => {
                             </div>
 
                             {(appt.Status === 'Chờ xác nhận' || appt.Status === 'Đã xác nhận') && (
-                              <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-slate-750/50 mt-1">
+                              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-750/50 mt-1">
+                                <button
+                                  onClick={() => {
+                                    setSelectedPaymentAppt(appt);
+                                    setIsPaymentOpen(true);
+                                  }}
+                                  className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+                                >
+                                  💳 Thanh toán cọc giữ chỗ
+                                </button>
                                 <button
                                   onClick={() => handleCancelAppointment(appt.AppointmentID)}
-                                  className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 transition"
+                                  className="px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 transition cursor-pointer"
                                 >
                                   Hủy lịch hẹn
                                 </button>
                               </div>
                             )}
+
+                            {appt.Status === 'Đã cọc' && (
+                              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-750/50 mt-1">
+                                <button
+                                  onClick={() => {
+                                    setSelectedPaymentAppt(appt);
+                                    setIsPaymentOpen(true);
+                                  }}
+                                  className="px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/40 transition flex items-center gap-1 cursor-pointer"
+                                >
+                                  🧾 Xem biên nhận thanh toán cọc
+                                </button>
+                              </div>
+                            )}
+
 
                             {appt.Status === 'Hoàn thành' && (
                               <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-slate-750/50 mt-1 gap-2">
@@ -811,6 +843,18 @@ const UserDashboard = () => {
         garageId={selectedReviewGarage?.id}
         garageName={selectedReviewGarage?.name}
         onSaveSuccess={fetchAppointments}
+      />
+
+      <PaymentCheckoutModal
+        isOpen={isPaymentOpen}
+        onClose={() => {
+          setIsPaymentOpen(false);
+          setSelectedPaymentAppt(null);
+        }}
+        appointmentId={selectedPaymentAppt?.AppointmentID}
+        defaultAmount={100000}
+        garageName={selectedPaymentAppt?.GarageName || 'Gara đối tác ACOH'}
+        onPaymentSuccess={fetchAppointments}
       />
 
       <AiAssistantChat />

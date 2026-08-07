@@ -81,7 +81,7 @@ pie title Tỉ lệ hoàn thành tính năng dự án ACOH
 | 2 | **AI OCR quét Sổ Đăng Kiểm tự động** | Dùng AI (Google Vision / Tesseract) đọc ảnh Sổ đăng kiểm để tự trích xuất Số quản lý, Ngày hết hạn, Số khung, Số máy và tự điền form. | 🔴 Chưa thực hiện (Mới có OCR quét biển số xe) |
 | 3 | **AI OCR quét Hóa đơn / Phiếu thu tiền cũ** | Quét ảnh hóa đơn sửa xe cũ để tự động phân tích các dòng phụ tùng, đơn giá và điền tự động vào lịch sử chi tiêu. | 🔴 Chưa thực hiện |
 | 4 | **Tự động sinh bộ Lịch bảo dưỡng mẫu khi tạo Xe** | Vừa thêm xe mới (với km hiện tại và ngày mua) là hệ thống tự động khởi tạo sẵn trọn bộ lịch nhắc thay nhớt 5.000km, 10.000km, đăng kiểm định kỳ. | 🟢 Đã hoàn thành (Tự động khởi tạo theo loại xe & mốc km) |
-| 5 | **Tích hợp Cổng thanh toán trực tuyến** | Thanh toán tiền cọc đặt lịch hoặc thanh toán hóa đơn bảo dưỡng trực tiếp qua VNPAY / MoMo / ZaloPay. | 🔴 Chưa thực hiện |
+| 5 | **Tích hợp Cổng thanh toán trực tuyến** | Thanh toán tiền cọc đặt lịch hoặc thanh toán hóa đơn bảo dưỡng trực tiếp qua VNPAY / MoMo / ZaloPay. | 🟢 Đã hoàn thành (Tích hợp VNPAY QR / VietQR / Sandbox 1-Click) |
 | 6 | **Kết nối thiết bị phần cứng OBD2 / GPS** | Cắm thiết bị OBD2 hoặc GPS trên xe để tự động cập nhật số km thực tế (Odometer) về app mà không cần nhập tay. | 🔴 Chưa thực hiện |
 | 7 | **Ứng dụng Mobile Native (iOS / Android)** | Đóng gói ứng dụng thành App di động Native (React Native / Flutter) tải từ App Store / Google Play Store. | 🔴 Chưa thực hiện (Hiện tại là Web Responsive) |
 

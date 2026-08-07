@@ -15,6 +15,7 @@ import { AppointmentsModule } from './modules/appointments/appointments.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { ExtensionsModule } from './modules/extensions/extensions.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { PaymentsModule } from './modules/payments/payments.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { AdminModule } from './modules/admin/admin.module';
     AnalyticsModule,
     ExtensionsModule,
     AdminModule,
+    PaymentsModule,
     MailerModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

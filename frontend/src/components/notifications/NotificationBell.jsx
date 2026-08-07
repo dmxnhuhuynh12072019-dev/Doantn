@@ -184,11 +184,11 @@ const NotificationBell = () => {
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative z-50" ref={dropdownRef}>
       {/* Bell Icon Button */}
       <button
         onClick={handleToggle}
-        className="relative p-2.5 rounded-xl text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-350 dark:hover:bg-slate-600 transition"
+        className="relative p-2.5 rounded-xl text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-350 dark:hover:bg-slate-600 transition cursor-pointer"
         title="Thông báo"
       >
         <svg className={`w-5 h-5 ${unreadCount > 0 ? 'animate-pulse' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -216,31 +216,31 @@ const NotificationBell = () => {
 
       {/* Notifications Dropdown Panel */}
       {isOpen && (
-        <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-3 duration-200">
+        <div className="fixed sm:absolute left-1/2 -translate-x-1/2 sm:left-auto sm:right-0 sm:translate-x-0 top-28 sm:top-full mt-2 sm:mt-3 w-[92vw] max-w-sm sm:w-96 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl shadow-2xl overflow-hidden z-[100] animate-in fade-in slide-in-from-top-3 duration-200">
           {/* Header Panel */}
-          <div className="flex justify-between items-center px-6 py-4 bg-slate-50/50 dark:bg-slate-900/30 border-b border-slate-100 dark:border-slate-700">
+          <div className="flex flex-wrap sm:flex-nowrap justify-between items-center px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/50 dark:bg-slate-900/30 border-b border-slate-100 dark:border-slate-700 gap-2">
             <div className="flex items-center gap-2">
-              <h3 className="font-black text-slate-850 dark:text-white text-base">Thông báo</h3>
+              <h3 className="font-black text-slate-850 dark:text-white text-sm sm:text-base">Thông báo</h3>
               {isConnected && (
                 <span className="text-xxxs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-400 px-1.5 py-0.5 rounded-md">
                   ⚡ Live
                 </span>
               )}
             </div>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
               <button
                 onClick={() => {
                   setIsOpen(false);
                   setIsSettingsOpen(true);
                 }}
-                className="text-xxs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-950/40 px-2 py-1 rounded-lg flex items-center gap-1"
+                className="text-xxs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-950/40 px-2 py-1 rounded-lg flex items-center gap-1 cursor-pointer"
                 title="Cài đặt thông báo Zalo ZNS & SMS"
               >
                 ⚙️ Zalo/SMS
               </button>
               <button
                 onClick={handleTriggerTestScan}
-                className="text-xxs font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/40 px-2 py-1 rounded-lg"
+                className="text-xxs font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/40 px-2 py-1 rounded-lg cursor-pointer"
                 title="Kích hoạt quét hệ thống để cập nhật thông báo về lịch và hạn giấy tờ xe"
               >
                 Quét thử
@@ -248,7 +248,7 @@ const NotificationBell = () => {
               {unreadCount > 0 && (
                 <button
                   onClick={handleMarkAllAsRead}
-                  className="text-xxs font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"
+                  className="text-xxs font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white cursor-pointer px-1 py-1"
                 >
                   Đọc tất cả
                 </button>
