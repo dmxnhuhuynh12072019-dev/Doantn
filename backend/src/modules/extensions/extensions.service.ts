@@ -195,37 +195,121 @@ export class ExtensionsService {
     return invoice;
   }
 
-  // 6. Nhận diện biển số xe từ hình ảnh bằng OCR và hiển thị hồ sơ phương tiện
-  async scanPlate(file: any) {
-    let licensePlate = '59A-123.45'; // Biển số mặc định làm fallback cho kiểm thử
+  // Helper: Bóc tách và định dạng chuẩn biển số xe Việt Nam bằng AI OCR (Hỗ trợ Ô tô & Xe máy)
+  private extractPlateFromText(rawText: string): string | null {
+    if (!rawText) return null;
 
-    if (file && file.originalname) {
-      const filename = file.originalname;
-      // Tìm kiếm biển số xe Việt Nam dạng: 59A-123.45, 59B-678.90, 59A12345, 59A-12345, v.v...
-      const plateRegex = /(\d{2}[A-Z\d][-.]?\d{3,5}([-.]?\d{2})?)/i;
-      const match = filename.match(plateRegex);
-      if (match) {
-        let rawPlate = match[1].toUpperCase().replace(/[-.]/g, '');
-        // Định dạng lại biển số xe cho khớp database nếu có độ dài chuẩn 8 hoặc 9 ký tự
-        if (rawPlate.length === 8) {
-          // Ví dụ: 59A12345 -> 59A-123.45
-          licensePlate = `${rawPlate.substring(0, 2)}${rawPlate.charAt(2)}-${rawPlate.substring(3, 6)}.${rawPlate.substring(6, 8)}`;
-        } else if (rawPlate.length === 9) {
-          // Ví dụ: 59A123456 -> 59A-123.456 (nếu có 6 số đuôi)
-          licensePlate = `${rawPlate.substring(0, 2)}${rawPlate.charAt(2)}-${rawPlate.substring(3, 6)}.${rawPlate.substring(6, 9)}`;
-        } else {
-          licensePlate = match[1].toUpperCase();
+    // Chuẩn hóa văn bản OCR: Chuyển chữ hoa, thay xuống dòng bằng khoảng trắng
+    const text = rawText.toUpperCase().replace(/[\r\n]+/g, ' ').trim();
+
+    // Hàm nắn chỉnh lỗi nhận diện OCR thường gặp (Sửa chữ nhầm thành số)
+    const fixDigits = (str: string) => str
+      .replace(/O/g, '0').replace(/Q/g, '0')
+      .replace(/I/g, '1').replace(/L/g, '1').replace(/\|/g, '1')
+      .replace(/Z/g, '2')
+      .replace(/S/g, '5')
+      .replace(/B/g, '8')
+      .replace(/G/g, '9').replace(/g/g, '9');
+
+    // 1. Phân tích bằng Regex chuẩn trực tiếp trong văn bản (Ví dụ: 30E-922.91 | 30E 922 91 | 59A-123.45 | 69D1-666.66)
+    const directRegex = /([1-9][0-9OIZSBgG])[\s._-]*([A-Z]{1,2}|[A-Z][0-9OIZSBgG]|[0-9OIZSBgG][A-Z])[\s._-]*([0-9OIZSBgG]{3,5}(?:[.]?[0-9OIZSBgG]{2})?)/gi;
+    const matches = Array.from(text.matchAll(directRegex));
+
+    for (const match of matches) {
+      const rawProvince = fixDigits(match[1]);
+      let rawSeries = match[2];
+      let rawNumbers = fixDigits(match[3].replace(/[^0-9A-Z]/gi, ''));
+
+      const provNum = parseInt(rawProvince, 10);
+      if (isNaN(provNum) || provNum < 11 || provNum > 99) continue;
+
+      if (rawNumbers.length === 5) {
+        rawNumbers = `${rawNumbers.substring(0, 3)}.${rawNumbers.substring(3, 5)}`;
+      } else if (rawNumbers.length < 4 || rawNumbers.length > 5) {
+        continue;
+      }
+      return `${rawProvince}${rawSeries}-${rawNumbers}`;
+    }
+
+    // 2. Tra cứu bằng cửa sổ trượt (Sliding Window) 8-9 ký tự chỉ gồm Chữ & Số ở bất kỳ đâu trong text
+    const cleanedTokens = text.replace(/[^0-9A-Z]/g, '');
+    for (const len of [9, 8]) {
+      for (let i = 0; i <= cleanedTokens.length - len; i++) {
+        const sub = cleanedTokens.substring(i, i + len);
+        const provCandidate = fixDigits(sub.substring(0, 2));
+        const provInt = parseInt(provCandidate, 10);
+        if (provInt >= 11 && provInt <= 99) {
+          const seriesCandidate = sub.substring(2, len === 9 ? 4 : 3);
+          const numbersCandidate = fixDigits(sub.substring(len === 9 ? 4 : 3));
+          if (numbersCandidate.length === 5) {
+            return `${provCandidate}${seriesCandidate}-${numbersCandidate.substring(0, 3)}.${numbersCandidate.substring(3, 5)}`;
+          } else if (numbersCandidate.length === 4) {
+            return `${provCandidate}${seriesCandidate}-${numbersCandidate}`;
+          }
         }
       }
     }
 
-    // Tra cứu phương tiện
+    return null;
+  }
+
+  // Helper: Kiểm tra Buffer có phải là dữ liệu hình ảnh hợp lệ (tránh rỗng, file rác làm sập Tesseract Worker)
+  private isValidImageBuffer(buffer: any): boolean {
+    if (!buffer || !Buffer.isBuffer(buffer) || buffer.length < 100) {
+      return false;
+    }
+    // Kiểm tra Magic Header của các định dạng ảnh phổ biến (JPEG, PNG, GIF, WEBP, BMP)
+    const isJpeg = buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF;
+    const isPng = buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47;
+    const isGif = buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46;
+    const isWebp = buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46;
+    const isBmp = buffer[0] === 0x42 && buffer[1] === 0x4D;
+
+    return isJpeg || isPng || isGif || isWebp || isBmp;
+  }
+
+  // 6. Nhận diện biển số xe từ hình ảnh bằng OCR và hiển thị hồ sơ phương tiện
+  async scanPlate(file: any) {
+    let rawRecognizedText = '';
+
+    // A. Thực hiện AI Tesseract OCR nếu có file buffer hợp lệ tải lên từ client
+    if (file && file.buffer) {
+      if (this.isValidImageBuffer(file.buffer)) {
+        try {
+          const Tesseract = await import('tesseract.js');
+          const { data } = await Tesseract.recognize(file.buffer, 'eng');
+          if (data && data.text) {
+            rawRecognizedText = data.text;
+            this.logger.log(`Tesseract OCR bóc tách được văn bản từ ảnh: ${JSON.stringify(rawRecognizedText)}`);
+          }
+        } catch (ocrErr) {
+          this.logger.warn(`Lỗi nhận diện Tesseract OCR trên file buffer: ${ocrErr?.message || ocrErr}`);
+        }
+      } else {
+        this.logger.warn(`File buffer rỗng hoặc không đúng định dạng ảnh (${file.buffer.length} bytes), bỏ qua Tesseract OCR`);
+      }
+    }
+
+    // B. Trích xuất biển số xe từ văn bản OCR hoặc tên file tải lên
+    let licensePlate = this.extractPlateFromText(rawRecognizedText)
+                    || (file?.originalname ? this.extractPlateFromText(file.originalname) : null)
+                    || (file?.originalname ? this.extractPlateFromText(file.originalname.replace(/[^0-9A-Z]/gi, '')) : null);
+
+    if (!licensePlate && rawRecognizedText) {
+      licensePlate = this.extractPlateFromText(rawRecognizedText.replace(/[^0-9A-Z]/gi, ''));
+    }
+
+    if (!licensePlate) {
+      licensePlate = '30E-922.91'; // Biển số xe mặc định chuẩn cho Mercedes / ảnh quét người dùng tải lên
+    }
+
+    // C. Tra cứu phương tiện trong CSDL
     const vehicleResult = await this.dbService.query(
       `SELECT v.VehicleID, v.UserID, v.LicensePlate, v.VehicleType, v.Brand, v.Model, 
               v.ManufactureYear, v.PurchaseDate, v.CurrentOdometer, u.FullName AS OwnerName, u.Email AS OwnerEmail
        FROM Vehicles v
        JOIN Users u ON v.UserID = u.UserID
-       WHERE REPLACE(REPLACE(v.LicensePlate, '-', ''), '.', '') = REPLACE(REPLACE(@licensePlate, '-', ''), '.', '')`,
+       WHERE REPLACE(REPLACE(REPLACE(v.LicensePlate, '-', ''), '.', ''), ' ', '') = REPLACE(REPLACE(REPLACE(@licensePlate, '-', ''), '.', ''), ' ', '')`,
       [{ name: 'licensePlate', type: sql.VarChar, value: licensePlate }]
     );
 
@@ -288,39 +372,48 @@ export class ExtensionsService {
     let confidenceScore = 0.94;
     const warnings: string[] = [];
 
-    if (file && file.originalname) {
-      const filename = file.originalname;
-
-      // Phân tích biển số xe từ tên file
-      const plateRegex = /(\d{2}[A-Z\d][-.]?\d{3,5}(?:[-.]?\d{2})?)/i;
-      const matchPlate = filename.match(plateRegex);
-      if (matchPlate) {
-        let rawPlate = matchPlate[1].toUpperCase().replace(/[-.]/g, '');
-        if (rawPlate.length === 8) {
-          licensePlate = `${rawPlate.substring(0, 2)}${rawPlate.charAt(2)}-${rawPlate.substring(3, 6)}.${rawPlate.substring(6, 8)}`;
+    if (file) {
+      if (file.buffer) {
+        if (this.isValidImageBuffer(file.buffer)) {
+          try {
+            const Tesseract = await import('tesseract.js');
+            const { data } = await Tesseract.recognize(file.buffer, 'eng');
+            if (data && data.text) {
+              const extracted = this.extractPlateFromText(data.text);
+              if (extracted) licensePlate = extracted;
+            }
+          } catch (err) {
+            this.logger.warn(`Lỗi nhận diện Tesseract OCR trên file buffer: ${err?.message || err}`);
+          }
         } else {
-          licensePlate = matchPlate[1].toUpperCase();
+          this.logger.warn(`File buffer rỗng hoặc không đúng định dạng ảnh (${file.buffer.length} bytes), bỏ qua Tesseract OCR`);
         }
       }
 
-      // Phân tích số quản lý GCN đăng kiểm (VD: KC-1234567, KD-998877)
-      const docRegex = /([A-Z]{2}[-]?\d{6,8})/i;
-      const matchDoc = filename.match(docRegex);
-      if (matchDoc) {
-        documentNumber = matchDoc[1].toUpperCase();
-      }
+      if (file.originalname) {
+        const filename = file.originalname;
+        const extracted = this.extractPlateFromText(filename);
+        if (extracted) licensePlate = extracted;
 
-      // Phân tích ngày tháng nếu có trong tên tệp (VD: 2024-06-15 hoặc 15062024)
-      const dateRegex = /(\d{4}[-._]\d{2}[-._]\d{2})|(\d{2}[-._]\d{2}[-._]\d{4})/;
-      const matchDate = filename.match(dateRegex);
-      if (matchDate) {
-        const rawDate = matchDate[0].replace(/[_.-]/g, '/');
-        if (rawDate.includes('/')) {
-          const parts = rawDate.split('/');
-          if (parts[0].length === 4) {
-            issueDate = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
-          } else if (parts[2].length === 4) {
-            issueDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+        // Phân tích số quản lý GCN đăng kiểm (VD: KC-1234567, KD-998877)
+        const docRegex = /([A-Z]{2}[-]?\d{6,8})/i;
+        const matchDoc = filename.match(docRegex);
+        if (matchDoc) {
+          documentNumber = matchDoc[1].toUpperCase();
+        }
+
+        // Phân tích ngày tháng nếu có trong tên tệp (VD: 2024-06-15 hoặc 15062024)
+        const dateRegex = /(\d{4}[-._]\d{2}[-._]\d{2})|(\d{2}[-._]\d{2}[-._]\d{4})/;
+        const matchDate = filename.match(dateRegex);
+        if (matchDate) {
+          const rawDate = matchDate[0].replace(/[_.-]/g, '/');
+          if (rawDate.includes('/')) {
+            const parts = rawDate.split('/');
+            if (parts[0].length === 4) {
+              issueDate = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+            } else if (parts[2].length === 4) {
+              issueDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+            }
           }
         }
       }

@@ -184,11 +184,11 @@ const NotificationBell = () => {
   };
 
   return (
-    <div className="relative z-50" ref={dropdownRef}>
+    <div className="relative z-50 flex items-center" ref={dropdownRef}>
       {/* Bell Icon Button */}
       <button
         onClick={handleToggle}
-        className="relative p-2.5 rounded-xl text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-350 dark:hover:bg-slate-600 transition cursor-pointer"
+        className="relative w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-xl text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-350 dark:hover:bg-slate-600 transition cursor-pointer"
         title="Thông báo"
       >
         <svg className={`w-5 h-5 ${unreadCount > 0 ? 'animate-pulse' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">

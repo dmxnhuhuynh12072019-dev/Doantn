@@ -65,7 +65,7 @@ const AiAssistantChat = () => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 font-sans">
+    <div className="fixed bottom-20 right-5 sm:bottom-6 sm:right-6 z-50 font-sans">
       {/* 1. Chat bubble icon */}
       {!isOpen && (
         <button

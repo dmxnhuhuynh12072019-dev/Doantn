@@ -57,6 +57,7 @@ function App() {
       />
 
       {/* Điều hướng mặc định */}
+      <Route path="/" element={<Navigate to="/user/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );

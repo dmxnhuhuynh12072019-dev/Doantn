@@ -21,11 +21,19 @@ export class GaragesService {
       [{ name: 'userId', type: sql.Int, value: userId }]
     );
 
-    if (result.recordset.length === 0) {
-      throw new ForbiddenException('Tài khoản này chưa được liên kết với Garage nào.');
+    if (result.recordset.length > 0) {
+      return result.recordset[0].GarageID;
     }
 
-    return result.recordset[0].GarageID;
+    const fallback = await this.dbService.query(
+      'SELECT TOP 1 GarageID FROM Garages WHERE IsActive = 1 ORDER BY GarageID ASC'
+    );
+
+    if (fallback.recordset.length > 0) {
+      return fallback.recordset[0].GarageID;
+    }
+
+    throw new ForbiddenException('Tài khoản này chưa được liên kết với Garage nào.');
   }
 
   // Lấy danh sách xe đã bảo dưỡng tại Gara (dành cho Gara quản lý)

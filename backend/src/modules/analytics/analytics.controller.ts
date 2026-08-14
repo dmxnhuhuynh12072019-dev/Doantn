@@ -14,7 +14,7 @@ export class AnalyticsController {
   constructor(private analyticsService: AnalyticsService) {}
 
   @Get('garage/dashboard')
-  @Roles('Garage')
+  @Roles('Garage', 'Admin')
   @UseGuards(RolesGuard)
   @ApiOperation({ summary: 'Lấy dữ liệu báo cáo vận hành Gara (Garage Dashboard)' })
   @ApiResponse({ status: 200, description: 'Trả về dữ liệu thống kê doanh thu và xe.' })

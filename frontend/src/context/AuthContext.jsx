@@ -78,7 +78,11 @@ export const AuthProvider = ({ children }) => {
       }
       return loggedUser;
     } catch (error) {
-      throw error.response?.data || { message: 'Đã xảy ra lỗi khi đăng nhập' };
+      const serverMessage = error.response?.data?.message;
+      const message = Array.isArray(serverMessage)
+        ? serverMessage.join(', ')
+        : (typeof serverMessage === 'string' ? serverMessage : (error.message || 'Đã xảy ra lỗi khi đăng nhập'));
+      throw { message };
     }
   };
 
@@ -93,7 +97,11 @@ export const AuthProvider = ({ children }) => {
       });
       return res.data;
     } catch (error) {
-      throw error.response?.data || { message: 'Đã xảy ra lỗi khi đăng ký tài khoản' };
+      const serverMessage = error.response?.data?.message;
+      const message = Array.isArray(serverMessage)
+        ? serverMessage.join(', ')
+        : (typeof serverMessage === 'string' ? serverMessage : (error.message || 'Đã xảy ra lỗi khi đăng ký tài khoản'));
+      throw { message };
     }
   };
 

@@ -29,7 +29,9 @@ const LicensePlateScannerModal = ({ isOpen, onClose, onSearchSuccess }) => {
     const dummyFile = new File([''], `${plate}.jpg`, { type: 'image/jpeg' });
     setFile(dummyFile);
     setPreviewUrl(
-      plate === '59A-123.45'
+      plate === '30E-922.91'
+        ? 'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=800&auto=format&fit=crop&q=80' // Mercedes car photo
+        : plate === '59A-123.45'
         ? 'https://images.unsplash.com/photo-1506015391300-4802dc74de2e?w=500&auto=format&fit=crop&q=60' // Mock car image
         : 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=500&auto=format&fit=crop&q=60' // Mock bike image
     );
@@ -163,17 +165,31 @@ const LicensePlateScannerModal = ({ isOpen, onClose, onSearchSuccess }) => {
             {/* Ảnh mẫu giả lập test nhanh */}
             <button
               type="button"
+              onClick={() => selectMockImage('30E-922.91')}
+              className="px-3.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-sm"
+            >
+              🚗 Dùng thử Mercedes (30E-922.91)
+            </button>
+            <button
+              type="button"
+              onClick={() => selectMockImage('69D1-666.66')}
+              className="px-3.5 py-2.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-xl text-xs font-bold border border-indigo-200 dark:border-indigo-800 transition cursor-pointer"
+            >
+              🏍️ Dùng thử Xe máy (69D1-666.66)
+            </button>
+            <button
+              type="button"
               onClick={() => selectMockImage('59A-123.45')}
               className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-600 transition cursor-pointer"
             >
-              🚗 Dùng thử ảnh Ô tô (59A-123.45)
+              🚗 Dùng thử Ô tô (59A-123.45)
             </button>
             <button
               type="button"
               onClick={() => selectMockImage('59B-678.90')}
               className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-600 transition cursor-pointer"
             >
-              🏍️ Dùng thử ảnh Xe máy (59B-678.90)
+              🏍️ Dùng thử Xe máy (59B-678.90)
             </button>
           </div>
 

@@ -16,6 +16,16 @@ import MaintenanceHistoryTab from '../../components/maintenances/MaintenanceHist
 import MaintenanceMatrixView from '../../components/maintenances/MaintenanceMatrixView';
 import LegalDocumentsTab from '../../components/legal/LegalDocumentsTab';
 import Header from '../../components/common/Header';
+import BannerSlider from '../../components/common/BannerSlider';
+import NewServicesSection from '../../components/common/NewServicesSection';
+import OperatingCriteriaSection from '../../components/common/OperatingCriteriaSection';
+import CustomerReviewsSection from '../../components/common/CustomerReviewsSection';
+import NewsSection from '../../components/common/NewsSection';
+import Footer from '../../components/common/Footer';
+import AboutSection from '../../components/common/AboutSection';
+import ServicesPageSection from '../../components/common/ServicesPageSection';
+import NewsPageSection from '../../components/common/NewsPageSection';
+import ContactPageSection from '../../components/common/ContactPageSection';
 
 const UserDashboard = () => {
   const { user, logout, themePreference, updateThemePreference } = useAuth();
@@ -42,6 +52,7 @@ const UserDashboard = () => {
 
   // Main Page sub-tab (Module 7 Expense Analytics)
   const [mainTab, setMainTab] = useState('vehicles');
+  const [currentView, setCurrentView] = useState('home'); // 'home' | 'about' | 'services' | 'news' | 'contact'
   const [expensesData, setExpensesData] = useState(null);
   const [loadingExpenses, setLoadingExpenses] = useState(false);
   const [expensesError, setExpensesError] = useState('');
@@ -232,7 +243,66 @@ const UserDashboard = () => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col">
       {/* Header */}
-      <Header dashboardType="user" />
+      {/* Header */}
+      <Header
+        dashboardType="user"
+        onMenuClick={(menuId) => {
+          setSelectedVehicleForDetail(null);
+          setCurrentView(menuId);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+      />
+
+      {/* Hero Banner Slider (Horizontal Slide Banner matching sample image) */}
+      {!selectedVehicleForDetail && currentView === 'home' && (
+        <>
+          <BannerSlider
+            onOpenAppointment={() => {
+              if (vehicles.length > 0) {
+                setSelectedVehicle(vehicles[0]);
+                setIsAppointmentOpen(true);
+              } else {
+                handleAddClick();
+              }
+            }}
+          />
+          {/* Section: Dịch vụ mới */}
+          <NewServicesSection
+            onOpenAppointment={(serviceName) => {
+              if (vehicles.length > 0) {
+                setSelectedVehicle(vehicles[0]);
+              }
+              setIsAppointmentOpen(true);
+            }}
+          />
+          {/* Section: Tiêu chí hoạt động */}
+          <OperatingCriteriaSection />
+        </>
+      )}
+
+      {/* Render Dedicated Views */}
+      {!selectedVehicleForDetail && currentView === 'about' && (
+        <AboutSection />
+      )}
+
+      {!selectedVehicleForDetail && currentView === 'services' && (
+        <ServicesPageSection
+          onOpenAppointment={(serviceName) => {
+            if (vehicles.length > 0) {
+              setSelectedVehicle(vehicles[0]);
+            }
+            setIsAppointmentOpen(true);
+          }}
+        />
+      )}
+
+      {!selectedVehicleForDetail && currentView === 'news' && (
+        <NewsPageSection />
+      )}
+
+      {!selectedVehicleForDetail && currentView === 'contact' && (
+        <ContactPageSection />
+      )}
 
       {/* Main Content */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-8 pb-24 md:pb-8">
@@ -503,7 +573,8 @@ const UserDashboard = () => {
           </div>
         ) : (
           /* Grid Danh sách xe */
-          <>
+          currentView === 'home' && (
+            <>
             {/* Welcome Section */}
             <div className="mb-8 flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 p-8 shadow-sm">
               <div className="text-center sm:text-left">
@@ -809,8 +880,21 @@ const UserDashboard = () => {
               </div>
             )}
           </>
+          )
         )}
       </main>
+
+      {/* Section: Khách hàng nhận xét (Dưới cùng trang chủ) */}
+      {!selectedVehicleForDetail && currentView === 'home' && (
+        <>
+          <CustomerReviewsSection />
+          {/* Section: Tin tức */}
+          <NewsSection />
+        </>
+      )}
+
+      {/* Footer */}
+      {!selectedVehicleForDetail && <Footer />}
 
       {/* Modals */}
       <VehicleFormModal

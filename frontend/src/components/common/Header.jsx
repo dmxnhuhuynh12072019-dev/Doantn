@@ -2,22 +2,43 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import NotificationBell from '../notifications/NotificationBell';
 
-const Header = ({ dashboardType = 'user', onOpenOcrScanner }) => {
+const Header = ({ dashboardType = 'user', onOpenOcrScanner, onMenuClick }) => {
   const { user, logout, themePreference, updateThemePreference } = useAuth();
   const [activeMenu, setActiveMenu] = useState('home');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
 
   const isGarage = dashboardType === 'garage' || user?.role === 'Garage';
 
   useEffect(() => {
+    let prevScrollY = window.scrollY;
+
     const handleScroll = () => {
-      if (window.scrollY > 40) {
+      const currentScrollY = window.scrollY;
+
+      // Shadow elevation state
+      if (currentScrollY > 10) {
         setIsScrolled(true);
       } else {
         setIsScrolled(false);
       }
+
+      // Smooth scroll direction detection:
+      // Always keep header visible near top of page (0 - 80px)
+      if (currentScrollY <= 80) {
+        setIsVisible(true);
+      } else if (currentScrollY > prevScrollY + 8) {
+        // Scrolling DOWN -> slide header up out of view
+        setIsVisible(false);
+      } else if (currentScrollY < prevScrollY - 5) {
+        // Scrolling UP -> slide header back down smoothly on top
+        setIsVisible(true);
+      }
+
+      prevScrollY = currentScrollY;
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -25,15 +46,19 @@ const Header = ({ dashboardType = 'user', onOpenOcrScanner }) => {
   }, []);
 
   return (
-    <header className="w-full flex flex-col z-40 sticky top-0 shadow-md transition-all duration-300 ease-in-out">
-      {/* 1. TOP ANNOUNCEMENT BAR (Hidden when scrolled down) */}
-      <div
-        className={`bg-indigo-600 dark:bg-indigo-700 text-white text-xs font-semibold px-4 sm:px-6 transition-all duration-300 ease-in-out ${
-          isScrolled ? 'max-h-0 opacity-0 py-0 border-none overflow-hidden' : 'max-h-24 opacity-100 py-2'
-        }`}
-      >
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
-          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-center sm:text-left">
+    <header
+      className={`w-full flex flex-col z-50 sticky top-0 transition-all duration-300 ${
+        isScrolled
+          ? 'shadow-xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-md'
+          : 'shadow-xs bg-white dark:bg-slate-900'
+      }`}
+    >
+      {/* 1. TOP ANNOUNCEMENT BAR (Hidden on mobile for sleek space-saving header) */}
+      <div className={`hidden md:block bg-indigo-600 dark:bg-indigo-700 text-white text-xs font-semibold px-6 sm:px-10 lg:px-16 transition-all duration-300 overflow-hidden ${
+        isScrolled ? 'max-h-0 py-0 opacity-0' : 'max-h-10 py-2'
+      }`}>
+        <div className="max-w-7xl mx-auto flex flex-row justify-between items-center gap-2">
+          <div className="flex items-center gap-4">
             <span className="flex items-center gap-1.5 hover:text-indigo-100 transition">
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -41,7 +66,7 @@ const Header = ({ dashboardType = 'user', onOpenOcrScanner }) => {
               </svg>
               1073/23 CMT8, P.7, Q.Tân Bình, TP.HCM
             </span>
-            <span className="hidden md:inline text-indigo-300">|</span>
+            <span className="text-indigo-300">|</span>
             <a href="mailto:info@acoh.com" className="flex items-center gap-1.5 hover:text-indigo-100 transition">
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -70,62 +95,57 @@ const Header = ({ dashboardType = 'user', onOpenOcrScanner }) => {
         </div>
       </div>
 
-      {/* 2. MIDDLE BRANDING & CONTACT / USER ACTIONS BAR (Hidden when scrolled down) */}
-      <div
-        className={`bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 px-4 sm:px-6 transition-all duration-300 ease-in-out ${
-          isScrolled ? 'max-h-0 opacity-0 py-0 border-none overflow-hidden' : 'max-h-96 opacity-100 py-4'
-        }`}
-      >
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+      {/* 2. MAIN BRANDING & USER CONTROLS BAR */}
+      <div className={`bg-white/95 dark:bg-slate-800/95 backdrop-blur-md px-4 sm:px-6 md:px-12 transition-all duration-300 border-b border-slate-100 dark:border-slate-700/60 ${
+        isScrolled
+          ? 'md:max-h-0 md:py-0 md:opacity-0 md:border-b-0 py-3 sm:py-3.5 overflow-hidden'
+          : 'max-h-32 py-5 sm:py-6'
+      }`}>
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-8 md:gap-12">
           {/* Logo & Brand Name */}
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-md border border-indigo-500 shrink-0">
-              <svg className="w-7 h-7 stroke-current" fill="none" viewBox="0 0 24 24">
+          <div className="flex items-center gap-2 h-9 md:h-10">
+            <div className="w-9 h-9 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md border border-indigo-500 shrink-0">
+              <svg className="w-4 h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 stroke-current" fill="none" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 17a2 2 0 100 4 2 2 0 000-4zm10 0a2 2 0 100 4 2 2 0 000-4zM4 11l2-5h12l2 5M4 11h16M4 11v6h16v-6" />
               </svg>
             </div>
-            <div>
-              <h1 className="text-2xl font-black tracking-tight text-slate-800 dark:text-white leading-tight flex items-center gap-2">
-                {isGarage ? (
-                  <>ACOH <span className="text-indigo-600 dark:text-indigo-400">Garage</span></>
-                ) : (
-                  <>ACOH <span className="text-indigo-600 dark:text-indigo-400">AutoCare</span></>
-                )}
-              </h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                {isGarage ? 'Hệ thống quản lý Gara đối tác chuyên nghiệp' : 'AutoCare Office Helper - Quản lý & Bảo dưỡng xe'}
-              </p>
-            </div>
+            <h1 className="text-[11px] md:text-xs font-bold tracking-tight text-slate-900 dark:text-white leading-none m-0 flex items-center h-9 md:h-10">
+              {isGarage ? (
+                <>ACOH <span className="text-indigo-600 dark:text-indigo-400">Garage</span></>
+              ) : (
+                <>ACOH <span className="text-indigo-600 dark:text-indigo-400">AutoCare</span></>
+              )}
+            </h1>
           </div>
 
-          {/* Right Info: Working Hours, Hotline, and User Controls */}
-          <div className="flex flex-wrap items-center justify-center md:justify-end gap-6 text-xs sm:text-sm">
-            {/* Giờ làm việc */}
-            <div className="hidden lg:flex flex-col text-right">
-              <span className="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[11px]">Giờ làm việc:</span>
-              <span className="font-bold text-slate-700 dark:text-slate-200">Thứ 2 - thứ 6 (9h - 18h)</span>
+          {/* Right Info: Working Hours, Hotline (Desktop) & User Controls */}
+          <div className="flex items-center gap-10 lg:gap-16">
+            {/* Working Hours (Desktop Only) */}
+            <div className="hidden lg:flex flex-col justify-center text-left h-9 md:h-10">
+              <span className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm leading-tight">Giờ làm việc:</span>
+              <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-tight">Thứ 2 - thứ 6 (9h - 18h)</span>
             </div>
 
-            {/* Gọi ngay Hotline */}
-            <div className="hidden sm:flex flex-col text-right pr-2 border-r border-slate-200 dark:border-slate-700">
-              <span className="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[11px]">Gọi ngay:</span>
-              <a href="tel:0313728397" className="font-black text-base text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 transition">
+            {/* Hotline (Desktop Only) */}
+            <div className="hidden md:flex flex-col justify-center text-left h-9 md:h-10">
+              <span className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm leading-tight">Gọi ngay:</span>
+              <a href="tel:0313728397" className="font-bold text-xs sm:text-sm text-rose-500 hover:text-rose-600 dark:text-rose-400 leading-tight transition">
                 (+84) 313-728-397
               </a>
             </div>
 
             {/* User Controls */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4 sm:gap-5">
               <NotificationBell />
 
-              {/* Garage special action: OCR Scan */}
+              {/* Garage special action: OCR Scan (Desktop) */}
               {isGarage && onOpenOcrScanner && (
                 <button
                   onClick={onOpenOcrScanner}
-                  className="px-3.5 h-10 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black shadow-md border border-indigo-500 hover:shadow-lg transition cursor-pointer flex items-center gap-1.5 animate-pulse"
+                  className="hidden sm:flex px-3.5 h-9 md:h-10 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md border border-indigo-500 hover:shadow-lg transition cursor-pointer items-center gap-1.5 animate-pulse"
                   title="Nhận diện biển số xe bằng AI (OCR)"
                 >
-                  📸 <span className="hidden sm:inline">Scan Biển số</span>
+                  📸 <span>Scan Biển số</span>
                 </button>
               )}
 
@@ -135,47 +155,64 @@ const Header = ({ dashboardType = 'user', onOpenOcrScanner }) => {
                   const nextTheme = themePreference === 'light' ? 'dark' : themePreference === 'dark' ? 'system' : 'light';
                   updateThemePreference(nextTheme);
                 }}
-                className="w-10 h-10 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 flex items-center justify-center transition cursor-pointer shrink-0"
+                className="w-9 h-9 md:w-10 md:h-10 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 flex items-center justify-center transition cursor-pointer shrink-0 text-sm"
                 title={`Giao diện: ${themePreference === 'light' ? 'Sáng' : themePreference === 'dark' ? 'Tối' : 'Hệ thống'}. Nhấn để đổi.`}
               >
                 {themePreference === 'light' ? '☀️' : themePreference === 'dark' ? '🌙' : '💻'}
               </button>
 
-              {/* User Avatar */}
-              <div className="flex items-center gap-2">
+              {/* User Avatar (Desktop & Tablet) */}
+              <div className="hidden sm:flex items-center gap-2 h-9 md:h-10">
                 <a
                   href="/profile"
-                  className="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 flex items-center justify-center font-black border border-slate-200 dark:border-slate-600 hover:shadow-xs transition shrink-0"
+                  className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 flex items-center justify-center font-bold border border-slate-200 dark:border-slate-600 hover:shadow-xs transition shrink-0 text-xs sm:text-sm"
                   title="Hồ sơ cá nhân"
                 >
                   {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
                 </a>
-                <div className="hidden xl:flex flex-col text-left">
+                <div className="hidden xl:flex flex-col justify-center text-left h-9 md:h-10">
                   <span className="text-xs font-bold text-slate-800 dark:text-white leading-tight">{user?.fullName}</span>
-                  <span className="text-xxs text-slate-400 dark:text-slate-500 font-semibold">{user?.role || 'Người dùng'}</span>
+                  <span className="text-xxs text-slate-400 dark:text-slate-500 font-semibold leading-tight">{user?.role || 'Người dùng'}</span>
                 </div>
               </div>
 
-              {/* Logout Button */}
+              {/* Logout Button (Desktop) */}
               <button
                 onClick={logout}
-                className="w-10 h-10 rounded-full flex items-center justify-center text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 border border-transparent hover:border-rose-100 dark:hover:border-rose-950/40 transition shrink-0"
+                className="hidden md:flex w-9 h-9 md:w-10 md:h-10 rounded-full items-center justify-center text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 border border-transparent hover:border-rose-100 dark:hover:border-rose-950/40 transition shrink-0"
                 title="Đăng xuất"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
               </button>
+
+              {/* Mobile Hamburger Toggle Button */}
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="md:hidden w-9 h-9 rounded-xl bg-slate-900 dark:bg-slate-800 text-white flex items-center justify-center border border-slate-800 dark:border-slate-700 shadow-sm transition active:scale-95 cursor-pointer ml-1"
+                aria-label="Toggle Mobile Menu"
+              >
+                {isMobileMenuOpen ? (
+                  <svg className="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5 text-slate-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                )}
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 3. BOTTOM NAVIGATION BAR (ONLY THIS REMAINS VISIBLE WHEN SCROLLED DOWN) */}
-      <nav className="bg-slate-950 dark:bg-slate-900 text-white border-b border-slate-800 shadow-md px-4 sm:px-6 py-2.5 transition-all duration-300">
+      {/* 3. DESKTOP BOTTOM NAVIGATION BAR */}
+      <nav className="hidden md:block bg-slate-950 dark:bg-slate-900 text-white border-t border-slate-800 shadow-md px-6 sm:px-10 lg:px-16 py-2.5">
         <div className="max-w-7xl mx-auto min-h-[40px] flex justify-center items-center relative">
           {isSearchOpen ? (
-            /* Full-width sleek search mode (No text overlap) */
+            /* Full-width sleek search mode */
             <div className="w-full flex items-center justify-between gap-3 px-2 animate-fadeIn">
               <div className="flex-1 flex items-center bg-slate-900 border border-indigo-500/60 rounded-xl px-3.5 py-1.5 focus-within:ring-2 focus-within:ring-indigo-500 transition-all shadow-inner">
                 <svg className="w-4 h-4 text-indigo-400 mr-2.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -212,57 +249,45 @@ const Header = ({ dashboardType = 'user', onOpenOcrScanner }) => {
           ) : (
             /* Standard Centered Navigation Links */
             <>
-              <div className="flex items-center justify-center space-x-1 sm:space-x-8 overflow-x-auto text-xs sm:text-sm font-bold tracking-wider uppercase whitespace-nowrap px-8">
-                <button
-                  onClick={() => setActiveMenu('home')}
-                  className={`px-4 py-1.5 rounded-lg transition ${
-                    activeMenu === 'home'
-                      ? 'text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 font-black shadow-inner'
-                      : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-                  }`}
-                >
-                  TRANG CHỦ
-                </button>
-                <button
-                  onClick={() => setActiveMenu('about')}
-                  className={`px-4 py-1.5 rounded-lg transition ${
-                    activeMenu === 'about'
-                      ? 'text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 font-black shadow-inner'
-                      : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-                  }`}
-                >
-                  GIỚI THIỆU
-                </button>
-                <button
-                  onClick={() => setActiveMenu('services')}
-                  className={`px-4 py-1.5 rounded-lg transition ${
-                    activeMenu === 'services'
-                      ? 'text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 font-black shadow-inner'
-                      : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-                  }`}
-                >
-                  DỊCH VỤ ▾
-                </button>
-                <button
-                  onClick={() => setActiveMenu('news')}
-                  className={`px-4 py-1.5 rounded-lg transition ${
-                    activeMenu === 'news'
-                      ? 'text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 font-black shadow-inner'
-                      : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-                  }`}
-                >
-                  TIN TỨC
-                </button>
-                <button
-                  onClick={() => setActiveMenu('contact')}
-                  className={`px-4 py-1.5 rounded-lg transition ${
-                    activeMenu === 'contact'
-                      ? 'text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 font-black shadow-inner'
-                      : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-                  }`}
-                >
-                  LIÊN HỆ
-                </button>
+              <div className="flex items-center justify-center space-x-6 lg:space-x-8 text-xs sm:text-sm font-bold tracking-wider uppercase whitespace-nowrap no-scrollbar">
+                {[
+                  { id: 'home', label: 'TRANG CHỦ' },
+                  { id: 'about', label: 'GIỚI THIỆU' },
+                  { id: 'services', label: 'DỊCH VỤ ▾' },
+                  { id: 'news', label: 'TIN TỨC' },
+                  { id: 'contact', label: 'LIÊN HỆ' },
+                ].map((menu) => {
+                  const isActive = activeMenu === menu.id;
+                  return (
+                    <button
+                      key={menu.id}
+                      onClick={() => {
+                        setActiveMenu(menu.id);
+                        if (onMenuClick) {
+                          onMenuClick(menu.id);
+                        }
+                        if (menu.id === 'home') {
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        } else {
+                          const el = document.getElementById(menu.id);
+                          if (el) {
+                            el.scrollIntoView({ behavior: 'smooth' });
+                          }
+                        }
+                      }}
+                      className={`relative px-3.5 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ${
+                        isActive
+                          ? 'text-indigo-400 font-black tracking-wide'
+                          : 'text-slate-300 hover:text-white hover:bg-slate-800/60 font-bold'
+                      }`}
+                    >
+                      <span>{menu.label}</span>
+                      {isActive && (
+                        <span className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-indigo-500 border-2 border-slate-950 shadow-md"></span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Right Search Toggle Button */}
@@ -281,8 +306,153 @@ const Header = ({ dashboardType = 'user', onOpenOcrScanner }) => {
           )}
         </div>
       </nav>
+
+      {/* 4. MOBILE SLIDE-OVER DRAWER MENU */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-50 flex flex-col bg-slate-950/95 text-white backdrop-blur-xl animate-fadeIn overflow-y-auto">
+          {/* Mobile Drawer Top Bar */}
+          <div className="flex items-center justify-between p-4 border-b border-slate-800">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md">
+                <svg className="w-5 h-5 stroke-current" fill="none" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 17a2 2 0 100 4 2 2 0 000-4zm10 0a2 2 0 100 4 2 2 0 000-4zM4 11l2-5h12l2 5M4 11h16M4 11v6h16v-6" />
+                </svg>
+              </div>
+              <span className="font-black text-lg text-white tracking-tight">
+                ACOH <span className="text-indigo-400">{isGarage ? 'Garage' : 'AutoCare'}</span>
+              </span>
+            </div>
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="p-2 rounded-xl bg-slate-900 text-slate-300 hover:text-white border border-slate-800 cursor-pointer"
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Search bar inside mobile drawer */}
+          <div className="p-4 border-b border-slate-800/80">
+            <div className="flex items-center bg-slate-900 border border-indigo-500/40 rounded-xl px-3.5 py-2.5 focus-within:ring-2 focus-within:ring-indigo-500 transition-all">
+              <svg className="w-4 h-4 text-indigo-400 mr-2.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Tìm kiếm dịch vụ, bảo dưỡng, xe..."
+                className="w-full bg-transparent text-xs text-white placeholder-slate-400 focus:outline-none"
+              />
+            </div>
+          </div>
+
+          {/* Mobile Nav Links */}
+          <div className="p-4 flex flex-col space-y-1.5">
+            {[
+              { id: 'home', label: 'TRANG CHỦ', icon: '🏠' },
+              { id: 'about', label: 'GIỚI THIỆU', icon: 'ℹ️' },
+              { id: 'services', label: 'DỊCH VỤ', icon: '🛠️' },
+              { id: 'news', label: 'TIN TỨC', icon: '📰' },
+              { id: 'contact', label: 'LIÊN HỆ', icon: '📞' },
+            ].map((menu) => (
+              <button
+                key={menu.id}
+                onClick={() => {
+                  setActiveMenu(menu.id);
+                  setIsMobileMenuOpen(false);
+                  if (onMenuClick) {
+                    onMenuClick(menu.id);
+                  }
+                  if (menu.id === 'home') {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  } else {
+                    const el = document.getElementById(menu.id);
+                    if (el) {
+                      el.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }
+                }}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition text-left ${
+                  activeMenu === menu.id
+                    ? 'bg-indigo-600 text-white shadow-md'
+                    : 'text-slate-300 hover:bg-slate-900 hover:text-white'
+                }`}
+              >
+                <span className="text-base">{menu.icon}</span>
+                <span>{menu.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Garage OCR Scanner Button for Mobile */}
+          {isGarage && onOpenOcrScanner && (
+            <div className="px-4 py-2">
+              <button
+                onClick={() => {
+                  onOpenOcrScanner();
+                  setIsMobileMenuOpen(false);
+                }}
+                className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black shadow-md flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>📸</span>
+                <span>Scan Biển số xe AI (OCR)</span>
+              </button>
+            </div>
+          )}
+
+          {/* User Account Section */}
+          <div className="mt-auto p-4 border-t border-slate-800 bg-slate-900/60">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <a
+                  href="/profile"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="w-10 h-10 rounded-full bg-slate-800 text-indigo-400 flex items-center justify-center font-black border border-slate-700"
+                >
+                  {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
+                </a>
+                <div className="flex flex-col">
+                  <span className="text-sm font-bold text-white leading-tight">{user?.fullName || 'Người dùng'}</span>
+                  <span className="text-xs text-slate-400 font-medium">{user?.role || 'User'}</span>
+                </div>
+              </div>
+              <a
+                href="/profile"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-xs font-semibold text-indigo-400 hover:text-indigo-300"
+              >
+                Hồ sơ →
+              </a>
+            </div>
+
+            <div className="text-xs text-slate-400 space-y-1 mb-4 pt-2 border-t border-slate-800/80">
+              <p>📍 1073/23 CMT8, P.7, Q.Tân Bình, TP.HCM</p>
+              <p>📞 Hotline: (+84) 313-728-397</p>
+            </div>
+
+            <button
+              onClick={() => {
+                logout();
+                setIsMobileMenuOpen(false);
+              }}
+              className="w-full py-2.5 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              <span>Đăng xuất</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Permanent Sticky 2px Purple Accent Line attached to Header */}
+      <div className="w-full h-[2px] bg-indigo-600 shrink-0 z-50"></div>
     </header>
   );
 };
 
 export default Header;
+

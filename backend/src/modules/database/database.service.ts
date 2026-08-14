@@ -12,7 +12,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   async onModuleInit() {
     const config: sql.config = {
       user: this.configService.get<string>('DB_USER') || 'sa',
-      password: this.configService.get<string>('DB_PASSWORD') || '',
+      password: this.configService.get<string>('DB_PASSWORD') || '123456',
       server: this.configService.get<string>('DB_HOST') || 'localhost',
       database: this.configService.get<string>('DB_NAME') || 'ACOH_DB',
       port: parseInt(this.configService.get<string>('DB_PORT') || '1433', 10),
@@ -20,6 +20,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       options: {
         encrypt: false,
         trustServerCertificate: true,
+        cryptoCredentialsDetails: { minVersion: 'TLSv1' },
         requestTimeout: parseInt(this.configService.get<string>('DB_REQUEST_TIMEOUT') || '30000', 10),
       },
     };
@@ -92,9 +93,13 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
         {
           name: 'Update CHK_Notifications_Type constraint',
           sql: `
-            IF EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CHK_Notifications_Type')
+            IF EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CHK_Notifications_Type' AND definition NOT LIKE '%ZaloZNS%')
             BEGIN
                 ALTER TABLE Notifications DROP CONSTRAINT CHK_Notifications_Type;
+                ALTER TABLE Notifications ADD CONSTRAINT CHK_Notifications_Type CHECK (NotificationType IN ('Email', 'InApp', 'ZaloZNS', 'SMS', 'All'));
+            END
+            ELSE IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CHK_Notifications_Type')
+            BEGIN
                 ALTER TABLE Notifications ADD CONSTRAINT CHK_Notifications_Type CHECK (NotificationType IN ('Email', 'InApp', 'ZaloZNS', 'SMS', 'All'));
             END;
           `,
@@ -118,7 +123,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     if (!this.pool || !this.pool.connected) {
       const config: sql.config = {
         user: this.configService.get<string>('DB_USER') || 'sa',
-        password: this.configService.get<string>('DB_PASSWORD') || '',
+        password: this.configService.get<string>('DB_PASSWORD') || '123456',
         server: this.configService.get<string>('DB_HOST') || 'localhost',
         database: this.configService.get<string>('DB_NAME') || 'ACOH_DB',
         port: parseInt(this.configService.get<string>('DB_PORT') || '1433', 10),
