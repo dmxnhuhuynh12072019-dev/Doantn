@@ -53,6 +53,7 @@ const UserDashboard = () => {
   // Main Page sub-tab (Module 7 Expense Analytics)
   const [mainTab, setMainTab] = useState('vehicles');
   const [currentView, setCurrentView] = useState('home'); // 'home' | 'about' | 'services' | 'news' | 'contact'
+  const [selectedServiceCategory, setSelectedServiceCategory] = useState(null);
   const [expensesData, setExpensesData] = useState(null);
   const [loadingExpenses, setLoadingExpenses] = useState(false);
   const [expensesError, setExpensesError] = useState('');
@@ -246,9 +247,15 @@ const UserDashboard = () => {
       {/* Header */}
       <Header
         dashboardType="user"
-        onMenuClick={(menuId) => {
+        currentView={currentView}
+        onMenuClick={(menuId, categoryId) => {
           setSelectedVehicleForDetail(null);
           setCurrentView(menuId);
+          if (categoryId) {
+            setSelectedServiceCategory(categoryId);
+          } else {
+            setSelectedServiceCategory(null);
+          }
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
       />
@@ -277,6 +284,49 @@ const UserDashboard = () => {
           />
           {/* Section: Tiêu chí hoạt động */}
           <OperatingCriteriaSection />
+
+          {/* Home Page Quick Vehicle Banner */}
+          <div className="max-w-7xl mx-auto px-6 mt-8">
+            <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 rounded-3xl p-6 sm:p-8 text-white shadow-lg flex flex-col sm:flex-row justify-between items-center gap-6">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-xs font-bold mb-2">
+                  🚗 Quản lý phương tiện thông minh
+                </div>
+                <h3 className="text-xl sm:text-2xl font-black mb-1">
+                  Bạn đang có {vehicles.length} phương tiện trong danh sách
+                </h3>
+                <p className="text-indigo-100 text-xs sm:text-sm">
+                  Theo dõi số km, lập kế hoạch bảo dưỡng định kỳ và kiểm soát chi phí nuôi xe.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3 shrink-0">
+                <button
+                  onClick={() => {
+                    setCurrentView('vehicles');
+                    setMainTab('vehicles');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="px-5 py-3 rounded-2xl bg-white text-indigo-700 font-bold text-xs sm:text-sm shadow-md hover:bg-indigo-50 transition cursor-pointer flex items-center gap-2"
+                >
+                  <span>Xem danh sách xe</span>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => {
+                    setCurrentView('vehicles');
+                    setMainTab('vehicles');
+                    handleAddClick();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="px-4 py-3 rounded-2xl bg-indigo-500/50 hover:bg-indigo-500/70 border border-white/20 text-white font-bold text-xs sm:text-sm transition cursor-pointer"
+                >
+                  + Thêm xe mới
+                </button>
+              </div>
+            </div>
+          </div>
         </>
       )}
 
@@ -287,6 +337,7 @@ const UserDashboard = () => {
 
       {!selectedVehicleForDetail && currentView === 'services' && (
         <ServicesPageSection
+          selectedCategory={selectedServiceCategory}
           onOpenAppointment={(serviceName) => {
             if (vehicles.length > 0) {
               setSelectedVehicle(vehicles[0]);
@@ -326,7 +377,7 @@ const UserDashboard = () => {
               <div className="space-y-3">
                 <div className="flex flex-wrap items-center gap-3">
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-700 text-slate-650 dark:text-slate-300">
-                    {selectedVehicleForDetail.VehicleType === 'Ô tô' ? '🚗 Ô tô' : '🏍️ Xe máy'}
+                    🚗 Ô tô
                   </span>
                   {selectedVehicleForDetail.IsCommercial ? (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900/40">
@@ -573,17 +624,20 @@ const UserDashboard = () => {
           </div>
         ) : (
           /* Grid Danh sách xe */
-          currentView === 'home' && (
+          currentView === 'vehicles' && (
             <>
             {/* Welcome Section */}
-            <div className="mb-8 flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 p-8 shadow-sm">
+            <div className="mb-8 flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 p-6 sm:p-8 shadow-sm">
               <div className="text-center sm:text-left">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-xs font-bold mb-2">
+                  🚘 Quản lý xe Mobile First
+                </div>
                 <h2 className="text-2xl font-black text-slate-800 dark:text-white mb-1">Góc Quản lý Phương tiện</h2>
                 <p className="text-slate-500 dark:text-slate-400 text-sm">Theo dõi số kilomet đi được để lập kế hoạch bảo dưỡng định kỳ.</p>
               </div>
               <button
                 onClick={handleAddClick}
-                className="px-5 py-3 rounded-2xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 self-center sm:self-auto"
+                className="px-5 py-3 rounded-2xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 self-center sm:self-auto cursor-pointer"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
@@ -660,7 +714,7 @@ const UserDashboard = () => {
                           <div>
                             <div className="flex flex-wrap items-center gap-1.5 mb-1">
                               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-700 text-slate-650 dark:text-slate-300">
-                                {vehicle.VehicleType === 'Ô tô' ? '🚗 Ô tô' : '🏍️ Xe máy'}
+                                🚗 Ô tô
                               </span>
                               {vehicle.IsCommercial ? (
                                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900/40">
@@ -948,10 +1002,11 @@ const UserDashboard = () => {
         <button
           onClick={() => {
             setSelectedVehicleForDetail(null);
-            setMainTab('expenses');
+            setCurrentView('home');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
           className={`flex flex-col items-center gap-1 text-xxs font-bold cursor-pointer ${
-            !selectedVehicleForDetail && mainTab === 'expenses'
+            !selectedVehicleForDetail && currentView === 'home'
               ? 'text-indigo-600 dark:text-indigo-400'
               : 'text-slate-500 dark:text-slate-400'
           }`}
@@ -962,10 +1017,12 @@ const UserDashboard = () => {
         <button
           onClick={() => {
             setSelectedVehicleForDetail(null);
+            setCurrentView('vehicles');
             setMainTab('vehicles');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
           className={`flex flex-col items-center gap-1 text-xxs font-bold cursor-pointer ${
-            !selectedVehicleForDetail && mainTab === 'vehicles'
+            !selectedVehicleForDetail && currentView === 'vehicles'
               ? 'text-indigo-600 dark:text-indigo-400'
               : 'text-slate-500 dark:text-slate-400'
           }`}

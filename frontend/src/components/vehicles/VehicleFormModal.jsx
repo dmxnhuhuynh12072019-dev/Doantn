@@ -152,15 +152,10 @@ const VehicleFormModal = ({ isOpen, onClose, onSave, vehicle = null }) => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-slate-750 dark:text-slate-300 mb-1">Loại phương tiện</label>
-              <select
-                value={vehicleType}
-                onChange={(e) => setVehicleType(e.target.value)}
-                disabled={!!vehicle}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-850 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60 transition"
-              >
-                <option value="Ô tô">🚗 Ô tô</option>
-                <option value="Xe máy">🏍️ Xe máy</option>
-              </select>
+              <div className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-800 dark:text-white font-bold flex items-center gap-2 cursor-default text-sm">
+                <span>🚗</span>
+                <span>Ô tô / Xe hơi</span>
+              </div>
             </div>
 
             <div>

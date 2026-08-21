@@ -9,25 +9,42 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
 
   constructor(private configService: ConfigService) {}
 
-  async onModuleInit() {
-    const config: sql.config = {
+  private getSqlConfig(): sql.config {
+    const rawHost = this.configService.get<string>('DB_HOST') || '127.0.0.1';
+    const serverHost = rawHost === 'localhost' ? '127.0.0.1' : rawHost;
+    const timeout = parseInt(this.configService.get<string>('DB_REQUEST_TIMEOUT') || '60000', 10);
+
+    return {
       user: this.configService.get<string>('DB_USER') || 'sa',
       password: this.configService.get<string>('DB_PASSWORD') || '123456',
-      server: this.configService.get<string>('DB_HOST') || 'localhost',
+      server: serverHost,
       database: this.configService.get<string>('DB_NAME') || 'ACOH_DB',
       port: parseInt(this.configService.get<string>('DB_PORT') || '1433', 10),
-      requestTimeout: parseInt(this.configService.get<string>('DB_REQUEST_TIMEOUT') || '30000', 10),
+      connectionTimeout: 60000,
+      requestTimeout: timeout,
+      pool: {
+        max: 25,
+        min: 2,
+        idleTimeoutMillis: 30000,
+      },
       options: {
         encrypt: false,
         trustServerCertificate: true,
         cryptoCredentialsDetails: { minVersion: 'TLSv1' },
-        requestTimeout: parseInt(this.configService.get<string>('DB_REQUEST_TIMEOUT') || '30000', 10),
+        requestTimeout: timeout,
+        cancelTimeout: 30000,
+        enableArithAbort: true,
+        connectTimeout: 60000,
       },
     };
+  }
+
+  async onModuleInit() {
+    const config = this.getSqlConfig();
 
     try {
       this.pool = await new sql.ConnectionPool(config).connect();
-      this.logger.log('Connected to SQL Server successfully.');
+      this.logger.log('Connected to SQL Server successfully (127.0.0.1:1433).');
       
       // === AUTO-MIGRATION DỮ LIỆU MODULE 1: ZALO ZNS & SMS ===
       const migrations = [
@@ -93,12 +110,21 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
         {
           name: 'Update CHK_Notifications_Type constraint',
           sql: `
-            IF EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CHK_Notifications_Type' AND definition NOT LIKE '%ZaloZNS%')
+            IF EXISTS (
+              SELECT 1 FROM sys.check_constraints 
+              WHERE parent_object_id = OBJECT_ID('Notifications') 
+                AND name = 'CHK_Notifications_Type' 
+                AND LOWER(definition) NOT LIKE '%zalozns%'
+            )
             BEGIN
                 ALTER TABLE Notifications DROP CONSTRAINT CHK_Notifications_Type;
                 ALTER TABLE Notifications ADD CONSTRAINT CHK_Notifications_Type CHECK (NotificationType IN ('Email', 'InApp', 'ZaloZNS', 'SMS', 'All'));
             END
-            ELSE IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CHK_Notifications_Type')
+            ELSE IF NOT EXISTS (
+              SELECT 1 FROM sys.check_constraints 
+              WHERE parent_object_id = OBJECT_ID('Notifications') 
+                AND name = 'CHK_Notifications_Type'
+            )
             BEGIN
                 ALTER TABLE Notifications ADD CONSTRAINT CHK_Notifications_Type CHECK (NotificationType IN ('Email', 'InApp', 'ZaloZNS', 'SMS', 'All'));
             END;
@@ -121,21 +147,16 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
 
   private async ensureConnected() {
     if (!this.pool || !this.pool.connected) {
-      const config: sql.config = {
-        user: this.configService.get<string>('DB_USER') || 'sa',
-        password: this.configService.get<string>('DB_PASSWORD') || '123456',
-        server: this.configService.get<string>('DB_HOST') || 'localhost',
-        database: this.configService.get<string>('DB_NAME') || 'ACOH_DB',
-        port: parseInt(this.configService.get<string>('DB_PORT') || '1433', 10),
-        requestTimeout: parseInt(this.configService.get<string>('DB_REQUEST_TIMEOUT') || '30000', 10),
-        options: {
-          encrypt: false,
-          trustServerCertificate: true,
-          requestTimeout: parseInt(this.configService.get<string>('DB_REQUEST_TIMEOUT') || '30000', 10),
-        },
-      };
+      const config = this.getSqlConfig();
       this.logger.log('Re-initializing SQL Server connection pool...');
-      this.pool = await new sql.ConnectionPool(config).connect();
+      try {
+        if (this.pool) {
+          try { await this.pool.close(); } catch (e) {}
+        }
+        this.pool = await new sql.ConnectionPool(config).connect();
+      } catch (err) {
+        this.logger.error('Re-initialization of ConnectionPool failed:', err?.message || err);
+      }
     }
   }
 
@@ -143,11 +164,22 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     if (!this.pool || !this.pool.connected) {
       await this.ensureConnected();
     }
-    const request = this.pool.request();
-    for (const param of params) {
-      request.input(param.name, param.type, param.value);
+
+    try {
+      const request = this.pool.request();
+      for (const param of params) {
+        request.input(param.name, param.type, param.value);
+      }
+      return await request.query(queryText);
+    } catch (err) {
+      this.logger.warn(`Query failed (${err?.code || err?.message}). Attempting reconnect retry...`);
+      await this.ensureConnected();
+      const request = this.pool.request();
+      for (const param of params) {
+        request.input(param.name, param.type, param.value);
+      }
+      return await request.query(queryText);
     }
-    return request.query(queryText);
   }
 
   async onModuleDestroy() {

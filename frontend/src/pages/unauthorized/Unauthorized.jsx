@@ -11,14 +11,15 @@ const Unauthorized = () => {
       return;
     }
     
-    switch (user.role) {
-      case 'Admin':
+    const role = user.role ? String(user.role).toLowerCase() : '';
+    switch (role) {
+      case 'admin':
         navigate('/admin/dashboard');
         break;
-      case 'Garage':
+      case 'garage':
         navigate('/garage/dashboard');
         break;
-      case 'User':
+      case 'user':
       default:
         navigate('/user/dashboard');
         break;
@@ -38,7 +39,7 @@ const Unauthorized = () => {
         
         <button
           onClick={handleBackToDashboard}
-          className="w-full py-3 px-4 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition"
+          className="w-full py-3 px-4 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition cursor-pointer"
         >
           Quay lại Trang chủ
         </button>

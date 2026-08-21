@@ -1,58 +1,128 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import * as extensionService from '../../services/extensionService';
 
 const LicensePlateScannerModal = ({ isOpen, onClose, onSearchSuccess }) => {
+  const [activeMode, setActiveMode] = useState('camera'); // 'camera' | 'upload'
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [scanning, setScanning] = useState(false);
   const [scannedPlate, setScannedPlate] = useState('');
-  const [flashOn, setFlashOn] = useState(false);
   const [error, setError] = useState('');
+  
+  // Camera state
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [facingMode, setFacingMode] = useState('environment'); // 'environment' (back) | 'user' (front)
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const streamRef = useRef(null);
   const fileInputRef = useRef(null);
 
+  // Stop camera when modal closes or unmounts
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    setIsCameraActive(false);
+  };
+
+  // Start camera stream
+  const startCamera = async () => {
+    stopCamera();
+    setError('');
+    try {
+      const constraints = {
+        video: {
+          facingMode: facingMode,
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+      };
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+      setIsCameraActive(true);
+    } catch (err) {
+      console.error('Lỗi mở camera:', err);
+      setIsCameraActive(false);
+      setError('Không thể mở Camera/WebCam trên thiết bị. Vui lòng cấp quyền truy cập hoặc tải tệp ảnh từ máy.');
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen && activeMode === 'camera') {
+      startCamera();
+    } else {
+      stopCamera();
+    }
+    return () => {
+      stopCamera();
+    };
+  }, [isOpen, activeMode, facingMode]);
+
   if (!isOpen) return null;
+
+  // Chụp ảnh từ Camera WebCam
+  const captureCameraSnapshot = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          setError('Không thể chụp hình từ camera.');
+          return;
+        }
+        const capturedFile = new File([blob], `webcam_car_${Date.now()}.jpg`, { type: 'image/jpeg' });
+        const url = URL.createObjectURL(capturedFile);
+        setFile(capturedFile);
+        setPreviewUrl(url);
+        stopCamera();
+        triggerOcrScan(capturedFile);
+      },
+      'image/jpeg',
+      0.9
+    );
+  };
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
       setFile(selectedFile);
-      setPreviewUrl(URL.createObjectURL(selectedFile));
+      const url = URL.createObjectURL(selectedFile);
+      setPreviewUrl(url);
       setError('');
       setScannedPlate('');
-      // Tự động kích hoạt quét khi người dùng chọn ảnh
       triggerOcrScan(selectedFile);
     }
-  };
-
-  const selectMockImage = (plate) => {
-    // Giả lập chọn một ảnh có tên tương ứng biển số
-    const dummyFile = new File([''], `${plate}.jpg`, { type: 'image/jpeg' });
-    setFile(dummyFile);
-    setPreviewUrl(
-      plate === '30E-922.91'
-        ? 'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=800&auto=format&fit=crop&q=80' // Mercedes car photo
-        : plate === '59A-123.45'
-        ? 'https://images.unsplash.com/photo-1506015391300-4802dc74de2e?w=500&auto=format&fit=crop&q=60' // Mock car image
-        : 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=500&auto=format&fit=crop&q=60' // Mock bike image
-    );
-    setError('');
-    setScannedPlate('');
-    triggerOcrScan(dummyFile);
   };
 
   const triggerOcrScan = async (fileToScan) => {
     setScanning(true);
     setError('');
+    setScannedPlate('');
     try {
-      // Gọi service OCR backend
       const result = await extensionService.scanPlate(fileToScan);
-      
-      // Giả lập thời gian xử lý AI trong 1.5 giây để tăng trải nghiệm UX trực quan
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      setScannedPlate(result.licensePlate);
+      if (result && result.licensePlate) {
+        setScannedPlate(result.licensePlate.toUpperCase());
+        if (result.vehicleProfile) {
+          // If profile found directly
+        }
+      } else {
+        setError(result?.message || 'Không tự động nhận diện được biển số từ ảnh. Vui lòng nhập biển số thủ công bên dưới.');
+      }
     } catch (err) {
-      setError(err.message || 'Lỗi nhận diện biển số xe. Vui lòng thử lại.');
+      console.error('Lỗi AI OCR scanPlate:', err);
+      setError('Lỗi kết nối dịch vụ AI OCR. Vui lòng nhập biển số ô tô thủ công.');
     } finally {
       setScanning(false);
     }
@@ -60,26 +130,49 @@ const LicensePlateScannerModal = ({ isOpen, onClose, onSearchSuccess }) => {
 
   const handleSubmitSearch = async (e) => {
     e.preventDefault();
-    if (!scannedPlate.trim()) return;
+    if (!scannedPlate.trim()) {
+      setError('Vui lòng nhập biển số ô tô trước khi tra cứu.');
+      return;
+    }
 
     setScanning(true);
     setError('');
 
     try {
-      // Gửi file giả lập hoặc thực tế lên server để lấy đầy đủ thông tin xe & lịch sử
       const finalFile = file || new File([''], `${scannedPlate.trim()}.jpg`, { type: 'image/jpeg' });
       const result = await extensionService.scanPlate(finalFile);
-      
-      if (result.vehicleProfile) {
+
+      if (result && result.vehicleProfile) {
         onSearchSuccess(result.vehicleProfile);
         onClose();
       } else {
-        setError(result.message || 'Không tìm thấy xe này trong hệ thống.');
+        // Safe creation for new vehicle profile
+        onSearchSuccess({
+          vehicleId: null,
+          licensePlate: scannedPlate.trim().toUpperCase(),
+          vehicleType: 'Ô tô',
+          brand: 'Ô tô',
+          model: 'Chưa cập nhật model',
+          manufactureYear: new Date().getFullYear(),
+          customerName: 'Chủ xe (Chờ định danh)',
+          customerPhone: '',
+        });
+        onClose();
       }
     } catch (err) {
-      setError(err.message || 'Lỗi tìm kiếm phương tiện.');
+      setError(err.message || 'Lỗi tra cứu phương tiện.');
     } finally {
       setScanning(false);
+    }
+  };
+
+  const handleRetake = () => {
+    setFile(null);
+    setPreviewUrl(null);
+    setScannedPlate('');
+    setError('');
+    if (activeMode === 'camera') {
+      startCamera();
     }
   };
 
@@ -89,11 +182,16 @@ const LicensePlateScannerModal = ({ isOpen, onClose, onSearchSuccess }) => {
       <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose}></div>
 
       {/* Modal Content */}
-      <div className="relative w-full max-w-lg bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 p-6 z-10 animate-in fade-in zoom-in-95 duration-200">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-black text-slate-800 dark:text-white flex items-center gap-2">
-            📸 Quét biển số xe bằng AI (OCR)
-          </h3>
+      <div className="relative w-full max-w-xl bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 p-6 z-10 animate-in fade-in zoom-in-95 duration-200">
+        <div className="flex justify-between items-center mb-5">
+          <div>
+            <h3 className="text-xl font-black text-slate-800 dark:text-white flex items-center gap-2">
+              📸 Quét & Nhận diện Biển số Xe Ô tô (AI OCR)
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+              Sử dụng WebCam trực tiếp hoặc tải tệp ảnh xe ô tô vào xưởng
+            </p>
+          </div>
           <button
             onClick={onClose}
             className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
@@ -102,128 +200,174 @@ const LicensePlateScannerModal = ({ isOpen, onClose, onSearchSuccess }) => {
           </button>
         </div>
 
-        <div className="space-y-6">
-          {/* Giao diện quét / camera */}
-          <div className="relative aspect-video rounded-2xl bg-slate-950 border border-slate-800 overflow-hidden flex flex-col items-center justify-center group">
-            {previewUrl ? (
-              <img
-                src={previewUrl}
-                alt="Plate Preview"
-                className="w-full h-full object-cover"
+        {/* Mode Selector Tabs */}
+        <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-2xl mb-5">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveMode('camera');
+              handleRetake();
+            }}
+            className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+              activeMode === 'camera'
+                ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'
+            }`}
+          >
+            📷 Chụp qua WebCam / Camera
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveMode('upload');
+              stopCamera();
+            }}
+            className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+              activeMode === 'upload'
+                ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'
+            }`}
+          >
+            📤 Tải ảnh từ máy tính
+          </button>
+        </div>
+
+        <div className="space-y-5">
+          {/* CAMERA MODE VIEW */}
+          {activeMode === 'camera' && !previewUrl && (
+            <div className="relative aspect-video rounded-2xl bg-slate-950 border border-slate-800 overflow-hidden flex items-center justify-center">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className={`w-full h-full object-cover ${isCameraActive ? 'block' : 'hidden'}`}
               />
-            ) : (
-              <div className="text-center p-6 text-slate-400 space-y-3">
-                <span className="text-4xl block animate-bounce">📷</span>
-                <p className="text-xs font-semibold">Bấm nút bên dưới để chụp ảnh hoặc tải ảnh biển số xe lên</p>
-              </div>
-            )}
+              <canvas ref={canvasRef} className="hidden" />
 
-            {/* AI Scanning overlay line */}
-            {scanning && (
-              <div className="absolute inset-x-0 h-1 bg-indigo-500 shadow-[0_0_15px_#6366f1] animate-[scan_2s_ease-in-out_infinite] z-20"></div>
-            )}
-
-            {/* Giao diện trạng thái đang nhận diện */}
-            {scanning && (
-              <div className="absolute inset-0 bg-slate-950/70 flex flex-col items-center justify-center gap-3 text-white z-10">
-                <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                <p className="text-xs font-bold tracking-wide animate-pulse">Trí tuệ nhân tạo (OCR) đang phân tích ảnh...</p>
-              </div>
-            )}
-
-            {/* Flash button overlay */}
-            <button
-              type="button"
-              onClick={() => setFlashOn(!flashOn)}
-              className={`absolute top-4 right-4 p-2 rounded-xl text-xs font-black shadow-md border cursor-pointer z-10 transition ${
-                flashOn 
-                  ? 'bg-amber-500 border-amber-400 text-white shadow-amber-500/20' 
-                  : 'bg-slate-900/60 border-slate-800 text-slate-350'
-              }`}
-            >
-              ⚡ Flash: {flashOn ? 'BẬT' : 'TẮT'}
-            </button>
-          </div>
-
-          {/* Các nút hành động tải ảnh */}
-          <div className="flex flex-wrap gap-2 justify-center">
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black shadow-md hover:shadow-lg transition cursor-pointer flex items-center gap-1.5"
-            >
-              📤 Chọn ảnh từ máy
-            </button>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              accept="image/*"
-              className="hidden"
-            />
-
-            {/* Ảnh mẫu giả lập test nhanh */}
-            <button
-              type="button"
-              onClick={() => selectMockImage('30E-922.91')}
-              className="px-3.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-sm"
-            >
-              🚗 Dùng thử Mercedes (30E-922.91)
-            </button>
-            <button
-              type="button"
-              onClick={() => selectMockImage('69D1-666.66')}
-              className="px-3.5 py-2.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-xl text-xs font-bold border border-indigo-200 dark:border-indigo-800 transition cursor-pointer"
-            >
-              🏍️ Dùng thử Xe máy (69D1-666.66)
-            </button>
-            <button
-              type="button"
-              onClick={() => selectMockImage('59A-123.45')}
-              className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-600 transition cursor-pointer"
-            >
-              🚗 Dùng thử Ô tô (59A-123.45)
-            </button>
-            <button
-              type="button"
-              onClick={() => selectMockImage('59B-678.90')}
-              className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-600 transition cursor-pointer"
-            >
-              🏍️ Dùng thử Xe máy (59B-678.90)
-            </button>
-          </div>
-
-          {/* Form kết quả nhận diện và tìm kiếm */}
-          {scannedPlate && (
-            <form onSubmit={handleSubmitSearch} className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-700">
-              <div className="space-y-1.5">
-                <label className="text-xs font-black text-slate-500 dark:text-slate-450 uppercase block">
-                  Biển số xe nhận diện được (cho phép sửa lại nếu mờ/sai lệch):
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    required
-                    value={scannedPlate}
-                    onChange={(e) => setScannedPlate(e.target.value.toUpperCase())}
-                    className="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white font-black tracking-wider text-center text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-                    placeholder="Nhập biển số xe..."
-                  />
-                  <button
-                    type="submit"
-                    disabled={scanning}
-                    className="px-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black shadow-md hover:shadow-lg transition flex items-center justify-center cursor-pointer disabled:opacity-50"
-                  >
-                    🔍 Tra cứu
-                  </button>
+              {!isCameraActive && (
+                <div className="text-center p-6 text-slate-400 space-y-3">
+                  <span className="text-4xl block">📹</span>
+                  <p className="text-xs font-semibold">Đang kết nối Camera / WebCam...</p>
                 </div>
-              </div>
-            </form>
+              )}
+
+              {/* Camera Controls Overlay */}
+              {isCameraActive && (
+                <>
+                  <div className="absolute inset-0 border-2 border-dashed border-indigo-400/40 pointer-events-none rounded-2xl flex items-center justify-center">
+                    <div className="w-3/4 h-1/2 border-2 border-indigo-400 rounded-xl relative">
+                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xxs font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                        Căn biển số ô tô vào đây
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="absolute bottom-4 inset-x-0 flex items-center justify-center gap-3 z-10 px-4">
+                    <button
+                      type="button"
+                      onClick={() => setFacingMode((prev) => (prev === 'environment' ? 'user' : 'environment'))}
+                      className="p-3 bg-slate-900/80 hover:bg-slate-900 text-white rounded-full border border-slate-700 transition cursor-pointer text-xs"
+                      title="Đổi camera trước/sau"
+                    >
+                      🔄
+                    </button>
+                    <button
+                      type="button"
+                      onClick={captureCameraSnapshot}
+                      className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-black shadow-lg hover:shadow-indigo-500/30 transition cursor-pointer flex items-center gap-2"
+                    >
+                      📸 Chụp ảnh biển số xe
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           )}
 
+          {/* UPLOAD MODE VIEW OR PREVIEW */}
+          {(activeMode === 'upload' || previewUrl) && (
+            <div className="relative aspect-video rounded-2xl bg-slate-950 border border-slate-800 overflow-hidden flex flex-col items-center justify-center group">
+              {previewUrl ? (
+                <>
+                  <img src={previewUrl} alt="Plate Preview" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={handleRetake}
+                    className="absolute top-3 right-3 px-3 py-1.5 bg-slate-900/80 hover:bg-slate-900 text-white rounded-xl text-xs font-bold border border-slate-700 transition cursor-pointer z-20"
+                  >
+                    🔄 Chụp / Chọn lại
+                  </button>
+                </>
+              ) : (
+                <div className="text-center p-6 text-slate-400 space-y-4">
+                  <span className="text-5xl block animate-bounce">📤</span>
+                  <div className="space-y-1">
+                    <p className="text-xs font-bold text-slate-300">Tải ảnh chụp biển số xe ô tô rõ ràng</p>
+                    <p className="text-xxs text-slate-500">Hỗ trợ các định dạng JPG, PNG, WEBP</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black shadow-md hover:shadow-lg transition cursor-pointer inline-flex items-center gap-2"
+                  >
+                    📁 Chọn tệp ảnh từ máy
+                  </button>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                </div>
+              )}
+
+              {/* AI Scanning overlay line */}
+              {scanning && (
+                <div className="absolute inset-x-0 h-1 bg-indigo-500 shadow-[0_0_15px_#6366f1] animate-[scan_2s_ease-in-out_infinite] z-20" />
+              )}
+
+              {/* Giao diện trạng thái đang nhận diện */}
+              {scanning && (
+                <div className="absolute inset-0 bg-slate-950/75 flex flex-col items-center justify-center gap-3 text-white z-10">
+                  <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-xs font-bold tracking-wide animate-pulse">AI OCR đang bóc tách biển số ô tô thực tế...</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Form kết quả nhận diện và tìm kiếm */}
+          <form onSubmit={handleSubmitSearch} className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-700">
+            <div className="space-y-1.5">
+              <label className="text-xs font-black text-slate-600 dark:text-slate-300 uppercase block flex items-center justify-between">
+                <span>Biển số xe bóc tách được (Có thể tự chỉnh sửa):</span>
+                {scannedPlate && <span className="text-emerald-500 text-xxs font-bold">✓ Bóc tách thành công</span>}
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  required
+                  value={scannedPlate}
+                  onChange={(e) => setScannedPlate(e.target.value.toUpperCase())}
+                  className="flex-1 px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white font-black tracking-wider text-center text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                  placeholder="Ví dụ: 30G-567.89..."
+                />
+                <button
+                  type="submit"
+                  disabled={scanning || !scannedPlate.trim()}
+                  className="px-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-black shadow-md hover:shadow-lg transition flex items-center justify-center cursor-pointer disabled:opacity-50"
+                >
+                  🔍 Tra cứu Hồ sơ
+                </button>
+              </div>
+            </div>
+          </form>
+
           {error && (
-            <div className="p-3 text-xs font-semibold text-rose-600 bg-rose-50 dark:bg-rose-950/20 rounded-xl border border-rose-100 dark:border-rose-950/40 text-center animate-shake">
-              ⚠️ {error}
+            <div className="p-3 text-xs font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 rounded-2xl border border-amber-200 dark:border-amber-900/50 text-center">
+              💡 {error}
             </div>
           )}
         </div>
@@ -234,14 +378,6 @@ const LicensePlateScannerModal = ({ isOpen, onClose, onSearchSuccess }) => {
         @keyframes scan {
           0%, 100% { top: 0%; }
           50% { top: 100%; }
-        }
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          25% { transform: translateX(-4px); }
-          75% { transform: translateX(4px); }
-        }
-        .animate-shake {
-          animation: shake 0.3s ease-in-out;
         }
       `}</style>
     </div>

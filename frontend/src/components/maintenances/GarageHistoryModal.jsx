@@ -88,12 +88,12 @@ const GarageHistoryModal = ({ isOpen, onClose, onSave }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
       <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose}></div>
 
-      <div className="relative w-full max-w-lg bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 p-8 z-10 animate-in fade-in zoom-in-95 duration-200">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-2xl font-black text-slate-800 dark:text-white">
+      <div className="relative w-full max-w-xl max-h-[92vh] flex flex-col bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 p-6 sm:p-8 z-10 animate-in fade-in zoom-in-95 duration-200 my-auto overflow-hidden">
+        <div className="flex justify-between items-center pb-4 border-b border-slate-100 dark:border-slate-700 mb-4 shrink-0">
+          <h3 className="text-xl sm:text-2xl font-black text-slate-800 dark:text-white">
             🔧 Ghi sổ bảo dưỡng dịch vụ
           </h3>
           <button
@@ -105,6 +105,8 @@ const GarageHistoryModal = ({ isOpen, onClose, onSave }) => {
             </svg>
           </button>
         </div>
+
+        <div className="overflow-y-auto max-h-[calc(92vh-7rem)] pr-1.5 space-y-4">
 
         {/* Bước 1: Tìm kiếm xe */}
         <div className="mb-6 bg-slate-50 dark:bg-slate-700/30 p-4 rounded-2xl border border-slate-100 dark:border-slate-750">
@@ -136,7 +138,7 @@ const GarageHistoryModal = ({ isOpen, onClose, onSave }) => {
             <div className="mt-3 p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 space-y-1">
               <div className="flex justify-between items-center">
                 <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">
-                  {searchedVehicle.VehicleType === 'Ô tô' ? '🚗 Ô tô' : '🏍️ Xe máy'}
+                  🚗 Ô tô
                 </span>
                 <span className="px-2 py-0.5 border border-slate-800 dark:border-slate-400 rounded-md text-xs font-black tracking-wide text-slate-800 dark:text-white shrink-0 whitespace-nowrap">
                   {searchedVehicle.LicensePlate}
@@ -223,6 +225,35 @@ const GarageHistoryModal = ({ isOpen, onClose, onSave }) => {
           <div>
             <div className="flex justify-between items-center mb-1">
               <label className="block text-sm font-semibold text-slate-750 dark:text-slate-300">
+                Gói bảo dưỡng chuẩn theo mốc km:
+              </label>
+            </div>
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {[
+                { label: 'Gói 5.000 km', odo: '5000', text: 'Bảo dưỡng mốc 5.000 km: Thay dầu động cơ, Vệ sinh lọc gió, Kiểm tra nước làm mát' },
+                { label: 'Gói 10.000 km', odo: '10000', text: 'Bảo dưỡng mốc 10.000 km: Thay dầu động cơ, Thay lọc dầu, Đảo lốp, Kiểm tra phanh' },
+                { label: 'Gói 20.000 km', odo: '20000', text: 'Bảo dưỡng mốc 20.000 km: Thay dầu, Thay lọc dầu, Lọc gió động cơ, Lọc gió máy lạnh' },
+                { label: 'Gói 40.000 km', odo: '40000', text: 'Bảo dưỡng mốc 40.000 km: Thay dầu số, Dầu cầu, Nước làm mát, Bugi, Dầu phanh' },
+                { label: 'Gói 75.000 km', odo: '75000', text: 'Bảo dưỡng mốc 75.000 km: Kiểm tra dây curoa, Bơm nước, Rô tuyn, Giảm xóc' },
+              ].map((preset) => (
+                <button
+                  key={preset.label}
+                  type="button"
+                  onClick={() => {
+                    if (!executionOdometer || executionOdometer === '0') {
+                      setExecutionOdometer(preset.odo);
+                    }
+                    setDetails(prev => prev ? `${prev}\n${preset.text}` : preset.text);
+                  }}
+                  className="px-2.5 py-1 text-xs font-bold rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition cursor-pointer"
+                >
+                  🛠️ {preset.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex justify-between items-center mb-1">
+              <label className="block text-sm font-semibold text-slate-750 dark:text-slate-300">
                 Nội dung dịch vụ thực hiện <span className="text-rose-500">*</span>
               </label>
             </div>
@@ -266,6 +297,7 @@ const GarageHistoryModal = ({ isOpen, onClose, onSave }) => {
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );

@@ -9,6 +9,32 @@ import Unauthorized from './pages/unauthorized/Unauthorized';
 import UserDashboard from './pages/dashboards/UserDashboard';
 import GarageDashboard from './pages/dashboards/GarageDashboard';
 import AdminDashboard from './pages/dashboards/AdminDashboard';
+import { useAuth } from './context/AuthContext';
+
+const RootRedirect = () => {
+  const { user, token, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent"></div>
+      </div>
+    );
+  }
+
+  if (!token || !user) {
+    return <Navigate to="/user/dashboard" replace />;
+  }
+
+  const role = user?.role ? String(user.role).toLowerCase() : '';
+  if (role === 'admin') {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+  if (role === 'garage') {
+    return <Navigate to="/garage/dashboard" replace />;
+  }
+  return <Navigate to="/user/dashboard" replace />;
+};
 
 function App() {
   return (
@@ -34,7 +60,7 @@ function App() {
       <Route
         path="/user/dashboard"
         element={
-          <ProtectedRoute allowedRoles={['User']}>
+          <ProtectedRoute allowedRoles={['User', 'Garage', 'Admin']}>
             <UserDashboard />
           </ProtectedRoute>
         }
@@ -42,7 +68,7 @@ function App() {
       <Route
         path="/garage/dashboard"
         element={
-          <ProtectedRoute allowedRoles={['Garage']}>
+          <ProtectedRoute allowedRoles={['Garage', 'Admin']}>
             <GarageDashboard />
           </ProtectedRoute>
         }
@@ -56,12 +82,11 @@ function App() {
         }
       />
 
-      {/* Điều hướng mặc định */}
-      <Route path="/" element={<Navigate to="/user/dashboard" replace />} />
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      {/* Điều hướng mặc định dựa theo role người dùng */}
+      <Route path="/" element={<RootRedirect />} />
+      <Route path="*" element={<RootRedirect />} />
     </Routes>
   );
 }
 
 export default App;
-

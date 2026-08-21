@@ -1,8 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import NotificationBell from '../notifications/NotificationBell';
 
-const Header = ({ dashboardType = 'user', onOpenOcrScanner, onMenuClick }) => {
+const serviceSubItems = [
+  { id: 'maintenance', label: 'Bảo dưỡng -Sửa chữa' },
+  { id: 'care', label: 'Chăm sóc – Trang trí nội ngoại thất' },
+  { id: 'paint', label: 'Làm đồng – Sơn màu – Dặm vá' },
+];
+
+const Header = ({ dashboardType = 'user', currentView, onOpenOcrScanner, onMenuClick }) => {
   const { user, logout, themePreference, updateThemePreference } = useAuth();
   const [activeMenu, setActiveMenu] = useState('home');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -10,8 +16,42 @@ const Header = ({ dashboardType = 'user', onOpenOcrScanner, onMenuClick }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
+  const [isServicesDropdownOpen, setIsServicesDropdownOpen] = useState(false);
+  const [isMobileServicesOpen, setIsMobileServicesOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
   const isGarage = dashboardType === 'garage' || user?.role === 'Garage';
+
+  useEffect(() => {
+    if (currentView) {
+      setActiveMenu(currentView);
+    }
+  }, [currentView]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsServicesDropdownOpen(false);
+      }
+    };
+    if (isServicesDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isServicesDropdownOpen]);
+
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMobileMenuOpen]);
 
   useEffect(() => {
     let prevScrollY = window.scrollY;
@@ -96,10 +136,10 @@ const Header = ({ dashboardType = 'user', onOpenOcrScanner, onMenuClick }) => {
       </div>
 
       {/* 2. MAIN BRANDING & USER CONTROLS BAR */}
-      <div className={`bg-white/95 dark:bg-slate-800/95 backdrop-blur-md px-4 sm:px-6 md:px-12 transition-all duration-300 border-b border-slate-100 dark:border-slate-700/60 ${
+      <div className={`relative z-[100] bg-white dark:bg-slate-800 backdrop-blur-md px-4 sm:px-6 md:px-12 transition-all duration-300 border-b border-slate-100 dark:border-slate-700/60 ${
         isScrolled
-          ? 'md:max-h-0 md:py-0 md:opacity-0 md:border-b-0 py-3 sm:py-3.5 overflow-hidden'
-          : 'max-h-32 py-5 sm:py-6'
+          ? 'py-2.5 sm:py-3'
+          : 'py-3 sm:py-5'
       }`}>
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-8 md:gap-12">
           {/* Logo & Brand Name */}
@@ -209,7 +249,7 @@ const Header = ({ dashboardType = 'user', onOpenOcrScanner, onMenuClick }) => {
       </div>
 
       {/* 3. DESKTOP BOTTOM NAVIGATION BAR */}
-      <nav className="hidden md:block bg-slate-950 dark:bg-slate-900 text-white border-t border-slate-800 shadow-md px-6 sm:px-10 lg:px-16 py-2.5">
+      <nav className="relative z-0 hidden md:block bg-slate-900 text-white border-t border-slate-800/60 shadow-md px-6 sm:px-10 lg:px-16 py-2.5">
         <div className="max-w-7xl mx-auto min-h-[40px] flex justify-center items-center relative">
           {isSearchOpen ? (
             /* Full-width sleek search mode */
@@ -252,12 +292,80 @@ const Header = ({ dashboardType = 'user', onOpenOcrScanner, onMenuClick }) => {
               <div className="flex items-center justify-center space-x-6 lg:space-x-8 text-xs sm:text-sm font-bold tracking-wider uppercase whitespace-nowrap no-scrollbar">
                 {[
                   { id: 'home', label: 'TRANG CHỦ' },
+                  ...(!isGarage ? [{ id: 'vehicles', label: 'DANH SÁCH XE' }] : []),
                   { id: 'about', label: 'GIỚI THIỆU' },
-                  { id: 'services', label: 'DỊCH VỤ ▾' },
+                  { id: 'services', label: 'DỊCH VỤ' },
                   { id: 'news', label: 'TIN TỨC' },
                   { id: 'contact', label: 'LIÊN HỆ' },
                 ].map((menu) => {
                   const isActive = activeMenu === menu.id;
+
+                  if (menu.id === 'services') {
+                    return (
+                      <div key={menu.id} className="relative inline-block" ref={dropdownRef}>
+                        <button
+                          onClick={() => {
+                            setIsServicesDropdownOpen((prev) => !prev);
+                            setActiveMenu('services');
+                            if (onMenuClick) {
+                              onMenuClick('services');
+                            }
+                          }}
+                          className={`relative px-3.5 py-1.5 rounded-lg transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
+                            isActive || isServicesDropdownOpen
+                              ? 'text-indigo-400 font-black tracking-wide'
+                              : 'text-slate-300 hover:text-white hover:bg-slate-800/60 font-bold'
+                          }`}
+                        >
+                          <span>DỊCH VỤ</span>
+                          <svg
+                            className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                              isServicesDropdownOpen ? 'rotate-180 text-indigo-400' : 'text-slate-400'
+                            }`}
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                          </svg>
+                          {isActive && (
+                            <span className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-indigo-500 border-2 border-slate-950 shadow-md"></span>
+                          )}
+                        </button>
+
+                        {/* Dropdown Popover */}
+                        {isServicesDropdownOpen && (
+                          <div className="absolute top-full mt-3.5 left-1/2 -translate-x-1/2 w-72 sm:w-80 bg-slate-900 text-white rounded-2xl shadow-2xl border border-slate-700 p-2.5 z-50 animate-fadeIn">
+                            {/* Top Pointer Triangle Arrow */}
+                            <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3.5 h-3.5 bg-slate-900 rotate-45 border-t border-l border-slate-700"></div>
+
+                            <div className="relative z-10 flex flex-col space-y-1">
+                              {serviceSubItems.map((subItem) => (
+                                <button
+                                  key={subItem.id}
+                                  onClick={() => {
+                                    setIsServicesDropdownOpen(false);
+                                    setActiveMenu('services');
+                                    if (onMenuClick) {
+                                      onMenuClick('services', subItem.id);
+                                    }
+                                    const el = document.getElementById('services');
+                                    if (el) {
+                                      el.scrollIntoView({ behavior: 'smooth' });
+                                    }
+                                  }}
+                                  className="w-full text-left px-4 py-3 text-sm font-bold text-slate-100 hover:text-indigo-400 hover:bg-slate-800 rounded-xl transition-colors duration-150 flex items-center justify-between cursor-pointer border-b border-slate-800/80 last:border-b-0"
+                                >
+                                  <span>{subItem.label}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+
                   return (
                     <button
                       key={menu.id}
@@ -283,7 +391,7 @@ const Header = ({ dashboardType = 'user', onOpenOcrScanner, onMenuClick }) => {
                     >
                       <span>{menu.label}</span>
                       {isActive && (
-                        <span className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-indigo-500 border-2 border-slate-950 shadow-md"></span>
+                        <span className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-indigo-500 border-2 border-slate-900 shadow-md"></span>
                       )}
                     </button>
                   );
@@ -309,7 +417,7 @@ const Header = ({ dashboardType = 'user', onOpenOcrScanner, onMenuClick }) => {
 
       {/* 4. MOBILE SLIDE-OVER DRAWER MENU */}
       {isMobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-50 flex flex-col bg-slate-950/95 text-white backdrop-blur-xl animate-fadeIn overflow-y-auto">
+        <div className="md:hidden fixed inset-0 z-50 flex flex-col bg-slate-900/95 text-white backdrop-blur-xl animate-fadeIn overflow-y-auto">
           {/* Mobile Drawer Top Bar */}
           <div className="flex items-center justify-between p-4 border-b border-slate-800">
             <div className="flex items-center gap-2.5">
@@ -352,38 +460,96 @@ const Header = ({ dashboardType = 'user', onOpenOcrScanner, onMenuClick }) => {
           <div className="p-4 flex flex-col space-y-1.5">
             {[
               { id: 'home', label: 'TRANG CHỦ', icon: '🏠' },
+              ...(!isGarage ? [{ id: 'vehicles', label: 'DANH SÁCH XE', icon: '🚗' }] : []),
               { id: 'about', label: 'GIỚI THIỆU', icon: 'ℹ️' },
               { id: 'services', label: 'DỊCH VỤ', icon: '🛠️' },
               { id: 'news', label: 'TIN TỨC', icon: '📰' },
               { id: 'contact', label: 'LIÊN HỆ', icon: '📞' },
-            ].map((menu) => (
-              <button
-                key={menu.id}
-                onClick={() => {
-                  setActiveMenu(menu.id);
-                  setIsMobileMenuOpen(false);
-                  if (onMenuClick) {
-                    onMenuClick(menu.id);
-                  }
-                  if (menu.id === 'home') {
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  } else {
-                    const el = document.getElementById(menu.id);
-                    if (el) {
-                      el.scrollIntoView({ behavior: 'smooth' });
+            ].map((menu) => {
+              if (menu.id === 'services') {
+                return (
+                  <div key={menu.id} className="flex flex-col space-y-1">
+                    <button
+                      onClick={() => {
+                        setIsMobileServicesOpen(!isMobileServicesOpen);
+                        setActiveMenu('services');
+                      }}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-xl font-bold text-sm transition text-left ${
+                        activeMenu === 'services'
+                          ? 'bg-indigo-600 text-white shadow-md'
+                          : 'text-slate-300 hover:bg-slate-900 hover:text-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-base">{menu.icon}</span>
+                        <span>{menu.label}</span>
+                      </div>
+                      <svg
+                        className={`w-4 h-4 transition-transform ${isMobileServicesOpen ? 'rotate-180' : ''}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {isMobileServicesOpen && (
+                      <div className="pl-6 space-y-1 py-1">
+                        {serviceSubItems.map((subItem) => (
+                          <button
+                            key={subItem.id}
+                            onClick={() => {
+                              setActiveMenu('services');
+                              setIsMobileMenuOpen(false);
+                              if (onMenuClick) {
+                                onMenuClick('services', subItem.id);
+                              }
+                              const el = document.getElementById('services');
+                              if (el) {
+                                el.scrollIntoView({ behavior: 'smooth' });
+                              }
+                            }}
+                            className="w-full text-left px-4 py-2.5 text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-900 rounded-lg transition flex items-center gap-2"
+                          >
+                            <span className="text-indigo-400">•</span>
+                            <span>{subItem.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              return (
+                <button
+                  key={menu.id}
+                  onClick={() => {
+                    setActiveMenu(menu.id);
+                    setIsMobileMenuOpen(false);
+                    if (onMenuClick) {
+                      onMenuClick(menu.id);
                     }
-                  }
-                }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition text-left ${
-                  activeMenu === menu.id
-                    ? 'bg-indigo-600 text-white shadow-md'
-                    : 'text-slate-300 hover:bg-slate-900 hover:text-white'
-                }`}
-              >
-                <span className="text-base">{menu.icon}</span>
-                <span>{menu.label}</span>
-              </button>
-            ))}
+                    if (menu.id === 'home') {
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    } else {
+                      const el = document.getElementById(menu.id);
+                      if (el) {
+                        el.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    }
+                  }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition text-left ${
+                    activeMenu === menu.id
+                      ? 'bg-indigo-600 text-white shadow-md'
+                      : 'text-slate-300 hover:bg-slate-900 hover:text-white'
+                  }`}
+                >
+                  <span className="text-base">{menu.icon}</span>
+                  <span>{menu.label}</span>
+                </button>
+              );
+            })}
           </div>
 
           {/* Garage OCR Scanner Button for Mobile */}

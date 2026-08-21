@@ -15,7 +15,6 @@ export class ExtensionsService {
     if (msg.includes('nhớt') || msg.includes('dầu') || msg.includes('castrol') || msg.includes('bôi trơn')) {
       return `🚗 **Tư vấn thay dầu/nhớt động cơ:**\n\n` +
              `- **Đối với Ô tô:** Bạn nên thay dầu động cơ định kỳ sau mỗi **5.000 km** hoặc **6 tháng** (tùy điều kiện nào đến trước). Nếu dùng dầu tổng hợp toàn phần (Fully Synthetic), mốc thay có thể kéo dài đến **10.000 km** hoặc **12 tháng**.\n` +
-             `- **Đối với Xe máy:** Thay nhớt sau mỗi **1.500 km - 2.000 km**. Cứ mỗi 2 lần thay nhớt máy thì nên thay 1 lần nhớt hộp số (nhớt láp đối với xe tay ga).\n` +
              `⚠️ *Lưu ý:* Hãy nhớ thay lọc dầu ô tô sau mỗi 2 lần thay nhớt động cơ nhé!`;
     }
 
@@ -195,25 +194,25 @@ export class ExtensionsService {
     return invoice;
   }
 
-  // Helper: Bóc tách và định dạng chuẩn biển số xe Việt Nam bằng AI OCR (Hỗ trợ Ô tô & Xe máy)
+  // Helper: Bóc tách và định dạng chuẩn biển số xe Ô tô Việt Nam bằng AI OCR
   private extractPlateFromText(rawText: string): string | null {
     if (!rawText) return null;
 
     // Chuẩn hóa văn bản OCR: Chuyển chữ hoa, thay xuống dòng bằng khoảng trắng
     const text = rawText.toUpperCase().replace(/[\r\n]+/g, ' ').trim();
 
-    // Hàm nắn chỉnh lỗi nhận diện OCR thường gặp (Sửa chữ nhầm thành số)
+    // Hàm nắn chỉnh lỗi nhận diện OCR thường gặp trên biển số ô tô
     const fixDigits = (str: string) => str
       .replace(/O/g, '0').replace(/Q/g, '0')
       .replace(/I/g, '1').replace(/L/g, '1').replace(/\|/g, '1')
       .replace(/Z/g, '2')
       .replace(/S/g, '5')
-      .replace(/B/g, '8')
-      .replace(/G/g, '9').replace(/g/g, '9');
+      .replace(/B/g, '8');
 
-    // 1. Phân tích bằng Regex chuẩn trực tiếp trong văn bản (Ví dụ: 30E-922.91 | 30E 922 91 | 59A-123.45 | 69D1-666.66)
-    const directRegex = /([1-9][0-9OIZSBgG])[\s._-]*([A-Z]{1,2}|[A-Z][0-9OIZSBgG]|[0-9OIZSBgG][A-Z])[\s._-]*([0-9OIZSBgG]{3,5}(?:[.]?[0-9OIZSBgG]{2})?)/gi;
-    const matches = Array.from(text.matchAll(directRegex));
+    // 1. Phân tích Regex chuẩn cho Biển số xe Ô tô Việt Nam (Ví dụ: 30G-567.89 | 51K-123.45 | 30E-922.91 | 59A-123.45)
+    // Cấu trúc ô tô: [Mã tỉnh 2 số] [Ký tự seri 1-2 chữ] - [Dãy số 4-5 chữ số]
+    const carRegex = /([1-9][0-9OIZSB])[\s._-]*([A-Z]{1,2})[\s._-]*([0-9OIZSB]{3,5}(?:[.]?[0-9OIZSB]{2})?)/gi;
+    const matches = Array.from(text.matchAll(carRegex));
 
     for (const match of matches) {
       const rawProvince = fixDigits(match[1]);
@@ -223,6 +222,8 @@ export class ExtensionsService {
       const provNum = parseInt(rawProvince, 10);
       if (isNaN(provNum) || provNum < 11 || provNum > 99) continue;
 
+      if (!/^[0-9]+$/.test(rawNumbers)) continue; // Kiểm tra bắt buộc phần số không chứa ký tự chữ
+
       if (rawNumbers.length === 5) {
         rawNumbers = `${rawNumbers.substring(0, 3)}.${rawNumbers.substring(3, 5)}`;
       } else if (rawNumbers.length < 4 || rawNumbers.length > 5) {
@@ -231,7 +232,7 @@ export class ExtensionsService {
       return `${rawProvince}${rawSeries}-${rawNumbers}`;
     }
 
-    // 2. Tra cứu bằng cửa sổ trượt (Sliding Window) 8-9 ký tự chỉ gồm Chữ & Số ở bất kỳ đâu trong text
+    // 3. Tra cứu bằng cửa sổ trượt (Sliding Window) 8-9 ký tự
     const cleanedTokens = text.replace(/[^0-9A-Z]/g, '');
     for (const len of [9, 8]) {
       for (let i = 0; i <= cleanedTokens.length - len; i++) {
@@ -241,6 +242,10 @@ export class ExtensionsService {
         if (provInt >= 11 && provInt <= 99) {
           const seriesCandidate = sub.substring(2, len === 9 ? 4 : 3);
           const numbersCandidate = fixDigits(sub.substring(len === 9 ? 4 : 3));
+          
+          // Bắt buộc phần số chỉ được chứa chữ số 0-9
+          if (!/^[0-9]+$/.test(numbersCandidate)) continue;
+
           if (numbersCandidate.length === 5) {
             return `${provCandidate}${seriesCandidate}-${numbersCandidate.substring(0, 3)}.${numbersCandidate.substring(3, 5)}`;
           } else if (numbersCandidate.length === 4) {
@@ -290,7 +295,7 @@ export class ExtensionsService {
       }
     }
 
-    // B. Trích xuất biển số xe từ văn bản OCR hoặc tên file tải lên
+    // B. Trích xuất biển số xe ô tô thực tế từ văn bản OCR hoặc tên file tải lên
     let licensePlate = this.extractPlateFromText(rawRecognizedText)
                     || (file?.originalname ? this.extractPlateFromText(file.originalname) : null)
                     || (file?.originalname ? this.extractPlateFromText(file.originalname.replace(/[^0-9A-Z]/gi, '')) : null);
@@ -300,7 +305,12 @@ export class ExtensionsService {
     }
 
     if (!licensePlate) {
-      licensePlate = '30E-922.91'; // Biển số xe mặc định chuẩn cho Mercedes / ảnh quét người dùng tải lên
+      return {
+        licensePlate: null,
+        message: 'Chưa bóc tách tự động được biển số xe từ hình ảnh. Vui lòng kiểm tra lại độ rõ của ảnh hoặc nhập biển số thủ công.',
+        vehicleId: null,
+        vehicleProfile: null
+      };
     }
 
     // C. Tra cứu phương tiện trong CSDL
@@ -349,14 +359,7 @@ export class ExtensionsService {
         currentOdometer: vehicle.CurrentOdometer,
         ownerName: vehicle.OwnerName,
         ownerEmail: vehicle.OwnerEmail,
-        history: historyResult.recordset.map(row => ({
-          historyId: row.HistoryID,
-          executionDate: row.ExecutionDate,
-          executionOdometer: row.ExecutionOdometer,
-          totalCost: row.TotalCost,
-          details: row.Details,
-          garageName: row.GarageName || 'Tự bảo dưỡng'
-        }))
+        history: historyResult.recordset
       }
     };
   }

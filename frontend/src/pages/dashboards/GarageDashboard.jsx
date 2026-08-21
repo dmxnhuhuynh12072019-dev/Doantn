@@ -9,10 +9,12 @@ import GarageHistoryModal from '../../components/maintenances/GarageHistoryModal
 import CompleteAppointmentModal from '../../components/appointments/CompleteAppointmentModal';
 import VehicleProfileModal from '../../components/garages/VehicleProfileModal';
 import LicensePlateScannerModal from '../../components/extensions/LicensePlateScannerModal';
-import Header from '../../components/common/Header';
+import PresetOdometerChecklist from '../../components/maintenances/PresetOdometerChecklist';
+import NotificationBell from '../../components/notifications/NotificationBell';
 
 const GarageDashboard = () => {
   const { user, logout, themePreference, updateThemePreference } = useAuth();
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { toast } = useModal();
 
   // Tab state: 'appointments' | 'serviced' | 'analytics' | 'quick'
@@ -21,6 +23,7 @@ const GarageDashboard = () => {
   // Modal states
   const [isQuickLogOpen, setIsQuickLogOpen] = useState(false);
   const [isOcrScannerOpen, setIsOcrScannerOpen] = useState(false);
+  const [isPresetKmOpen, setIsPresetKmOpen] = useState(false);
 
   // Selected items for detail modals
   const [selectedApptForComplete, setSelectedApptForComplete] = useState(null);
@@ -145,25 +148,33 @@ const GarageDashboard = () => {
   };
 
   const handleOcrSearchSuccess = (vehicleProfile) => {
+    const vId = vehicleProfile.vehicleId || vehicleProfile.VehicleID;
+    const plate = vehicleProfile.licensePlate || vehicleProfile.LicensePlate;
     setFoundVehicle({
-      VehicleID: vehicleProfile.vehicleId,
-      UserID: vehicleProfile.userId,
-      LicensePlate: vehicleProfile.licensePlate,
-      VehicleType: vehicleProfile.vehicleType,
-      Brand: vehicleProfile.brand,
-      Model: vehicleProfile.model,
-      ManufactureYear: vehicleProfile.manufactureYear,
-      PurchaseDate: vehicleProfile.purchaseDate,
-      CurrentOdometer: vehicleProfile.currentOdometer,
-      OwnerName: vehicleProfile.ownerName,
-      OwnerEmail: vehicleProfile.ownerEmail
+      VehicleID: vId,
+      UserID: vehicleProfile.userId || vehicleProfile.UserID,
+      LicensePlate: plate,
+      VehicleType: vehicleProfile.vehicleType || vehicleProfile.VehicleType || 'Ô tô',
+      Brand: vehicleProfile.brand || vehicleProfile.Brand,
+      Model: vehicleProfile.model || vehicleProfile.Model,
+      ManufactureYear: vehicleProfile.manufactureYear || vehicleProfile.ManufactureYear,
+      PurchaseDate: vehicleProfile.purchaseDate || vehicleProfile.PurchaseDate,
+      CurrentOdometer: vehicleProfile.currentOdometer ?? vehicleProfile.CurrentOdometer ?? 0,
+      OwnerName: vehicleProfile.ownerName || vehicleProfile.OwnerName || vehicleProfile.customerName || 'Chủ xe',
+      OwnerEmail: vehicleProfile.ownerEmail || vehicleProfile.OwnerEmail || ''
     });
-    setQuickVehicleHistory(vehicleProfile.history);
-    setLicensePlateSearch(vehicleProfile.licensePlate);
+
+    if (vId) {
+      fetchQuickVehicleHistory(vId);
+    } else if (vehicleProfile.history) {
+      setQuickVehicleHistory(vehicleProfile.history);
+    }
+
+    setLicensePlateSearch(plate);
     setQuickSearchError('');
     setQuickHistoryError('');
     setActiveTab('quick'); // Switch to the Quick Actions search tab automatically!
-    toast.success(`Nhận diện & tìm kiếm thành công biển số: ${vehicleProfile.licensePlate}!`);
+    toast.success(`Nhận diện & tìm kiếm thành công biển số: ${plate}!`);
   };
 
   // C. Quick Action Handlers (Original Search)
@@ -227,54 +238,138 @@ const GarageDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col">
-      {/* Header */}
-      <Header dashboardType="garage" onOpenOcrScanner={() => setIsOcrScannerOpen(true)} />
-
-      {/* Main Tab bar */}
-      <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 shadow-xs shrink-0">
-        <div className="max-w-7xl mx-auto px-6 flex space-x-1 sm:space-x-4 overflow-x-auto">
-          <button
-            onClick={() => setActiveTab('appointments')}
-            className={`px-4 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${activeTab === 'appointments'
-                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
-                : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white'
-              }`}
-          >
-            📅 Lịch hẹn khách hàng
-          </button>
-          <button
-            onClick={() => setActiveTab('serviced')}
-            className={`px-4 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${activeTab === 'serviced'
-                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
-                : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white'
-              }`}
-          >
-            🚗 Quản lý xe đã bảo dưỡng
-          </button>
-          <button
-            onClick={() => setActiveTab('analytics')}
-            className={`px-4 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${activeTab === 'analytics'
-                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
-                : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white'
-              }`}
-          >
-            📊 Thống kê & Báo cáo
-          </button>
-          <button
-            onClick={() => setActiveTab('quick')}
-            className={`px-4 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${activeTab === 'quick'
-                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
-                : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white'
-              }`}
-          >
-            🔍 Tra cứu & Ghi nhận nhanh
-          </button>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col md:flex-row">
+      {/* Sidebar Panel matching Admin layout */}
+      <aside className="w-full md:w-72 bg-slate-900 text-slate-100 flex flex-col shrink-0 border-r border-slate-800">
+        <div className="p-6 border-b border-slate-850 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <span className="text-2xl">🏬</span>
+            <div>
+              <div className="text-lg font-black tracking-tight leading-none text-white">ACOH GARAGE</div>
+              <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">Garage Portal</span>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-8">
+        <nav className="flex-1 p-3.5 space-y-2">
+          {[
+            { id: 'appointments', icon: '📅', title: 'Lịch hẹn khách hàng' },
+            { id: 'serviced', icon: '🚗', title: 'Quản lý xe đã bảo dưỡng' },
+            { id: 'analytics', icon: '📊', title: 'Thống kê & Báo cáo' },
+            { id: 'quick', icon: '🔍', title: 'Tra cứu & Ghi nhận nhanh' },
+          ].map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs sm:text-sm font-bold text-left transition-all duration-200 cursor-pointer ${
+                  isActive
+                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 ring-1 ring-indigo-500/50'
+                    : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                }`}
+              >
+                <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-sm shrink-0 transition-colors ${
+                  isActive ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-300'
+                }`}>
+                  {tab.icon}
+                </span>
+                <span className="leading-snug font-bold text-xs sm:text-sm whitespace-nowrap">
+                  {tab.title}
+                </span>
+              </button>
+            );
+          })}
+        </nav>
+
+
+      </aside>
+
+      {/* Main Content Area */}
+      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        <header className="bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 py-4 px-6 md:px-8 flex items-center justify-between sticky top-0 z-15 shadow-xs">
+          <div>
+            <span className="text-xxs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-0.5">ACOH GARAGE PORTAL</span>
+            <h2 className="text-lg font-black text-slate-800 dark:text-white capitalize">
+              {activeTab === 'appointments' && 'Lịch hẹn khách hàng đặt tại tiệm'}
+              {activeTab === 'serviced' && 'Quản lý phương tiện đã làm dịch vụ'}
+              {activeTab === 'analytics' && 'Thống kê & Báo cáo doanh thu'}
+              {activeTab === 'quick' && 'Tra cứu lịch sử & Ghi nhận nhanh'}
+            </h2>
+          </div>
+
+          <div className="flex items-center gap-3.5 text-xs font-medium text-slate-500 dark:text-slate-400">
+            {/* Scan Biển số AI Button in Top Header */}
+            <button
+              onClick={() => setIsOcrScannerOpen(true)}
+              className="px-4 py-2 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md border border-indigo-500 hover:shadow-lg transition cursor-pointer flex items-center gap-2 animate-pulse"
+              title="Nhận diện biển số xe bằng AI (OCR)"
+            >
+              <span>📸</span> <span>Scan Biển số AI</span>
+            </button>
+
+            <NotificationBell />
+            <button
+              onClick={() => {
+                const nextTheme = themePreference === 'light' ? 'dark' : themePreference === 'dark' ? 'system' : 'light';
+                updateThemePreference(nextTheme);
+              }}
+              className="w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-750 text-slate-655 dark:text-slate-350 border border-slate-200 dark:border-slate-700 flex items-center justify-center transition cursor-pointer"
+              title={`Giao diện: ${themePreference === 'light' ? 'Sáng' : themePreference === 'dark' ? 'Tối' : 'Hệ thống'}. Nhấn để đổi.`}
+            >
+              {themePreference === 'light' ? '☀️' : themePreference === 'dark' ? '🌙' : '💻'}
+            </button>
+            <span className="hidden sm:inline">Hôm nay: <span className="font-bold text-slate-700 dark:text-white">{new Date().toLocaleDateString('vi-VN')}</span></span>
+
+            {/* Avatar Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setUserMenuOpen(prev => !prev)}
+                className="flex items-center gap-2 px-2 py-1.5 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer group"
+                title={user?.fullName || 'Tài khoản gara'}
+              >
+                <div className="w-8 h-8 rounded-full bg-indigo-600 text-white text-sm font-black flex items-center justify-center shrink-0 shadow ring-2 ring-indigo-200 dark:ring-indigo-500/40">
+                  {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'G'}
+                </div>
+                <div className="hidden sm:block text-left min-w-0">
+                  <p className="text-xs font-bold text-slate-800 dark:text-white truncate max-w-[120px]">{user?.fullName || 'Trần Thị Garage'}</p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate max-w-[120px]">{user?.email}</p>
+                </div>
+                <svg className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
+              </button>
+
+              {userMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+                    <div className="p-4 border-b border-slate-100 dark:border-slate-700">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-indigo-600 text-white text-base font-black flex items-center justify-center shrink-0 shadow">
+                          {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'G'}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{user?.fullName || 'Trần Thị Garage'}</p>
+                          <p className="text-xs text-slate-400 dark:text-slate-500 truncate">{user?.email}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-2">
+                      <button
+                        onClick={() => { setUserMenuOpen(false); logout(); }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition cursor-pointer"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                        Đăng xuất
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </header>
+
+        <div className="p-6 md:p-8 max-w-7xl w-full mx-auto space-y-6">
 
         {/* TAB 1: APPOINTMENTS */}
         {activeTab === 'appointments' && (
@@ -313,7 +408,7 @@ const GarageDashboard = () => {
                       <div className="flex justify-between items-start mb-4">
                         <div>
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xxs font-semibold bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 border border-indigo-100/30">
-                            {appt.VehicleType === 'Ô tô' ? '🚗 Ô tô' : '🏍️ Xe máy'}
+                            🚗 Ô tô
                           </span>
                           <h3 className="text-lg font-black text-slate-800 dark:text-white mt-1.5 leading-tight">
                             {appt.Brand} {appt.Model}
@@ -485,7 +580,7 @@ const GarageDashboard = () => {
                           </td>
                           <td className="px-6 py-4">{vehicle.VehicleType}</td>
                           <td className="px-6 py-4 font-bold">{vehicle.Brand} {vehicle.Model}</td>
-                          <td className="px-6 py-4 font-medium">{vehicle.CurrentOdometer.toLocaleString()} km</td>
+                          <td className="px-6 py-4 font-medium">{(vehicle.CurrentOdometer ?? 0).toLocaleString()} km</td>
                           <td className="px-6 py-4">
                             <div className="font-bold text-slate-800 dark:text-slate-200">{vehicle.OwnerName}</div>
                             <div className="text-xxs text-slate-400 dark:text-slate-500 mt-0.5">{vehicle.OwnerPhone}</div>
@@ -720,7 +815,7 @@ const GarageDashboard = () => {
                     <div className="pt-4 border-t border-slate-100 dark:border-slate-700 space-y-4">
                       <div className="flex justify-between items-center">
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 border border-indigo-100/30">
-                          {foundVehicle.VehicleType === 'Ô tô' ? '🚗 Ô tô' : '🏍️ Xe máy'}
+                          🚗 Ô tô
                         </span>
                         <span className="px-3 py-1 border-2 border-slate-800 dark:border-slate-400 bg-white dark:bg-slate-900 rounded-md text-sm font-black tracking-wider text-slate-800 dark:text-white shadow-xs shrink-0 whitespace-nowrap">
                           {foundVehicle.LicensePlate}
@@ -737,9 +832,19 @@ const GarageDashboard = () => {
                       <div className="bg-slate-50 dark:bg-slate-900/40 p-4 rounded-2xl">
                         <span className="text-xxs font-bold text-slate-400 dark:text-slate-500 uppercase block mb-1">Chỉ số Odo hiện tại</span>
                         <p className="text-2xl font-black text-slate-800 dark:text-white">
-                          {foundVehicle.CurrentOdometer.toLocaleString()}{' '}
+                          {foundVehicle.CurrentOdometer ? foundVehicle.CurrentOdometer.toLocaleString() : 0}{' '}
                           <span className="text-xs font-normal text-slate-500">km</span>
                         </p>
+                      </div>
+
+                      <div className="pt-2">
+                        <button
+                          type="button"
+                          onClick={() => setIsPresetKmOpen(true)}
+                          className="w-full py-3 px-4 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white rounded-2xl text-xs font-black shadow-lg shadow-indigo-500/20 transition flex items-center justify-center gap-2 cursor-pointer animate-pulse"
+                        >
+                          🛠️ Lập phiếu kiểm tra & Chọn mốc km (5k, 10k, 20k, 40k...)
+                        </button>
                       </div>
                     </div>
                   )}
@@ -798,7 +903,7 @@ const GarageDashboard = () => {
                               <div>
                                 <span className="text-slate-400 dark:text-slate-500 font-semibold block">Số Odo</span>
                                 <strong className="text-slate-700 dark:text-white">
-                                  {record.ExecutionOdometer.toLocaleString()} km
+                                  {(record.ExecutionOdometer ?? 0).toLocaleString()} km
                                 </strong>
                               </div>
                             </div>
@@ -831,6 +936,7 @@ const GarageDashboard = () => {
             </div>
           </div>
         )}
+        </div>
       </main>
 
       {/* --- MODALS RENDER --- */}
@@ -862,6 +968,28 @@ const GarageDashboard = () => {
         onClose={() => setIsOcrScannerOpen(false)}
         onSearchSuccess={handleOcrSearchSuccess}
       />
+
+      {/* 5. Preset Odometer Km Checklist Modal */}
+      {foundVehicle && (
+        <PresetOdometerChecklist
+          isOpen={isPresetKmOpen}
+          onClose={() => setIsPresetKmOpen(false)}
+          vehicle={{
+            vehicleID: foundVehicle.VehicleID || foundVehicle.vehicleId,
+            brand: foundVehicle.Brand || foundVehicle.brand,
+            model: foundVehicle.Model || foundVehicle.model,
+            licensePlate: foundVehicle.LicensePlate || foundVehicle.licensePlate,
+            vehicleType: foundVehicle.VehicleType || foundVehicle.vehicleType || 'Ô tô',
+            currentOdometer: foundVehicle.CurrentOdometer || foundVehicle.currentOdometer || 0,
+          }}
+          onSuccess={() => {
+            if (foundVehicle.VehicleID || foundVehicle.vehicleId) {
+              fetchQuickVehicleHistory(foundVehicle.VehicleID || foundVehicle.vehicleId);
+            }
+            toast.success('🎉 Đã lưu phiếu kiểm tra & mốc bảo dưỡng km thành công!');
+          }}
+        />
+      )}
     </div>
   );
 };

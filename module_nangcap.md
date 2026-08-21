@@ -3,11 +3,11 @@
 ## 1. THÔNG TIN CHUNG & MỤC TIÊU NÂNG CẤP
 * **Tên đề tài:** TÀI LIỆU ĐẶC TẢ KỸ THUẬT CÁC TÍNH NĂNG NÂNG CẤP HỆ THỐNG AUTOCARE OFFICE HELPER (ACOH)
 * **Tài liệu tham chiếu:** [module.md](file:///d:/DOANTOTNGHIEP/module.md) & [project_status.md](file:///d:/DOANTOTNGHIEP/project_status.md)
-* **Mục tiêu:** Định hướng kiến trúc, đặc tả chi tiết quy trình nghiệp vụ, giao diện, logic xử lý, hệ thống API và kịch bản kiểm thử cho 7 tính năng chưa thực hiện (nêu tại Phần III file `project_status.md`) nhằm phục vụ giai đoạn mở rộng sản phẩm.
+* **Mục tiêu:** Định hướng kiến trúc, đặc tả chi tiết quy trình nghiệp vụ, giao diện, logic xử lý, hệ thống API và kịch bản kiểm thử cho các tính năng nâng cấp cốt lõi (AI OCR biển số ô tô & WebCam, Luồng bảo dưỡng 4 bước, Phân quyền vai trò theo gói mốc km, Tối ưu Header Responsive & Performance) phục vụ báo cáo hội đồng bảo vệ và vận hành gara thực tế.
 
 ---
 
-## 2. DƠM MỤC CÁC MODULE NÂNG CẤP
+## 2. DANH MỤC CÁC MODULE NÂNG CẤP
 
 1. **MODULE 1:** Tích hợp Hệ thống Gửi tin nhắn Tự động Zalo ZNS & SMS Gateway
 2. **MODULE 2:** Nhận diện và Bóc tách Sổ Đăng Kiểm Tự động bằng AI OCR (Registration Certificate OCR)
@@ -16,6 +16,9 @@
 5. **MODULE 5:** Tích hợp Cổng Thanh toán Trực tuyến (VNPAY / MoMo / ZaloPay)
 6. **MODULE 6:** Kết nối Thiết bị Phần cứng OBD2 / GPS Đồng bộ Số Kilomet Thời gian thực
 7. **MODULE 7:** Phát triển Ứng dụng Di động Multi-Platform (React Native / Flutter Mobile Native App)
+8. **MODULE 8:** Nhận diện Biển số Xe Ô tô Thực tế bằng AI OCR & WebCam Trực tiếp (Automobile OCR & WebCam Integration)
+9. **MODULE 9:** Quy trình Nghiệp vụ Bảo dưỡng Ô tô 4 Bước & Phân quyền Vai trò (4-Step Maintenance Workflow & Role-Based Permissions)
+10. **MODULE 10:** Tối ưu hóa Giao diện Header Responsive & Hiệu năng Dashboard (UI/UX Responsive Layout & Performance Optimization)
 
 ---
 
@@ -61,7 +64,7 @@
 ### MODULE 2: NHẬN DIỆN VÀ BÓC TÁCH SỔ ĐĂNG KIỂM TỰ ĐỘNG BẰNG AI OCR (REGISTRATION CERTIFICATE OCR)
 
 #### A. Mô tả chức năng & Chi tiết quy trình nghiệp vụ
-* **Mục tiêu:** Thay vì người dùng phải gõ tay từng thông tin trên Sổ đăng kiểm (Số quản lý, Ngày hết hạn, Số khung, Số máy), chỉ cần chụp ảnh mặt trong của Sổ đăng kiểm / Giấy chứng nhận kiểm định, AI sẽ tự bóc tách và điền thẳng vào form.
+* **Mục tiêu:** Thay vì người dùng phải gõ tay từng thông tin trên Sổ đăng kiểm (Số quản lý, Ngày hết hạn, Số khung, Số máy), chỉ cần chụp ảnh mặt trong của Sổ đăng kiểm / Giấy chứng nhận kiểm định ô tô, AI sẽ tự bóc tách và điền thẳng vào form.
 * **Quy trình nghiệp vụ:**
   1. Người dùng vào tab **Giấy tờ xe** -> Chọn "Tải ảnh Sổ Đăng Kiểm".
   2. Ảnh được gửi lên Backend API.
@@ -83,28 +86,9 @@
 * **Module Extension OCR (`RegistrationOcrService`):**
   * Tích hợp `@google-cloud/vision` hoặc thư viện OCR tiếng Việt.
   * Xây dựng bộ quy tắc Regex trích xuất ngày tháng (`DD/MM/YYYY`) đứng sau từ khóa "Có hiệu lực đến ngày" hoặc "Valid until".
-  * Xử lý trường hợp ảnh mờ, lóa sáng: Trả về mức độ tin cậy (`confidenceScore`).
 
 #### D. Hệ thống API Endpoints (`/api/extensions/ocr`)
 * `POST /api/extensions/ocr/scan-registration` -> Upload `file` ảnh Sổ đăng kiểm (Multipart form data).
-* **Response Body trả về:**
-  ```json
-  {
-    "success": true,
-    "confidenceScore": 0.92,
-    "extractedData": {
-      "documentNumber": "KC-9876543",
-      "licensePlate": "59A-123.45",
-      "chassisNumber": "RLHFD184000123456",
-      "issueDate": "2024-06-15",
-      "expiryDate": "2026-12-15"
-    }
-  }
-  ```
-
-#### E. Hướng dẫn Kiểm thử Module 2 (Test Guide)
-* **FE Test:** Mở tab Giấy tờ xe -> Bấm "Quét Sổ Đăng Kiểm" -> Upload mẫu ảnh sổ đăng kiểm ô tô -> Xác nhận các ô "Số quản lý", "Ngày hết hạn" được điền tự động chính xác.
-* **API Test:** Gọi API `POST /scan-registration` với file mẫu -> Kiểm tra dữ liệu JSON trả về có đúng các trường ngày hết hạn và biển số.
 
 ---
 
@@ -115,155 +99,97 @@
 * **Quy trình nghiệp vụ:**
   1. Chủ xe chọn "Quét Hóa đơn bảo dưỡng cũ".
   2. Upload tệp ảnh hóa đơn giấy hoặc phiếu xuất kho của tiệm sửa xe.
-  3. AI OCR đọc cấu hình bảng (Table Transformer / Form Recognizer):
+  3. AI OCR đọc cấu hình bảng:
      * *Tên Gara thực hiện*
      * *Ngày thực hiện & Số km bàn giao*
-     * *Danh sách các dòng sản phẩm/dịch vụ:* (VD: Thay nhớt Castrol 4L - 450.000đ, Thay lọc nhớt - 150.000đ, Tiền công - 100.000đ)
+     * *Danh sách các dòng sản phẩm/dịch vụ*
      * *Tổng tiền thanh toán*.
   4. Trả về màn hình xem trước dưới dạng bảng điều chỉnh. Người dùng kiểm tra và nhấn "Xác nhận lưu vào Nhật ký bảo dưỡng".
 
+---
+
+### MODULE 8: NHẬN DIỆN BIỂN SỐ XE Ô TÔ THỰC TẾ BẰNG AI OCR & WEBCAM TRỰC TIẾP (AUTOMOBILE OCR & WEBCAM INTEGRATION)
+
+#### A. Mô tả chức năng & Chi tiết quy trình nghiệp vụ
+* **Mục tiêu:**
+  * **Tập trung 100% vào Ô tô / Xe hơi**: Loại bỏ hoàn toàn quy trình nhận diện xe máy (vì trên thực tế ô tô mới có chu kỳ bảo dưỡng, đăng kiểm nghiêm ngặt).
+  * **Xử lý bóc tách thật (Không dữ liệu test / fix cứng)**: Loại bỏ các đoạn code mock/hardcode biển số mẫu (`30G-567.89`, `69D1-666.66`, `59A-123.45`...). Sử dụng AI Tesseract OCR bóc tách thực tế từ hình ảnh bất kỳ do người dùng/hội đồng bảo vệ tải lên.
+  * **Tích hợp Camera/WebCam trực tiếp**: Cho phép nhân viên gara bật WebCam trên laptop/máy tính hoặc camera thiết bị di động (`navigator.mediaDevices.getUserMedia`) để chụp ảnh xe ngay tại cầu nâng/cổng gara.
+* **Quy trình nghiệp vụ:**
+  1. Nhân viên Lễ tân / Kỹ thuật bấm chọn "Scan Biển số Xe".
+  2. Lựa chọn nguồn ảnh: **Chụp từ WebCam/Camera trực tiếp** hoặc **Tải tệp ảnh ô tô từ máy tính**.
+  3. Khi chụp WebCam: Hệ thống hiển thị luồng video thời gian thực, người dùng căn chỉnh biển số xe ô tô vào khung và bấm "Chụp ảnh".
+  4. Ảnh (File/Blob) được gửi tới Endpoint Backend `POST /api/extensions/ocr/scan-plate`.
+  5. Tesseract OCR bóc tách chuỗi chữ & số thực tế -> Regex lọc chuẩn định dạng biển số Ô tô Việt Nam (`30G-567.89`, `51K-123.45`, `30E-12345`...).
+  6. FE hiển thị kết quả bóc tách lên ô Input có thể chỉnh sửa (Editable Text Field) để nhân viên rà soát lại nếu ảnh bị bẩn/lóa sáng trước khi thực hiện tra cứu hồ sơ.
+
 #### B. Thành phần Front-end (FE Interface)
-* **Giao diện Review Hóa đơn (`InvoiceOcrReviewModal`):**
-  * Màn hình chia đôi (Split view): Bên trái hiển thị ảnh chụp hóa đơn gốc, bên phải hiển thị Bảng dữ liệu trích xuất dạng Editable Table.
-  * Cho phép thêm/sửa/xóa từng dòng hạng mục chi phí trước khi lưu.
+* **Modal Quét Biển Số Ô tô (`LicensePlateScannerModal`):**
+  * Toggle Chế độ: `[Chụp bằng Camera/WebCam]` | `[Tải tệp ảnh lên]`.
+  * Khung xem video WebCam (`<video autoPlay playsInline />`) kèm nút chuyển camera (Front/Back) và nút "Chụp ảnh".
+  * Canvas chụp snapshot chuyển thành File Blob gửi API.
+  * Ô nhập kết quả nhận diện biển số ô tô cho phép chỉnh sửa trực tiếp.
 
 #### C. Thành phần Back-end (BE Logic)
-* **Invoice Parser Service (`InvoiceOcrService`):**
-  * Xử lý trích xuất văn bản theo dạng bảng (Row/Column Extraction).
-  * Chuẩn hóa đơn vị tiền tệ (loại bỏ chữ "đ", "VND", dấu chấm phân cách hàng nghìn).
-  * Tự động liên kết bản ghi mới tạo với bảng `MaintenanceHistory` trên SQL Server.
+* **Extensions Service (`ExtensionsService.scanPlate`):**
+  * Loại bỏ toàn bộ mock hardcoded strings (`69D1-666.66`, `30G-567.89`, `59A-123.45`, `WAVE`, `SANTA`, etc.).
+  * Điều chỉnh bộ regex `extractPlateFromText` tập trung vào định dạng biển số ô tô (dạng 1 dòng hoặc 2 dòng của ô tô).
+  * Trả về kết quả bóc tách thật cùng hồ sơ xe trong CSDL nếu tìm thấy.
 
 #### D. Hệ thống API Endpoints (`/api/extensions/ocr`)
-* `POST /api/extensions/ocr/scan-invoice` -> Upload `file` ảnh hóa đơn sửa xe.
-* `POST /api/maintenances/history/batch-import` -> Body: Danh sách các hạng mục từ hóa đơn đã được xác nhận để lưu vào database.
-
-#### E. Hướng dẫn Kiểm thử Module 3 (Test Guide)
-* **FE Test:** Vào Nhật ký bảo dưỡng -> Chọn "Số hóa hóa đơn cũ" -> Chọn ảnh hóa đơn -> Kiểm tra danh sách dịch vụ và tổng tiền hiện đúng lên Bảng điều chỉnh -> Bấm Lưu -> Kiểm tra Lịch sử bảo dưỡng được cập nhật.
+* `POST /api/extensions/ocr/scan-plate` -> Upload file ảnh hoặc blob từ webcam (`multipart/form-data`) -> Trả về: `{ licensePlate: "...", vehicleId: 10, vehicleProfile: { ... } }`.
 
 ---
 
-### MODULE 4: HỆ THỐNG TỰ ĐỘNG KHỞI TẠO BỘ LỊCH BẢO DƯỠNG MẪU THEO THÔNG SỐ XE (AUTO PRESET SCHEDULE GENERATOR)
+### MODULE 9: QUY TRÌNH NGHIỆP VỤ BẢO DƯỠNG Ô TÔ 4 BƯỚC & PHÂN QUYỀN VAI TRÒ (4-STEP MAINTENANCE WORKFLOW & ROLE-BASED PERMISSIONS)
 
-#### A. Mô tả chức năng & Chi tiết quy trình nghiệp vụ
-* **Mục tiêu:** Giúp người dùng mới không cần tự tạo thủ công từng lịch nhắc. Ngay khi bấm "Thêm xe mới", dựa vào Loại xe (Ô tô con, Xe máy, Xe tải) và Số km hiện tại / Ngày mua, hệ thống tự động tính toán và khởi tạo sẵn trọn bộ lịch nhắc bảo dưỡng tiêu chuẩn.
-* **Quy trình nghiệp vụ:**
-  1. Người dùng hoàn tất form thêm xe mới (VD: Ô tô Toyota Vios, Số km hiện tại: 12.000 km, Ngày mua: 01/01/2023).
-  2. BE sau khi lưu xe vào bảng `Vehicles`, tự động gọi `PresetGeneratorService`.
-  3. Dựa trên Ma trận bảo dưỡng chuẩn (`MaintenanceCategories`), hệ thống tính toán các mốc tiếp theo:
-     * *Thay nhớt máy:* Mốc 15.000 km (Cách 3.000 km nữa).
-     * *Thay lọc nhớt:* Mốc 20.000 km.
-     * *Đăng kiểm tiếp theo:* Tự động cộng 12 tháng hoặc 24 tháng theo chu kỳ quy định của loại xe.
-  4. Hệ thống tự động tạo một loạt bản ghi trong bảng `MaintenanceSchedules` và `LegalDocuments` ở trạng thái `Chưa thực hiện`.
+#### A. Chi tiết Luồng Bảo dưỡng Ô tô 4 Bước (Workflow Flow)
+1. **Bước 1 (Tiếp nhận & Định danh)**:
+   - Nhân viên Lễ tân/Gara mở tính năng Scan Biển số (Camera/Upload) tiếp nhận xe vào xưởng.
+   - Hệ thống bóc tách biển số xe -> Tự động truy xuất hồ sơ ô tô, chủ xe, và toàn bộ lịch sử bảo dưỡng trước đây (tại gara này hoặc liên gara).
+2. **Bước 2 (Kiểm tra & Lên phương án)**:
+   - Chuyển hồ sơ xe sang bộ phận Kỹ thuật viên/Kỹ sư.
+   - Kỹ thuật viên kiểm tra xe thực tế và đối chiếu với **Bộ danh mục mốc bảo dưỡng chuẩn theo km dành cho ô tô**:
+     * *Mốc 5.000 km / 3 tháng*: Thay dầu động cơ, vệ sinh lọc gió, kiểm tra nước rửa kính/nước làm mát.
+     * *Mốc 10.000 km / 6 tháng*: Thay dầu động cơ, thay lọc dầu, đảo lốp, kiểm tra hệ thống phanh.
+     * *Mốc 20.000 km / 12 tháng*: Thay dầu, thay lọc dầu, thay lọc gió động cơ, thay lọc gió máy lạnh, cân bằng động bánh xe.
+     * *Mốc 40.000 km / 24 tháng*: Thay toàn bộ dầu số, dầu cầu, nước làm mát, lọc nhiên liệu, bugi, dầu phanh.
+     * *Mốc 75.000 km & 100.000 km*: Kiểm tra bảo dưỡng toàn bộ dây curoa, bơm nước, rô tuân, giảm xóc.
+3. **Bước 3 (Báo giá & Xác nhận)**:
+   - Kỹ thuật viên tích chọn các hạng mục cần làm từ gói mốc km -> Hệ thống tự động chuyển phiếu kiểm tra sang bộ phận Lễ tân / Service Advisor.
+   - Lễ tân lập bảng báo giá tổng thể (Phụ tùng + Tiền công) -> Gửi báo giá cho Khách hàng qua hệ thống hoặc thông báo trực tiếp -> Khách hàng bấm "Xác nhận báo giá".
+4. **Bước 4 (Thi công & Nghiệm thu)**:
+   - Kỹ thuật viên tiến hành thay thế phụ tùng & sửa chữa -> Cập nhật trạng thái "Hoàn tất thi công".
+   - Hệ thống tự động ghi nhận dữ liệu vào `MaintenanceHistory`, cập nhật mốc Odometer mới của xe và xuất **Hóa đơn thanh toán (Invoice)**.
 
-#### B. Thành phần Front-end (FE Interface)
-* **Checkbox tùy chọn trong Form Thêm Xe (`AddVehicleModal`):**
-  * Tích chọn mặc định: *"Tự động khởi tạo lịch nhắc bảo dưỡng & thay nhớt tiêu chuẩn theo mốc km của nhà sản xuất"*.
-  * Hiển thị danh sách xem trước các lịch nhắc sẽ được tự động tạo.
-
-#### C. Thành phần Back-end (BE Logic)
-* **Preset Generator Service (`PresetScheduleService`):**
-  * Thuật toán làm tròn mốc km tiếp theo: `NextMilestone = Math.ceil(CurrentOdo / StepKM) * StepKM`.
-  * Tự động thêm bản ghi vào `MaintenanceSchedules` với `TargetOdometer = NextMilestone`.
-
-#### D. Hệ thống API Endpoints (`/api/vehicles`)
-* `POST /api/vehicles` -> Body: `{ brand, model, currentOdometer, autoGenerateSchedules: true }`
-* `GET /api/vehicles/:id/generated-schedules` -> Lấy danh sách các lịch nhắc tự động vừa sinh ra để xem/chỉnh sửa.
-
-#### E. Hướng dẫn Kiểm thử Module 4 (Test Guide)
-* **FE Test:** Thêm 1 chiếc xe ô tô mới với Odometer = 8.500 km -> Sau khi tạo xong, mở tab "Lịch nhắc bảo dưỡng" của xe đó -> Xác nhận đã có sẵn các lịch nhắc mốc 10.000 km (thay nhớt, lọc gió) mà không cần nhập tay.
-
----
-
-### MODULE 5: TÍCH HỢP CỔNG THANH TOÁN TRỰC TUYẾN (VNPAY / MOMO / ZALOPAY)
-
-#### A. Mô tả chức năng & Chi tiết quy trình nghiệp vụ
-* **Mục tiêu:** Cho phép chủ xe thanh toán tiền đặt cọc giữ chỗ khi Đặt lịch hẹn với Gara, hoặc thanh toán trực tiếp Hóa đơn bảo dưỡng sau khi Gara hoàn thành sửa chữa.
-* **Quy trình nghiệp vụ:**
-  1. Tại màn hình Đặt lịch hẹn hoặc Hóa đơn thanh toán, người dùng chọn "Thanh toán qua VNPAY / MoMo".
-  2. Backend tạo đơn hàng thanh toán, ký chữ ký số (HMAC SHA512) và sinh URL chuyển hướng thanh toán (Payment URL / QR Code).
-  3. Người dùng thực hiện quét mã QR hoặc nhập thẻ ngân hàng trên cổng VNPAY/MoMo.
-  4. Cổng thanh toán gọi IPN (Instant Payment Notification) Webhook về Backend ACOH để cập nhật trạng thái đơn hàng (`Paid`).
-  5. Hệ thống gửi thông báo Realtime cho cả Chủ xe và Gara: "Thanh toán thành công".
-
-#### B. Thành phần Front-end (FE Interface)
-* **Modal Chọn Phương Thức Thanh Toán (`PaymentCheckoutModal`):**
-  * Lựa chọn: Tiền mặt tại Gara, VNPAY QR, Ví MoMo, ZaloPay.
-  * Hiển thị Mã QR Code chuyển khoản động.
-  * Màn hình chờ kết quả thanh toán Realtime (tự chuyển trang thành công khi nhận Socket signal).
-
-#### C. Thành phần Back-end (BE Logic)
-* **Payment Module (`PaymentService`):**
-  * Cấu hình `vnp_TmnCode`, `vnp_HashSecret`, `vnp_Url`.
-  * Xử lý IPN Webhook (`/api/payments/vnpay-ipn`): Kiểm tra checksum chữ ký số, kiểm tra số tiền `vnp_Amount` khớp với hóa đơn.
-* **Database Schema Update:**
-  * Bổ sung bảng `Payments`: `PaymentID`, `AppointmentID`, `Amount`, `PaymentMethod`, `TransactionNo`, `Status` ('Pending'|'Success'|'Failed'), `CreatedAt`.
-
-#### D. Hệ thống API Endpoints (`/api/payments`)
-* `POST /api/payments/create-url` -> Body: `{ appointmentId, amount, paymentMethod }` (Tạo URL/QR thanh toán).
-* `GET /api/payments/vnpay-ipn` -> Webhook nhận kết quả tự động từ VNPAY Server.
-* `GET /api/payments/vnpay-return` -> Endpoint trả về trình duyệt sau khi người dùng hoàn tất thao tác.
-
-#### E. Hướng dẫn Kiểm thử Module 5 (Test Guide)
-* **FE Test:** Đặt 1 lịch hẹn bảo dưỡng -> Chọn thanh toán cọc 100.000đ qua VNPAY -> Quét mã QR Sandbox -> Nhập thông tin thẻ test VNPAY -> Xác nhận hiển thị thông báo "Thanh toán thành công" và trạng thái lịch hẹn chuyển sang "Đã cọc".
+#### B. Phân quyền và Vai trò Người dùng (Roles & Permissions)
+* **Khách hàng (`customer` / `user`)**:
+  * Đặt lịch hẹn bảo dưỡng ô tô trực tuyến.
+  * Theo dõi tiến độ xe đang bảo dưỡng real-time qua thanh trạng thái 4 bước (`Tiếp nhận` -> `Đang kiểm tra` -> `Đang báo giá` -> `Đang thi công` -> `Hoàn thành`).
+  * Xem & duyệt báo giá; xem lại lịch sử bảo dưỡng & tải hóa đơn.
+* **Kỹ thuật viên / Kỹ sư (`technician` / `mechanic`)**:
+  * Tiếp nhận phiếu kiểm tra kỹ thuật xe.
+  * Tích chọn nhanh các hạng mục bảo dưỡng từ Danh mục gói mốc km chuẩn (checkbox trực quan, không gõ chữ thô).
+  * Chuyển trạng thái phiếu kiểm tra cho Lễ tân.
+* **Lễ tân / Sale / Garage Admin (`advisor` / `admin` / `garage`)**:
+  * Mở Camera/WebCam quét biển số xe tiếp nhận xe tại xưởng.
+  * Đơn giá phụ tùng, tổng hợp tiền công và phát hành Báo giá.
+  * Nghiệm thu xe, xác nhận thanh toán & xuất hóa đơn.
 
 ---
 
-### MODULE 6: KẾT NỐI THIẾT BỊ PHẦN CỨNG OBD2 / GPS ĐỒNG BỘ SỐ KILOMET THỜI GIAN THỰC
+### MODULE 10: TỐI ƯU HÓA GIAO DIỆN HEADER RESPONSIVE & HIỆU NĂNG DASHBOARD (UI/UX RESPONSIVE LAYOUT & PERFORMANCE OPTIMIZATION)
 
-#### A. Mô tả chức năng & Chi tiết quy trình nghiệp vụ
-* **Mục tiêu:** Loại bỏ hoàn toàn việc chủ xe phải nhớ và nhập số km thủ công. Bằng cách cắm thiết bị OBD2 (qua cổng chẩn đoán xe) hoặc bộ giám sát hành trình GPS, số km di chuyển thực tế được đẩy liên tục về máy chủ ACOH.
-* **Quy trình nghiệp vụ:**
-  1. Thiết bị phần cứng (OBD2 Dongle / GPS Tracker) gắn trên xe gửi dữ liệu định kỳ (JSON via MQTT/HTTP POST) chứa: `deviceID`, `currentOdometer`, `speed`, `engineStatus`.
-  2. BE IoT Telemetry Service nhận dữ liệu, giải mã packet và cập nhật cột `CurrentOdometer` trong bảng `Vehicles`.
-  3. Khi số km vượt qua ngưỡng bảo dưỡng, hệ thống kích hoạt ngay Notification Realtime đẩy về điện thoại chủ xe: *"Xe bạn vừa đạt mốc 20.000 km, hãy đặt lịch thay nhớt!"*.
+#### A. Sửa lỗi vỡ Layout Header Responsive
+* **Hiện trạng lỗi:** Trên màn hình Mobile và Tablet (chiều rộng nhỏ hơn 768px - 1024px), menu điều hướng header bị đè lên nội dung, nhảy layout khi cuộn trang hoặc khi bấm bật menu hamburger.
+* **Giải pháp khắc phục:**
+  1. Tối ưu lại container `Header.jsx`: Thiết lập `sticky top-0 z-50` chuẩn, sử dụng `backdrop-blur-md` kết hợp `bg-white/95 dark:bg-slate-900/95`.
+  2. Tách biệt thanh Top Announcement Bar và Main Control Bar khi cuộn trang, ẩn gọn gàng bằng CSS `max-h` mà không làm thay đổi vị trí của dòng menu chính.
+  3. Cấu hình lại Slide-over Mobile Drawer Menu (`isMobileMenuOpen`): Sử dụng `fixed inset-0 z-50` phủ toàn màn hình kèm `overflow-y-auto` để đảm bảo menu mobile hiển thị mượt mà trên mọi thiết bị.
 
-#### B. Thành phần Front-end (FE Interface)
-* **Widget Trạng thái Phương tiện Thời gian thực (`LiveVehicleTelemetry`):**
-  * Biểu tượng kết nối thiết bị IoT (Đang kết nối / Mất tín hiệu).
-  * Đồng hồ hiển thị số km chạy thực (Live Odometer Counter) cập nhật tự động.
-
-#### C. Thành phần Back-end (BE Logic)
-* **IoT Telemetry Gateway (`TelemetryService`):**
-  * Xây dựng MQTT Broker / HTTP Webhook Ingestion Receiver nhận gói tin IoT.
-  * Tự động trigger kiểm tra mốc bảo dưỡng ngay khi số Odometer tăng lên.
-
-#### D. Hệ thống API Endpoints (`/api/telemetry`)
-* `POST /api/telemetry/odometer-sync` -> Header: `X-Device-Token`. Body: `{ deviceId, odometer, timestamp }`.
-* `GET /api/vehicles/:id/telemetry-status` -> Trả về trạng thái kết nối phần cứng và số km cập nhật mới nhất.
-
-#### E. Hướng dẫn Kiểm thử Module 6 (Test Guide)
-* **API Test:** Giả lập thiết bị phần cứng gửi request `POST /api/telemetry/odometer-sync` với `odometer: 15005` -> Kiểm tra số km của xe trên Dashboard tự động nhảy từ 14.800 km lên 15.005 km và thông báo cảnh báo bảo dưỡng xuất hiện.
-
----
-
-### MODULE 7: PHÁT TRIỂN ỨNG DỤNG DI ĐỘNG MULTI-PLATFORM (REACT NATIVE / FLUTTER MOBILE NATIVE APP)
-
-#### A. Mô tả chức năng & Chi tiết quy trình nghiệp vụ
-* **Mục tiêu:** Đóng gói toàn bộ tính năng ứng dụng thành App di động Native cài đặt trực tiếp từ App Store (iOS) và Google Play Store (Android), tận dụng các tính năng phần cứng di động như Push Notification (FCM/APNS), Bluetooth kết nối OBD2, và Camera quét QR/OCR mượt mà.
-* **Quy trình nghiệp vụ:**
-  1. Chủ xe tải App ACOH từ cửa hàng ứng dụng.
-  2. Đăng nhập và nhận Push Notification từ Firebase Cloud Messaging (FCM) ngay cả khi ứng dụng bị tắt hoàn toàn (Background/Killed state).
-  3. Sử dụng Camera Native với tốc độ lấy nét nhanh để quét biển số xe / hóa đơn.
-
-#### B. Thành phần Mobile Native App (Mobile UI Architecture)
-* **Tech Stack:** **React Native (Expo)** hoặc **Flutter**.
-* **Cấu trúc màn hình:**
-  * *Bottom Tab Navigator:* Trang chủ, Xe của tôi, Đặt lịch, Thông báo, Tài khoản.
-  * *Push Notification Integration:* Tích hợp `expo-notifications` kết hợp Firebase Cloud Messaging (FCM).
-  * *Native Camera Module:* `expo-camera` tối ưu hóa tốc độ chụp và truyền tệp ảnh lên Server.
-
-#### C. Thành phần Back-end (BE Logic)
-* **Push Notification Service (`FcmService`):**
-  * Tích hợp Firebase Admin SDK (`firebase-admin`).
-  * Quản lý lưu trữ `fcmToken` thiết bị di động trong bảng `UserDevices`: `DeviceID`, `UserID`, `FcmToken`, `Platform` ('iOS'|'Android').
-  * Gửi thông báo Push đến đúng thiết bị di động khi có sự kiện.
-
-#### D. Hệ thống API Endpoints (`/api/devices`)
-* `POST /api/devices/register-fcm` -> Body: `{ fcmToken, platform, deviceModel }` (Đăng ký Token nhận thông báo trên điện thoại).
-* `POST /api/devices/unregister-fcm` -> Body: `{ fcmToken }` (Hủy nhận thông báo khi đăng xuất).
-
-#### E. Hướng dẫn Kiểm thử Module 7 (Test Guide)
-* **Mobile Test:** Mở App trên điện thoại Android/iOS -> Đăng nhập -> Tắt hẳn ứng dụng -> Dùng Postman kích hoạt 1 thông báo cảnh báo -> Kiểm tra điện thoại hiển thị Notification Banner trên màn hình khóa.
+#### B. Tối ưu Hiệu năng Dashboard & Bảng biểu Báo cáo
+* Tải dữ liệu Dashboard theo dạng phân trang/lazy loading.
+* Sử dụng `React.memo` và `useCallback` cho các widget biểu đồ và bảng lịch sử bảo dưỡng để loại bỏ độ trễ (lag) khi thao tác chuyển tab.
 
 ---
 
@@ -272,9 +198,12 @@
 | Module nâng cấp | Mục tiêu chính | Công nghệ bổ sung | Mức độ ưu tiên |
 | :--- | :--- | :--- | :--- |
 | **Module 1: Zalo ZNS & SMS** | Gửi cảnh báo trực tiếp về SĐT / Zalo | Zalo OA API, Twilio/VietGuys SDK | **Cao (Ưu tiên #1)** |
-| **Module 2: AI OCR Sổ Đăng Kiểm** | Số hóa tự động giấy tờ đăng kiểm | Google Cloud Vision API / LayoutParser | **Cao (Ưu tiên #2)** |
+| **Module 2: AI OCR Sổ Đăng Kiểm** | Số hóa tự động giấy tờ đăng kiểm ô tô | Google Cloud Vision API / Tesseract | **Cao (Ưu tiên #2)** |
 | **Module 3: AI OCR Hóa Đơn Sửa Xe** | Số hóa nhật ký bảo dưỡng cũ | Table OCR Transformer / Regex Parser | **Trung bình** |
 | **Module 4: Auto Preset Schedule** | Tự sinh lịch nhắc khi tạo xe mới | NestJS Event Emitter / Service Logic | **Cao (Ưu tiên #3)** |
 | **Module 5: Thanh toán VNPAY/MoMo** | Thanh toán cọc & hóa đơn online | VNPAY SDK / Checksum HMAC SHA512 | **Trung bình** |
 | **Module 6: Kết nối OBD2 / GPS** | Tự động đồng bộ số km thực tế | MQTT Broker / Hardware Webhook | **Mở rộng về sau** |
 | **Module 7: Mobile Native App** | App di động Android & iOS | React Native / Expo / FCM | **Mở rộng về sau** |
+| **Module 8: AI OCR Biển số Ô tô & WebCam** | Chụp WebCam & Bóc tách thực biển số ô tô | Tesseract.js / WebCam HTML5 API | **Đã triển khai (Cốt lõi)** |
+| **Module 9: Luồng Bảo dưỡng 4 Bước & Roles** | Quy trình bảo dưỡng ô tô chuẩn 4 bước & phân quyền | NestJS RBAC / React Checkbox Presets | **Đã triển khai (Cốt lõi)** |
+| **Module 10: Fix Header Responsive & UX** | Sửa vỡ layout header & tối ưu lag dashboard | Tailwind Responsive / React Memo | **Đã triển khai (Cốt lõi)** |

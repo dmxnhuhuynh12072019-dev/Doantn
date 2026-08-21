@@ -78,10 +78,15 @@ export const AuthProvider = ({ children }) => {
       }
       return loggedUser;
     } catch (error) {
-      const serverMessage = error.response?.data?.message;
-      const message = Array.isArray(serverMessage)
-        ? serverMessage.join(', ')
-        : (typeof serverMessage === 'string' ? serverMessage : (error.message || 'Đã xảy ra lỗi khi đăng nhập'));
+      let message = 'Đã xảy ra lỗi khi đăng nhập';
+      if (error.response?.data?.message) {
+        const serverMsg = error.response.data.message;
+        message = Array.isArray(serverMsg) ? serverMsg.join(', ') : serverMsg;
+      } else if (error.message === 'Network Error' || !error.response) {
+        message = 'Không thể kết nối đến máy chủ backend. Vui lòng bấm "Đăng nhập" để thử lại.';
+      } else if (error.message) {
+        message = error.message;
+      }
       throw { message };
     }
   };
@@ -97,10 +102,15 @@ export const AuthProvider = ({ children }) => {
       });
       return res.data;
     } catch (error) {
-      const serverMessage = error.response?.data?.message;
-      const message = Array.isArray(serverMessage)
-        ? serverMessage.join(', ')
-        : (typeof serverMessage === 'string' ? serverMessage : (error.message || 'Đã xảy ra lỗi khi đăng ký tài khoản'));
+      let message = 'Đã xảy ra lỗi khi đăng ký tài khoản';
+      if (error.response?.data?.message) {
+        const serverMsg = error.response.data.message;
+        message = Array.isArray(serverMsg) ? serverMsg.join(', ') : serverMsg;
+      } else if (error.message === 'Network Error' || !error.response) {
+        message = 'Không thể kết nối đến máy chủ backend. Vui lòng thử lại sau giây lát.';
+      } else if (error.message) {
+        message = error.message;
+      }
       throw { message };
     }
   };

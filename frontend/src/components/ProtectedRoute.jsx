@@ -20,9 +20,16 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // Đã đăng nhập nhưng phân quyền không khớp
-  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/unauthorized" replace />;
+  // Đã đăng nhập nhưng phân quyền không khớp (so sánh không phân biệt hoa/thường)
+  if (allowedRoles && user) {
+    const userRoleLower = user.role ? String(user.role).toLowerCase() : '';
+    const hasPermission = allowedRoles.some(
+      (role) => String(role).toLowerCase() === userRoleLower
+    );
+
+    if (!hasPermission) {
+      return <Navigate to="/unauthorized" replace />;
+    }
   }
 
   return children;
