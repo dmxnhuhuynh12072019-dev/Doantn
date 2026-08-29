@@ -16,7 +16,7 @@ const thumbnails = [
 
 const Footer = () => {
   return (
-    <footer id="contact" className="bg-[#18181b] border-t border-zinc-800 text-zinc-400 transition-colors scroll-mt-20">
+    <footer id="contact" className="hidden md:block bg-[#18181b] border-t border-zinc-800 text-zinc-400 transition-colors scroll-mt-20">
       <div className="max-w-7xl mx-auto px-6">
         
         {/* Top Row: Newsletter, Logo, Hotline */}

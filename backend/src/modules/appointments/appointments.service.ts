@@ -67,7 +67,24 @@ export class AppointmentsService {
 
     const { GarageName, UserID: garageOwnerUserId } = garageCheck.recordset[0];
 
-    // 3. Tiến hành thêm lịch đặt hẹn
+    // 3. Kiểm tra giới hạn 3 người / 1 khung giờ tại Gara
+    const slotCheck = await this.dbService.query(
+      `SELECT COUNT(*) as BookedCount
+       FROM Appointments
+       WHERE GarageID = @garageId
+         AND AppointmentDate = @appointmentDate
+         AND Status != N'Hủy lịch'`,
+      [
+        { name: 'garageId', type: sql.Int, value: dto.garageId },
+        { name: 'appointmentDate', type: sql.DateTime, value: dto.appointmentDate },
+      ]
+    );
+
+    if (slotCheck.recordset.length > 0 && slotCheck.recordset[0].BookedCount >= 3) {
+      throw new BadRequestException('Khung giờ này đã đạt giới hạn tối đa (3 khách/khung giờ). Vui lòng chọn khung giờ khác.');
+    }
+
+    // 4. Tiến hành thêm lịch đặt hẹn
     const result = await this.dbService.query(
       `INSERT INTO Appointments (UserID, GarageID, VehicleID, AppointmentDate, Status, Notes, CreatedAt)
        OUTPUT INSERTED.AppointmentID
@@ -105,13 +122,13 @@ export class AppointmentsService {
     const result = await this.dbService.query(
       `SELECT a.*, v.LicensePlate, v.Brand, v.Model, v.VehicleType, g.GarageName, g.Address AS GarageAddress, g.Phone AS GaragePhone
        FROM Appointments a
-       JOIN Vehicles v ON a.VehicleID = v.VehicleID
-       JOIN Garages g ON a.GarageID = g.GarageID
-       WHERE a.UserID = @userId
+       LEFT JOIN Vehicles v ON a.VehicleID = v.VehicleID
+       LEFT JOIN Garages g ON a.GarageID = g.GarageID
+       WHERE a.UserID = @userId OR v.UserID = @userId
        ORDER BY a.AppointmentDate DESC`,
       [{ name: 'userId', type: sql.Int, value: userId }]
     );
-    return result.recordset;
+    return result.recordset || [];
   }
 
   // Lấy lịch hẹn của Gara (Dành cho Gara)
@@ -302,5 +319,23 @@ export class AppointmentsService {
     }
 
     return { message: 'Xác nhận hoàn tất bảo dưỡng lịch hẹn thành công!' };
+  }
+
+  // Lấy thống kê số lượng đặt lịch theo từng khung giờ của Gara trong ngày
+  async getSlotAvailability(garageId: number, dateStr: string) {
+    const result = await this.dbService.query(
+      `SELECT FORMAT(AppointmentDate, 'HH:mm') AS TimeSlot, COUNT(*) AS BookedCount
+       FROM Appointments
+       WHERE GarageID = @garageId
+         AND CAST(AppointmentDate AS DATE) = CAST(@date AS DATE)
+         AND Status != N'Hủy lịch'
+       GROUP BY FORMAT(AppointmentDate, 'HH:mm')`,
+      [
+        { name: 'garageId', type: sql.Int, value: garageId },
+        { name: 'date', type: sql.VarChar, value: dateStr },
+      ]
+    );
+
+    return result.recordset;
   }
 }

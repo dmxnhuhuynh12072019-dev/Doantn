@@ -44,3 +44,15 @@ export const completeAppointment = async (id, completeData) => {
     throw error.response?.data || { message: 'Không thể hoàn tất lịch bảo dưỡng' };
   }
 };
+
+export const getSlotAvailability = async (garageId, date) => {
+  try {
+    const res = await api.get('/api/appointments/slots', {
+      params: { garageId, date },
+    });
+    return res.data;
+  } catch (error) {
+    console.warn('Cannot fetch slot availability:', error);
+    return [];
+  }
+};

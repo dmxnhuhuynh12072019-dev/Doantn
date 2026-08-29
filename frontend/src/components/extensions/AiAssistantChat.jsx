@@ -20,6 +20,14 @@ const AiAssistantChat = () => {
   };
 
   useEffect(() => {
+    const handleOpenExternal = () => {
+      setIsOpen(true);
+    };
+    window.addEventListener('open-acoh-ai-chat', handleOpenExternal);
+    return () => window.removeEventListener('open-acoh-ai-chat', handleOpenExternal);
+  }, []);
+
+  useEffect(() => {
     if (isOpen) {
       scrollToBottom();
     }

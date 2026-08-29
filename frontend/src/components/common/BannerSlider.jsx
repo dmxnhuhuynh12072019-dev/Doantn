@@ -212,18 +212,6 @@ const BannerSlider = ({ onOpenAppointment, onOpenContact }) => {
         ))}
       </div>
 
-      {/* Floating Messenger Icon (Top Right floating on Banner as seen in sample photos) */}
-      <a
-        href="https://m.me/acohautocare"
-        target="_blank"
-        rel="noreferrer"
-        className="absolute top-6 right-6 z-20 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-tr from-blue-600 via-blue-500 to-cyan-400 text-white shadow-xl flex items-center justify-center hover:scale-110 transition-transform duration-200 border-2 border-white/40 group/msger"
-        title="Chat Facebook Messenger"
-      >
-        <svg className="w-5 h-5 sm:w-6 sm:h-6 fill-current" viewBox="0 0 24 24">
-          <path d="M12 0C5.373 0 0 4.974 0 11.111c0 3.498 1.744 6.614 4.469 8.654V24l4.088-2.242c1.092.3 2.246.464 3.443.464 6.627 0 12-4.975 12-11.111C24 4.974 18.627 0 12 0zm1.191 14.963l-3.055-3.26-5.963 3.26 6.559-6.963 3.13 3.26 5.888-3.26-6.559 6.963z"/>
-        </svg>
-      </a>
     </div>
   );
 };

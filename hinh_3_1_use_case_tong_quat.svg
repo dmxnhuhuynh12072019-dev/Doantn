@@ -1,0 +1,185 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 1280" width="100%" height="100%" style="background-color: #ffffff; font-family: 'Segoe UI', Arial, sans-serif;">
+  <!-- Background -->
+  <rect x="0" y="0" width="920" height="1280" fill="#ffffff" />
+
+  <!-- Outer System Boundary Box -->
+  <rect x="230" y="40" width="650" height="1160" fill="#ffffff" stroke="#1e293b" stroke-width="2" rx="4" />
+  <text x="555" y="75" fill="#0f172a" font-size="20" font-weight="bold" text-anchor="middle" letter-spacing="0.5">
+    Hệ Thống AutoCare Office Helper (ACOH)
+  </text>
+  <line x1="230" y1="95" x2="880" y2="95" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4,4" />
+
+  <!-- ==================== ACTOR 1: USER (CHỦ XE) ==================== -->
+  <g id="actor-user" transform="translate(100, 260)">
+    <!-- Head -->
+    <circle cx="0" cy="0" r="18" fill="#ffffff" stroke="#0284c7" stroke-width="2.5" />
+    <!-- Body -->
+    <line x1="0" y1="18" x2="0" y2="62" stroke="#0284c7" stroke-width="2.5" />
+    <!-- Arms -->
+    <line x1="-28" y1="34" x2="28" y2="34" stroke="#0284c7" stroke-width="2.5" />
+    <!-- Legs -->
+    <line x1="0" y1="62" x2="-24" y2="102" stroke="#0284c7" stroke-width="2.5" />
+    <line x1="0" y1="62" x2="24" y2="102" stroke="#0284c7" stroke-width="2.5" />
+    <!-- Label -->
+    <text x="0" y="125" fill="#0f172a" font-size="15" font-weight="bold" text-anchor="middle">Chủ xe</text>
+    <text x="0" y="143" fill="#0284c7" font-size="13" font-weight="600" text-anchor="middle">(User)</text>
+  </g>
+
+  <!-- USER USE CASES (Ovals) -->
+  <!-- UC 1: Quản lý thông tin cá nhân & Đăng nhập -->
+  <g id="uc-1" transform="translate(540, 135)">
+    <ellipse cx="0" cy="0" rx="175" ry="24" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.8" />
+    <text x="0" y="5" fill="#0369a1" font-size="13.5" font-weight="600" text-anchor="middle">Đăng ký / Đăng nhập &amp; Hồ sơ cá nhân</text>
+  </g>
+
+  <!-- UC 2: Quản lý phương tiện & Odometer -->
+  <g id="uc-2" transform="translate(540, 195)">
+    <ellipse cx="0" cy="0" rx="175" ry="24" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.8" />
+    <text x="0" y="5" fill="#0369a1" font-size="13.5" font-weight="600" text-anchor="middle">Quản lý phương tiện &amp; Cập nhật số km</text>
+  </g>
+
+  <!-- UC 3: Quản lý hồ sơ pháp lý & bảo hiểm -->
+  <g id="uc-3" transform="translate(540, 255)">
+    <ellipse cx="0" cy="0" rx="175" ry="24" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.8" />
+    <text x="0" y="5" fill="#0369a1" font-size="13.5" font-weight="600" text-anchor="middle">Quản lý Đăng kiểm &amp; Hợp đồng Bảo hiểm</text>
+  </g>
+
+  <!-- UC 4: Nhận thông báo & cảnh báo hạn xe -->
+  <g id="uc-4" transform="translate(540, 315)">
+    <ellipse cx="0" cy="0" rx="175" ry="24" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.8" />
+    <text x="0" y="5" fill="#0369a1" font-size="13.5" font-weight="600" text-anchor="middle">Nhận cảnh báo hạn xe &amp; Nhắc bảo dưỡng</text>
+  </g>
+
+  <!-- UC 5: Đặt lịch hẹn & duyệt báo giá -->
+  <g id="uc-5" transform="translate(540, 375)">
+    <ellipse cx="0" cy="0" rx="175" ry="24" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.8" />
+    <text x="0" y="5" fill="#0369a1" font-size="13.5" font-weight="600" text-anchor="middle">Đặt lịch bảo dưỡng &amp; Phê duyệt báo giá</text>
+  </g>
+
+  <!-- UC 6: Trợ lý AI tư vấn kỹ thuật -->
+  <g id="uc-6" transform="translate(540, 435)">
+    <ellipse cx="0" cy="0" rx="175" ry="24" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.8" />
+    <text x="0" y="5" fill="#0369a1" font-size="13.5" font-weight="600" text-anchor="middle">Trợ lý AI tư vấn kỹ thuật xe (Chatbot)</text>
+  </g>
+
+  <!-- UC 7: Xem thống kê chi tiêu cá nhân -->
+  <g id="uc-7" transform="translate(540, 495)">
+    <ellipse cx="0" cy="0" rx="175" ry="24" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.8" />
+    <text x="0" y="5" fill="#0369a1" font-size="13.5" font-weight="600" text-anchor="middle">Xem thống kê chi tiêu &amp; Lịch sử sửa xe</text>
+  </g>
+
+  <!-- Connectors for User -->
+  <line x1="125" y1="290" x2="365" y2="135" stroke="#1e293b" stroke-width="1.4" />
+  <line x1="125" y1="290" x2="365" y2="195" stroke="#1e293b" stroke-width="1.4" />
+  <line x1="125" y1="290" x2="365" y2="255" stroke="#1e293b" stroke-width="1.4" />
+  <line x1="125" y1="290" x2="365" y2="315" stroke="#1e293b" stroke-width="1.4" />
+  <line x1="125" y1="290" x2="365" y2="375" stroke="#1e293b" stroke-width="1.4" />
+  <line x1="125" y1="290" x2="365" y2="435" stroke="#1e293b" stroke-width="1.4" />
+  <line x1="125" y1="290" x2="365" y2="495" stroke="#1e293b" stroke-width="1.4" />
+
+  <!-- ==================== ACTOR 2: GARAGE (GARA ĐỐI TÁC) ==================== -->
+  <g id="actor-garage" transform="translate(100, 690)">
+    <!-- Head -->
+    <circle cx="0" cy="0" r="18" fill="#ffffff" stroke="#16a34a" stroke-width="2.5" />
+    <!-- Body -->
+    <line x1="0" y1="18" x2="0" y2="62" stroke="#16a34a" stroke-width="2.5" />
+    <!-- Arms -->
+    <line x1="-28" y1="34" x2="28" y2="34" stroke="#16a34a" stroke-width="2.5" />
+    <!-- Legs -->
+    <line x1="0" y1="62" x2="-24" y2="102" stroke="#16a34a" stroke-width="2.5" />
+    <line x1="0" y1="62" x2="24" y2="102" stroke="#16a34a" stroke-width="2.5" />
+    <!-- Label -->
+    <text x="0" y="125" fill="#0f172a" font-size="15" font-weight="bold" text-anchor="middle">Gara đối tác</text>
+    <text x="0" y="143" fill="#16a34a" font-size="13" font-weight="600" text-anchor="middle">(Garage)</text>
+  </g>
+
+  <!-- GARAGE USE CASES (Ovals) -->
+  <!-- UC 8: Quản lý hồ sơ xưởng & dịch vụ -->
+  <g id="uc-8" transform="translate(540, 570)">
+    <ellipse cx="0" cy="0" rx="175" ry="24" fill="#dcfce7" stroke="#16a34a" stroke-width="1.8" />
+    <text x="0" y="5" fill="#15803d" font-size="13.5" font-weight="600" text-anchor="middle">Quản lý thông tin xưởng &amp; Bảng giá dịch vụ</text>
+  </g>
+
+  <!-- UC 9: Quét biển số xe bằng AI OCR -->
+  <g id="uc-9" transform="translate(540, 630)">
+    <ellipse cx="0" cy="0" rx="175" ry="24" fill="#dcfce7" stroke="#16a34a" stroke-width="1.8" />
+    <text x="0" y="5" fill="#15803d" font-size="13.5" font-weight="600" text-anchor="middle">Quét biển số xe bằng AI OCR (WebCam)</text>
+  </g>
+
+  <!-- UC 10: Quản lý lịch hẹn & quy trình 4 bước -->
+  <g id="uc-10" transform="translate(540, 690)">
+    <ellipse cx="0" cy="0" rx="175" ry="24" fill="#dcfce7" stroke="#16a34a" stroke-width="1.8" />
+    <text x="0" y="5" fill="#15803d" font-size="13.5" font-weight="600" text-anchor="middle">Quản lý lịch hẹn &amp; Luồng bảo dưỡng 4 bước</text>
+  </g>
+
+  <!-- UC 11: Lập báo giá & Ghi sổ bảo dưỡng -->
+  <g id="uc-11" transform="translate(540, 750)">
+    <ellipse cx="0" cy="0" rx="175" ry="24" fill="#dcfce7" stroke="#16a34a" stroke-width="1.8" />
+    <text x="0" y="5" fill="#15803d" font-size="13.5" font-weight="600" text-anchor="middle">Lập báo giá &amp; Ghi sổ nhật ký sửa chữa</text>
+  </g>
+
+  <!-- UC 12: Xuất hóa đơn & Báo cáo doanh thu -->
+  <g id="uc-12" transform="translate(540, 810)">
+    <ellipse cx="0" cy="0" rx="175" ry="24" fill="#dcfce7" stroke="#16a34a" stroke-width="1.8" />
+    <text x="0" y="5" fill="#15803d" font-size="13.5" font-weight="600" text-anchor="middle">Xuất hóa đơn dịch vụ &amp; Thống kê doanh thu</text>
+  </g>
+
+  <!-- Connectors for Garage -->
+  <line x1="125" y1="720" x2="365" y2="570" stroke="#1e293b" stroke-width="1.4" />
+  <line x1="125" y1="720" x2="365" y2="630" stroke="#1e293b" stroke-width="1.4" />
+  <line x1="125" y1="720" x2="365" y2="690" stroke="#1e293b" stroke-width="1.4" />
+  <line x1="125" y1="720" x2="365" y2="750" stroke="#1e293b" stroke-width="1.4" />
+  <line x1="125" y1="720" x2="365" y2="810" stroke="#1e293b" stroke-width="1.4" />
+
+  <!-- ==================== ACTOR 3: ADMIN (QUẢN TRỊ VIÊN) ==================== -->
+  <g id="actor-admin" transform="translate(100, 1020)">
+    <!-- Head -->
+    <circle cx="0" cy="0" r="18" fill="#ffffff" stroke="#9333ea" stroke-width="2.5" />
+    <!-- Body -->
+    <line x1="0" y1="18" x2="0" y2="62" stroke="#9333ea" stroke-width="2.5" />
+    <!-- Arms -->
+    <line x1="-28" y1="34" x2="28" y2="34" stroke="#9333ea" stroke-width="2.5" />
+    <!-- Legs -->
+    <line x1="0" y1="62" x2="-24" y2="102" stroke="#9333ea" stroke-width="2.5" />
+    <line x1="0" y1="62" x2="24" y2="102" stroke="#9333ea" stroke-width="2.5" />
+    <!-- Label -->
+    <text x="0" y="125" fill="#0f172a" font-size="15" font-weight="bold" text-anchor="middle">Quản trị viên</text>
+    <text x="0" y="143" fill="#9333ea" font-size="13" font-weight="600" text-anchor="middle">(Admin)</text>
+  </g>
+
+  <!-- ADMIN USE CASES (Ovals) -->
+  <!-- UC 13: Quản lý người dùng & phân quyền -->
+  <g id="uc-13" transform="translate(540, 890)">
+    <ellipse cx="0" cy="0" rx="175" ry="24" fill="#f3e8ff" stroke="#9333ea" stroke-width="1.8" />
+    <text x="0" y="5" fill="#7e22ce" font-size="13.5" font-weight="600" text-anchor="middle">Quản lý người dùng &amp; Phân quyền (RBAC)</text>
+  </g>
+
+  <!-- UC 14: Quản lý danh mục mốc bảo dưỡng -->
+  <g id="uc-14" transform="translate(540, 955)">
+    <ellipse cx="0" cy="0" rx="175" ry="24" fill="#f3e8ff" stroke="#9333ea" stroke-width="1.8" />
+    <text x="0" y="5" fill="#7e22ce" font-size="13.5" font-weight="600" text-anchor="middle">Quản lý ma trận danh mục mốc bảo dưỡng</text>
+  </g>
+
+  <!-- UC 15: Kiểm duyệt gara đối tác -->
+  <g id="uc-15" transform="translate(540, 1020)">
+    <ellipse cx="0" cy="0" rx="175" ry="24" fill="#f3e8ff" stroke="#9333ea" stroke-width="1.8" />
+    <text x="0" y="5" fill="#7e22ce" font-size="13.5" font-weight="600" text-anchor="middle">Kiểm duyệt &amp; Quản lý mạng lưới Gara</text>
+  </g>
+
+  <!-- UC 16: Xem báo cáo thống kê toàn hệ thống -->
+  <g id="uc-16" transform="translate(540, 1085)">
+    <ellipse cx="0" cy="0" rx="175" ry="24" fill="#f3e8ff" stroke="#9333ea" stroke-width="1.8" />
+    <text x="0" y="5" fill="#7e22ce" font-size="13.5" font-weight="600" text-anchor="middle">Xem báo cáo thống kê tổng quan hệ thống</text>
+  </g>
+
+  <!-- Connectors for Admin -->
+  <line x1="125" y1="1050" x2="365" y2="890" stroke="#1e293b" stroke-width="1.4" />
+  <line x1="125" y1="1050" x2="365" y2="955" stroke="#1e293b" stroke-width="1.4" />
+  <line x1="125" y1="1050" x2="365" y2="1020" stroke="#1e293b" stroke-width="1.4" />
+  <line x1="125" y1="1050" x2="365" y2="1085" stroke="#1e293b" stroke-width="1.4" />
+
+  <!-- Caption text below the diagram -->
+  <text x="460" y="1245" fill="#0f172a" font-size="17" font-weight="bold" text-anchor="middle">
+    Hình 3.1 - Biểu đồ Use Case cấp 0 của hệ thống ACOH
+  </text>
+</svg>

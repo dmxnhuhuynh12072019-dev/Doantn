@@ -176,7 +176,6 @@ const Header = ({ dashboardType = 'user', currentView, onOpenOcrScanner, onMenuC
 
             {/* User Controls */}
             <div className="flex items-center gap-4 sm:gap-5">
-              <NotificationBell />
 
               {/* Garage special action: OCR Scan (Desktop) */}
               {isGarage && onOpenOcrScanner && (

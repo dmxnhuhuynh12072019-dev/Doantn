@@ -1,0 +1,270 @@
+================================================================================
+KỊCH BẢN THUYẾT TRÌNH BÁO CÁO BẢO VỆ ĐỒ ÁN TỐT NGHIỆP XỊN SÒ (16 SLIDE)
+ĐỀ TÀI: AUTOCARE OFFICE HELPER (ACOH)
+Ứng dụng Số hóa & Tự động Quản lý Lịch Đăng kiểm, Bảo dưỡng, Bảo hiểm Phương tiện
+================================================================================
+
+- Thời lượng khuyến nghị: 10 - 15 phút trình bày + 5 - 10 phút trả lời phản biện Hội đồng.
+- File Slide trình chiếu siêu phẩm: AutoCare_Office_Helper_SUPER_PREMIUM_DEFENSE.pptx
+- Tác phong: Trang phục lịch sự, giọng nói dõng dạc, tự tin, mắt hướng về phía Thầy/Cô trong Hội đồng và màn hình trình chiếu.
+
+================================================================================
+MỤC LỤC 16 SLIDE THUYẾT TRÌNH CHI TIẾT
+================================================================================
+
+[Slide 01] Trang bìa High-Tech Cover (ACOH Hero Slide)       - Thời gian: ~1 phút
+[Slide 02] Bối cảnh thực tế & 3 Nút thắt cấp thiết            - Thời gian: ~1 phút
+[Slide 03] Mục tiêu đề tài & Mô hình Use Case (RBAC 3 Role)   - Thời gian: ~1 phút
+[Slide 04] Kiến trúc Clean Architecture 3 lớp & Tech Stack    - Thời gian: ~1.5 phút
+[Slide 05] Thiết kế CSDL Quan hệ ERD 11 Bảng & Transaction   - Thời gian: ~1 phút
+[Slide 06] Phân hệ Quản lý Phương tiện & Xe dịch vụ (Fleet)  - Thời gian: ~1 phút
+[Slide 07] Hồ sơ Pháp lý, Chu kỳ Đăng kiểm & Cảnh báo 3 Cấp   - Thời gian: ~1 phút
+[Slide 08] Ma trận Bảo dưỡng Chuẩn & Cron Job Engine 00:00    - Thời gian: ~1.5 phút
+[Slide 09] Quy trình Vận hành Dịch vụ Gara Khép kín 4 Bước    - Thời gian: ~1.5 phút
+[Slide 10] Đột phá công nghệ: AI OCR Quét Biển số xe WebCam   - Thời gian: ~1.5 phút
+[Slide 11] Trợ lý AutoCare AI Chatbot & Dashboard Analytics  - Thời gian: ~1 phút
+[Slide 12] Mô hình Triển khai Hạ tầng (Deployment & Nginx)   - Thời gian: ~1 phút
+[Slide 13] Kiểm thử Chức năng (Black-box), API & Real-time   - Thời gian: ~1 phút
+[Slide 14] Kết quả đạt được & Đóng góp thực tiễn của đề tài   - Thời gian: ~1 phút
+[Slide 15] Định hướng phát triển trong tương lai (Roadmap)    - Thời gian: ~1 phút
+[Slide 16] Lời cảm ơn Hội đồng & Chuyển sang phần Q&A / Demo  - Thời gian: ~30 giây
+
+================================================================================
+NỘI DUNG LỜI THOẠI CHI TIẾT TỪNG SLIDE (SPEAKER SCRIPT)
+================================================================================
+
+--------------------------------------------------------------------------------
+SLIDE 1: TRANG BÌA HIGH-TECH COVER
+--------------------------------------------------------------------------------
+* Thời gian: 00:00 - 01:00
+* Slide hiển thị: Giao diện Dark Cyber cực sang trọng, Badge vàng, 3 khối công nghệ cốt lõi và thông tin Giảng viên hướng dẫn / Sinh viên thực hiện.
+
+[LỜI THOẠI]
+"Kính thưa Quý Thầy/Cô trong Hội đồng chấm bảo vệ đồ án tốt nghiệp cùng toàn thể các bạn sinh viên đang có mặt trong buổi bảo vệ ngày hôm nay!
+
+Lời đầu tiên, cho phép em xin được gửi tới Quý Thầy/Cô lời chào trân trọng và lời chúc sức khỏe tốt đẹp nhất.
+
+Em tên là [Họ và Tên bạn], sinh viên chuyên ngành [Kỹ thuật Phần mềm / Công nghệ Thông tin]. Dưới sự hướng dẫn và chỉ bảo tận tình của [ThS./TS. Họ và Tên GVHD], hôm nay em rất vinh dự được đứng tại đây để báo cáo kết quả thực hiện đồ án tốt nghiệp với đề tài: 'Xây dựng hệ thống AutoCare Office Helper (ACOH) - Ứng dụng số hóa và quản lý lịch đăng kiểm, bảo dưỡng và bảo hiểm phương tiện'.
+
+Sau đây, em xin phép được bắt đầu phần trình bày của mình."
+
+--------------------------------------------------------------------------------
+SLIDE 2: BỐI CẢNH THỰC TẾ & 3 NÚT THẮT CẤP THIẾT
+--------------------------------------------------------------------------------
+* Thời gian: 01:00 - 02:00
+* Slide hiển thị: 3 Thẻ Card viền màu Đỏ - Vàng - Xanh làm nổi bật 3 bài toán lớn.
+
+[LỜI THOẠI]
+"Kính thưa Thầy/Cô, hiện nay tại Việt Nam, số lượng phương tiện cá nhân—đặc biệt là ô tô và xe dịch vụ—đang tăng trưởng rất nhanh. Tuy nhiên, qua quá trình khảo sát thực tế, em nhận thấy 3 nút thắt lớn:
+
+- Thứ nhất - Rủi ro pháp lý & an toàn: Nhóm người bận rộn như nhân viên văn phòng hoặc chủ xe cá nhân thường xuyên quên các mốc kiểm định an toàn kỹ thuật (đăng kiểm) và hạn bảo hiểm bắt buộc. Khi quá hạn đăng kiểm, chủ xe không chỉ đối mặt với mức phạt hành chính từ 4 đến 16 triệu đồng kèm nguy cơ bị tước GPLX, mà còn tiềm ẩn nguy cơ mất an toàn giao thông nghiêm trọng do xe không được thay dầu nhớt và bảo dưỡng đúng hạn.
+- Thứ hai - Quản trị thủ công rời rạc: Việc quản lý giấy tờ hiện nay phần lớn vẫn thực hiện thủ công bằng sổ tay hoặc lưu trữ rời rạc, không có công cụ tính toán chi phí vận hành (TCO) và theo dõi số kilomet thực tế của xe.
+- Thứ ba - Gara thiếu kênh kỹ thuật số: Các xưởng dịch vụ (Gara) phần lớn tiếp nhận xe và đặt lịch thủ công qua điện thoại, thiếu quy trình báo giá và nghiệm thu điện tử minh bạch với khách hàng.
+
+Xuất phát từ những bất cập thực tế đó, đề tài AutoCare Office Helper được ra đời nhằm mang lại một giải pháp số hóa toàn diện."
+
+--------------------------------------------------------------------------------
+SLIDE 3: MỤC TIÊU ĐỀ TÀI & PHÂN QUYỀN ĐA VAI TRÒ (RBAC)
+--------------------------------------------------------------------------------
+* Thời gian: 02:00 - 03:00
+* Slide hiển thị: Sơ đồ Use Case tổng quát bên trái và 3 Thẻ phân quyền User, Garage, Admin bên phải.
+
+[LỜI THOẠI]
+"Đến với slide tiếp theo, hệ thống ACOH được thiết kế nhằm đạt được 4 mục tiêu cốt lõi:
+1. Số hóa tập trung toàn bộ hồ sơ xe, chu kỳ pháp lý và sổ bảo dưỡng điện tử lên đám mây.
+2. Tự động hóa cảnh báo đa kênh (Real-time WebSockets & Email) trước khi đến hạn theo thời gian hoặc số kilomet.
+3. Chuẩn hóa quy trình vận hành dịch vụ gara khép kín 4 bước minh bạch.
+4. Ứng dụng Trí tuệ Nhân tạo với AI OCR quét biển số xe thực tế và AI Chatbot hỗ trợ kỹ thuật xe.
+
+Hệ thống thiết lập cơ chế phân quyền RBAC cho 3 đối tượng người dùng:
+- User (Chủ phương tiện): Quản lý xe, cập nhật Odometer, nhận cảnh báo, đặt lịch hẹn và xem phân tích chi tiêu.
+- Garage (Xưởng dịch vụ): Tiếp nhận xe bằng OCR WebCam, kiểm tra checklist mốc km, lập báo giá điện tử và xuất hóa đơn.
+- Admin (Quản trị viên): Kiểm duyệt gara, giám sát giao dịch và theo dõi tăng trưởng hệ thống."
+
+--------------------------------------------------------------------------------
+SLIDE 4: KIẾN TRÚC CLEAN ARCHITECTURE & TECH STACK
+--------------------------------------------------------------------------------
+* Thời gian: 03:00 - 04:30
+* Slide hiển thị: Sơ đồ Clean Architecture 3 lớp bên trái và 3 Thẻ công nghệ Client - Server - Database bên phải.
+* Hành động: Chỉ tay vào sơ đồ kiến trúc 3 lớp trên slide.
+
+[LỜI THOẠI]
+"Về mặt kiến trúc kỹ thuật, hệ thống ACOH được xây dựng dựa trên mô hình Clean Architecture 3 lớp nhằm đảm bảo tính mở rộng cao, độc lập giữa các tầng và dễ dàng bảo trì:
+
+- Tầng Front-end: Em sử dụng ReactJS kết hợp Vite giúp tối ưu tốc độ render, thư viện TailwindCSS và Shadcn/ui để thiết kế giao diện chuẩn Mobile-First, tích hợp Socket.IO Client nhận thông báo thời gian thực và Recharts vẽ biểu đồ thống kê trực quan.
+- Tầng Back-end: Được phát triển bằng NestJS Framework (TypeScript). Nhờ kiến trúc Module hóa chặt chẽ kết hợp Dependency Injection, hệ thống phân tách rành mạch giữa Controller tiếp nhận API, Service xử lý nghiệp vụ và Gateway quản lý kết nối WebSocket. Bảo mật được thực thi bằng mã hóa mật khẩu một chiều BCrypt và xác thực JSON Web Token (JWT).
+- Hệ quản trị Cơ sở dữ liệu: Sử dụng Microsoft SQL Server (2014+) được thiết kế chuẩn hóa quan hệ 3NF, đồng thời đánh các Non-clustered Index trên các trường khóa ngoại để tối ưu hóa tốc độ truy vấn hàng trăm nghìn bản ghi.
+- Phân hệ AI & Tự động hóa: Tích hợp engine Tesseract.js nhận diện chữ từ ảnh chụp WebCam và Google Generative AI xây dựng Trợ lý ảo tư vấn bảo dưỡng."
+
+--------------------------------------------------------------------------------
+SLIDE 5: THIẾT KẾ CƠ SỞ DỮ LIỆU & MÔ HÌNH ERD (11 BẢNG CHUẨN)
+--------------------------------------------------------------------------------
+* Thời gian: 04:30 - 05:30
+* Slide hiển thị: Sơ đồ thực thể liên kết ERD 11 bảng và Hộp điểm nhấn Transaction ACID.
+
+[LỜI THOẠI]
+"Trên màn hình là sơ đồ thực thể liên kết ERD của hệ thống bao gồm 11 bảng dữ liệu cốt lõi:
+- Bảng Users liên kết 1-Nhiều với bảng Vehicles để một chủ xe có thể quản lý nhiều phương tiện.
+- Bảng Vehicles làm trung tâm kết nối với LegalDocuments (lưu Đăng kiểm, Bảo hiểm), MaintenanceSchedules (lưu lịch nhắc bảo dưỡng) và MaintenanceHistory (sổ nhật ký sửa chữa).
+- Bảng Garages liên kết với Appointments để xử lý các lịch đặt hẹn dịch vụ trực tuyến giữa Chủ xe và Xưởng.
+- Ngoài ra còn có các bảng Notifications ghi vết thông báo, GarageReviews đánh giá chất lượng và Payments lưu vết giao dịch thanh toán điện tử.
+
+Đặc biệt, hệ thống sử dụng Database Transactions khi chuyển trạng thái lịch hẹn sang hoàn tất, đảm bảo tính toàn vẹn dữ liệu (Atomicity): ghi sổ sửa chữa, cập nhật Odometer xe và gửi thông báo đều thành công đồng thời, nếu có lỗi sẽ rollback tự động."
+
+--------------------------------------------------------------------------------
+SLIDE 6: MODULE QUẢN LÝ PHƯƠNG TIỆN & ĐỘI XE THƯƠNG MẠI
+--------------------------------------------------------------------------------
+* Thời gian: 05:30 - 06:30
+* Slide hiển thị: Ảnh giao diện quản lý xe bên trái và 4 Tính năng nghiệp vụ bên phải.
+
+[LỜI THOẠI]
+"Đi sâu vào chi tiết các module chức năng:
+
+- Tại Module Quản lý Phương tiện, hệ thống cho phép quản lý cả Ô tô và Xe máy với biển số định danh Unique toàn hệ thống.
+- Một điểm sáng nghiệp vụ của đề tài là phân hệ Xe chạy dịch vụ (Commercial Fleet): Khi người dùng bật tùy chọn xe dịch vụ, hệ thống tự động mở rộng các trường quản lý Mã Hợp tác xã (HTX) và Số Phù hiệu xe—đây là các thông tin bắt buộc theo quy định pháp luật vận tải tại Việt Nam.
+- Ngoài ra, tính năng Cập nhật nhanh Odometer cho phép chủ xe cập nhật số km hàng ngày với thuật toán kiểm tra ràng buộc logic, ngăn chặn nhập số km mới nhỏ hơn số km đã lưu trong quá khứ."
+
+--------------------------------------------------------------------------------
+SLIDE 7: QUẢN LÝ HỒ SƠ PHÁP LÝ & CẢNH BÁO 3 CẤP ĐỘ
+--------------------------------------------------------------------------------
+* Thời gian: 06:30 - 07:30
+* Slide hiển thị: Ảnh giao diện pháp lý và 3 Badge Xanh / Cam / Đỏ nổi bật.
+
+[LỜI THOẠI]
+"Tại Module Quản lý Hồ sơ Pháp lý, hệ thống theo dõi 4 loại giấy tờ: Sổ Đăng kiểm, Bảo hiểm TNDS bắt buộc, Bảo hiểm vật chất xe và Giấy phép lái xe.
+
+Hệ thống triển khai cơ chế Động cơ phân loại cảnh báo 3 cấp độ màu sắc theo thời gian thực:
+- Mã màu Xanh (Còn hạn an toàn): Khi thời hạn còn trên 30 ngày.
+- Mã màu Cam (Sắp hết hạn): Khi thời hạn còn từ 1 đến 30 ngày, hệ thống sẽ nhắc nhở chủ xe chuẩn bị đặt lịch kiểm định hoặc mua bảo hiểm.
+- Mã màu Đỏ (Đã quá hạn nguy hiểm): Khi thời gian còn lại âm ngày, hệ thống cảnh báo nguy cơ bị phạt khi lưu thông trên đường.
+
+Toàn bộ số ngày đếm ngược được tính toán chính xác bằng hàm DATEDIFF từ máy chủ."
+
+--------------------------------------------------------------------------------
+SLIDE 8: MA TRẬN BẢO DƯỠNG & ĐỘNG CƠ CRON JOB QUÉT NGẦM
+--------------------------------------------------------------------------------
+* Thời gian: 07:30 - 09:00
+* Slide hiển thị: Ảnh ma trận bảo dưỡng và cơ chế Cron Job 00:00.
+
+[LỜI THOẠI]
+"Một trong những tính năng cốt lõi nhất của ACOH là Ma trận Bảo dưỡng Chuẩn hóa kết hợp với Động cơ Cảnh báo Cron Job tự động:
+
+- Hệ thống đã mã hóa sẵn các gói bảo dưỡng theo chuẩn kỹ thuật ô tô: mốc 5.000 km (thay dầu máy), mốc 10.000 km (thay lọc dầu, đảo lốp), mốc 20.000 km (thay lọc gió, cân bằng động) và mốc lớn 40.000 km (thay dầu số, bugi, nước mát).
+- Khi người dùng thêm xe mới, hệ thống sẽ Tự động sinh trọn bộ lịch bảo dưỡng mẫu phù hợp với loại xe.
+- Hàng đêm vào đúng 00:00 (nửa đêm), một tác vụ nền Cron Job sẽ tự động quét toàn bộ cơ sở dữ liệu để tìm ra các xe sắp đến hạn theo ngày hoặc theo số kilomet chênh lệch <= 500 km. Ngay lập tức, hệ thống sẽ phát tín hiệu cảnh báo đồng thời qua 2 kênh: Real-time WebSockets đẩy thông báo lên màn hình và Nodemailer SMTP gửi email thông báo chi tiết đến hòm thư của chủ xe."
+
+--------------------------------------------------------------------------------
+SLIDE 9: QUY TRÌNH NGHIỆP VỤ BẢO DƯỠNG GARA 4 BƯỚC
+--------------------------------------------------------------------------------
+* Thời gian: 09:00 - 10:30
+* Slide hiển thị: Ảnh đặt lịch và 4 Thẻ quy trình Gara khép kín.
+
+[LỜI THOẠI]
+"Để giải quyết bài toán thiếu minh bạch tại các gara truyền thống, ACOH đã chuẩn hóa quy trình dịch vụ thành 4 bước khép kín giữa Khách hàng và Xưởng:
+
+1. Bước 1 - Tiếp nhận & Định danh: Khách mang xe đến, lễ tân quét biển số xe để tra cứu ngay lịch sử và hồ sơ xe.
+2. Bước 2 - Kiểm tra & Lên phương án: Kỹ thuật viên kiểm tra xe trên cầu nâng và tích chọn các hạng mục cần thay thế từ checklist mốc km chuẩn.
+3. Bước 3 - Báo giá & Xác nhận: Cố vấn dịch vụ áp bảng giá phụ tùng, tiền công và thuế VAT, sau đó phát hành báo giá điện tử lên ứng dụng để khách hàng trực tiếp xác nhận duyệt sửa chữa.
+4. Bước 4 - Thi công & Nghiệm thu: Sau khi sửa xong, gara bấm hoàn tất; hệ thống sẽ tự động cập nhật số Odometer mới vào xe, tạo bản ghi Sổ bảo dưỡng điện tử, xuất hóa đơn chi tiết và gửi thông báo real-time mời khách đến nhận xe.
+
+Quy trình này loại bỏ hoàn toàn tình trạng mất mát hóa đơn giấy và tranh chấp chi phí."
+
+--------------------------------------------------------------------------------
+SLIDE 10: ĐỘT PHÁ CÔNG NGHỆ: AI OCR NHẬN DIỆN BIỂN SỐ XE
+--------------------------------------------------------------------------------
+* Thời gian: 10:30 - 12:00
+* Slide hiển thị: Ảnh WebCam OCR thực tế và 4 Điểm nhấn bóc tách Tesseract.js.
+* Hành động: Nhấn mạnh tính năng AI thực tế không dùng dữ liệu mock.
+
+[LỜI THOẠI]
+"Kính thưa Thầy/Cô, điểm đột phá về mặt công nghệ trong đề tài này là tính năng Nhận diện biển số xe ô tô thực tế bằng AI OCR qua WebCam trực tiếp:
+
+- Hệ thống không sử dụng dữ liệu giả lập (mock string) mà tích hợp engine Tesseract.js xử lý hình ảnh trực tiếp từ luồng video WebCam của máy tính hoặc camera điện thoại.
+- Thuật toán áp dụng Biểu thức chính quy (Regex) được tùy biến riêng cho quy chuẩn biển số xe cơ giới tại Việt Nam (bao gồm cả biển số 1 dòng và 2 dòng dạng 30G-567.89 hay 51K-123.45).
+- Sau khi nhận diện thành công, hệ thống tự động điền biển số và truy xuất ngay hồ sơ phương tiện trong CSDL. Giúp nhân viên tiếp tân gara tiết kiệm hơn 90% thời gian nhập liệu và loại bỏ sai sót chính tả.
+- Đồng thời, giao diện có cung cấp ô nhập cho phép kỹ thuật viên chỉnh sửa tức thời nếu biển số ngoài thực tế bị bám bùn đất hoặc chụp trong điều kiện thiếu sáng."
+
+--------------------------------------------------------------------------------
+SLIDE 11: TRỢ LÝ AI CHATBOT & DASHBOARD ANALYTICS
+--------------------------------------------------------------------------------
+* Thời gian: 12:00 - 13:00
+* Slide hiển thị: Ảnh Chatbot & Dashboard, 4 Tính năng mở rộng.
+
+[LỜI THOẠI]
+"Bên cạnh đó, hệ thống còn tích hợp các tiện ích gia tăng giá trị:
+
+- AutoCare AI Assistant: Trợ lý ảo AI được nhúng trực tiếp qua bong bóng chat ở góc màn hình, giúp giải đáp nhanh các thắc mắc về kỹ thuật xe, tư vấn giải thích ý nghĩa các đèn báo lỗi nguy hiểm trên mặt taplo (như Check Engine, Đèn báo áp suất lốp, Đèn ABS)...
+- Dashboard Thống kê trực quan: Sử dụng thư viện Recharts cung cấp biểu đồ tròn phân tích cơ cấu chi tiêu nuôi xe (tiền nhớt, phụ tùng, bảo hiểm, đăng kiểm) cho chủ xe, và biểu đồ cột/đường theo dõi doanh thu theo tuần/tháng cho phía Gara.
+- Xuất báo cáo & Đánh giá: Hỗ trợ xuất file CSV thống kê chi tiêu chuẩn UTF-8 BOM tiếng Việt không lỗi font trên Excel, xuất Hóa đơn sửa chữa PDF và hệ thống chấm điểm 1-5 sao minh bạch uy tín xưởng."
+
+--------------------------------------------------------------------------------
+SLIDE 12: MÔ HÌNH TRIỂN KHAI HẠ TẦNG (DEPLOYMENT ARCHITECTURE)
+--------------------------------------------------------------------------------
+* Thời gian: 13:00 - 14:00
+* Slide hiển thị: Sơ đồ Deployment bên trái và 4 Khối hạ tầng (Nginx, PM2, WebSocket, SQL Server) bên phải.
+
+[LỜI THOẠI]
+"Về mặt triển khai vận hành thực tế, hệ thống ACOH được thiết kế mô hình Deployment sẵn sàng cho môi trường Production:
+
+- Sử dụng Nginx làm Reverse Proxy và Load Balancer, đảm bảo bảo mật kết nối qua chứng chỉ SSL/TLS (HTTPS) và tối ưu hóa nén dữ liệu.
+- Ứng dụng chạy ngầm bằng PM2 Cluster Mode giúp tự phục hồi khi có sự cố mà không gây gián đoạn dịch vụ.
+- Cổng WebSocket Gateway Port 3000 duy trì kết nối hai chiều ổn định cho hàng nghìn máy trạm khách hàng.
+- Cơ sở dữ liệu SQL Server được thiết lập lịch trình sao lưu tự động định kỳ hàng đêm bảo toàn an toàn dữ liệu."
+
+--------------------------------------------------------------------------------
+SLIDE 13: KIỂM THỬ HỆ THỐNG & ĐẢM BẢO CHẤT LƯỢNG (TESTING)
+--------------------------------------------------------------------------------
+* Thời gian: 14:00 - 15:00
+* Slide hiển thị: 3 Cột kiểm thử (Black-box, API Postman, Real-time & Ngoại lệ).
+
+[LỜI THOẠI]
+"Để đảm bảo hệ thống vận hành ổn định và tin cậy trước khi bàn giao, em đã xây dựng bộ kịch bản kiểm thử toàn diện:
+
+- Kiểm thử chức năng (Black-box Testing): Hoàn thành 100% các Test Scenarios đã đặt ra, xác thực kiểm soát phân quyền 3 Role không thể truy cập chéo màn hình của nhau.
+- Kiểm thử API & Ràng buộc dữ liệu: Kiểm thử toàn bộ 30+ Endpoints trên Postman với các dữ liệu hợp lệ và dữ liệu biên dị thường; đảm bảo ràng buộc Unique biển số xe hoạt động chuẩn xác.
+- Kiểm thử Real-time & Xử lý ngoại lệ: Kiểm chứng độ trễ truyền nhận tin nhắn qua WebSockets luôn duy trì ở mức dưới 200 miligiây, và hệ thống tự động tái kết nối an toàn khi xảy ra sự cố gián đoạn mạng."
+
+--------------------------------------------------------------------------------
+SLIDE 14: KẾT QUẢ ĐẠT ĐƯỢC CỦA ĐỀ TÀI
+--------------------------------------------------------------------------------
+* Thời gian: 15:00 - 15:45
+* Slide hiển thị: Tổng kết đóng góp về Kỹ thuật và Nghiệp vụ thực tiễn với các dấu tích xanh nổi bật.
+
+[LỜI THOẠI]
+"Tổng kết lại quá trình nghiên cứu và thực hiện, đề tài đã đạt được các kết quả nổi bật:
+
+1. Về mặt Kỹ thuật: Hoàn thiện một ứng dụng Web Responsive hoàn chỉnh trên ReactJS và NestJS Clean Architecture; làm chủ công nghệ xử lý ảnh AI OCR trên trình duyệt và kỹ thuật thông báo thời gian thực đa kênh.
+2. Về mặt Nghiệp vụ: Xây dựng một nền tảng thực sự có tính ứng dụng cao, giúp giải quyết triệt để vấn đề quên hạn đăng kiểm, bảo hiểm của chủ xe, đồng thời cung cấp công cụ chuyển đổi số hiệu quả cho các cơ sở dịch vụ gara xe tại Việt Nam."
+
+--------------------------------------------------------------------------------
+SLIDE 15: ĐỊNH HƯỚNG PHÁT TRIỂN TRONG TƯƠNG LAI (ROADMAP)
+--------------------------------------------------------------------------------
+* Thời gian: 15:45 - 16:30
+* Slide hiển thị: 4 Hộp lộ trình phát triển (Zalo ZNS, AI Vision Sổ Đăng Kiểm, IoT OBD2, Native App).
+
+[LỜI THOẠI]
+"Trong giai đoạn tiếp theo, nhóm có định hướng nâng cấp hệ thống theo 4 hướng mở rộng chuyên sâu:
+
+1. Tích hợp Cổng gửi tin nhắn qua Zalo ZNS (Zalo Notification Service) và Brandname SMS để chủ xe nhận được thông báo ngay cả khi không mở ứng dụng.
+2. Ứng dụng AI Vision bóc tách toàn bộ thông số kỹ thuật (Số khung VIN, Số máy, Hạn kiểm định) trực tiếp từ Ảnh chụp Sổ Đăng Kiểm.
+3. Kết nối phần cứng Thiết bị IoT OBD-II / GPS Telematics cắm trên xe để tự động đồng bộ số kilomet thực tế về máy chủ theo thời gian thực.
+4. Đóng gói ứng dụng di động Native App (React Native / Flutter) phát hành trên App Store và Google Play Store."
+
+--------------------------------------------------------------------------------
+SLIDE 16: LỜI CẢM ƠN & PHIÊN HỎI ĐÁP (Q&A)
+--------------------------------------------------------------------------------
+* Thời gian: 16:30 - Kết thúc
+* Slide hiển thị: Khung Q&A nổi bật với lời cảm ơn Hội đồng & Sẵn sàng Demo trực tiếp.
+
+[LỜI THOẠI]
+"Kính thưa Quý Thầy/Cô trong Hội đồng chấm bảo vệ,
+
+Trên đây là toàn bộ nội dung báo cáo kết quả nghiên cứu và xây dựng đồ án tốt nghiệp của em. Em xin trân trọng cảm ơn Quý Thầy/Cô đã chú ý lắng nghe.
+
+Em rất mong nhận được những lời nhận xét, góp ý quý báu cũng như các câu hỏi phản biện từ Thầy/Cô để giúp đề tài được hoàn thiện hơn nữa.
+
+Sau đây, em xin phép sẵn sàng bước vào phần giải đáp câu hỏi và tiến hành Demo trực tiếp hệ thống theo yêu cầu của Hội đồng. Em xin chân thành cảm ơn!"
+
+================================================================================
+HẾT KỊCH BẢN THUYẾT TRÌNH BÁO CÁO ĐỒ ÁN ACOH
+================================================================================

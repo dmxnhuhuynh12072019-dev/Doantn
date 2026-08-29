@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import * as garageService from '../../services/garageService';
 
-const AppointmentModal = ({ isOpen, onClose, onSave, vehicle }) => {
+const AppointmentModal = ({ isOpen, onClose, onSave, vehicle, vehicles = [] }) => {
   const [garages, setGarages] = useState([]);
   const [selectedGarageId, setSelectedGarageId] = useState('');
+  const [selectedVehicleId, setSelectedVehicleId] = useState('');
   const [appointmentDate, setAppointmentDate] = useState('');
   const [notes, setNotes] = useState('');
   
@@ -48,14 +49,28 @@ const AppointmentModal = ({ isOpen, onClose, onSave, vehicle }) => {
       setAppointmentDate(getDefaultDateTime());
       setNotes('');
       setError('');
-    }
-  }, [isOpen]);
 
-  if (!isOpen || !vehicle) return null;
+      if (vehicle) {
+        setSelectedVehicleId(vehicle.VehicleID.toString());
+      } else if (vehicles && vehicles.length > 0) {
+        setSelectedVehicleId(vehicles[0].VehicleID.toString());
+      }
+    }
+  }, [isOpen, vehicle, vehicles]);
+
+  if (!isOpen) return null;
+
+  const currentVehicle = vehicle || (vehicles && vehicles.find(v => v.VehicleID.toString() === selectedVehicleId)) || (vehicles && vehicles[0]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    const targetVehicleId = vehicle ? vehicle.VehicleID : parseInt(selectedVehicleId, 10);
+    if (!targetVehicleId) {
+      setError('Vui lòng chọn một phương tiện của bạn.');
+      return;
+    }
 
     if (!selectedGarageId) {
       setError('Vui lòng chọn một Gara đối tác.');
@@ -76,7 +91,7 @@ const AppointmentModal = ({ isOpen, onClose, onSave, vehicle }) => {
     setSubmitLoading(true);
     const data = {
       garageId: parseInt(selectedGarageId, 10),
-      vehicleId: vehicle.VehicleID,
+      vehicleId: targetVehicleId,
       appointmentDate: new Date(appointmentDate).toISOString(),
       notes: notes.trim() || undefined,
     };
@@ -97,15 +112,17 @@ const AppointmentModal = ({ isOpen, onClose, onSave, vehicle }) => {
       <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose}></div>
 
       {/* Modal Content */}
-      <div className="relative w-full max-w-lg bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 p-8 z-10 animate-in fade-in zoom-in-95 duration-200">
-        <div className="flex justify-between items-center mb-6">
+      <div className="relative w-full max-w-lg bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 p-6 sm:p-8 z-10 animate-in fade-in zoom-in-95 duration-200">
+        <div className="flex justify-between items-center mb-5">
           <div>
-            <h3 className="text-2xl font-black text-slate-800 dark:text-white">
-              📅 Đặt lịch sửa chữa
+            <h3 className="text-xl sm:text-2xl font-black text-slate-800 dark:text-white">
+              📅 Đặt lịch sửa chữa & bảo dưỡng
             </h3>
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-              Phương tiện: <strong className="text-slate-600 dark:text-slate-350">{vehicle.Brand} {vehicle.Model} ({vehicle.LicensePlate})</strong>
-            </p>
+            {currentVehicle && (
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                Phương tiện: <strong className="text-slate-600 dark:text-slate-350">{currentVehicle.Brand} {currentVehicle.Model} ({currentVehicle.LicensePlate})</strong>
+              </p>
+            )}
           </div>
           <button
             onClick={onClose}
@@ -127,6 +144,27 @@ const AppointmentModal = ({ isOpen, onClose, onSave, vehicle }) => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Vehicle Selector (when not preset or multiple vehicles exist) */}
+          {!vehicle && vehicles.length > 0 && (
+            <div>
+              <label className="block text-sm font-semibold text-slate-750 dark:text-slate-300 mb-1">
+                Chọn xe cần bảo dưỡng <span className="text-rose-500">*</span>
+              </label>
+              <select
+                value={selectedVehicleId}
+                onChange={(e) => setSelectedVehicleId(e.target.value)}
+                required
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm font-medium"
+              >
+                {vehicles.map((v) => (
+                  <option key={v.VehicleID} value={v.VehicleID}>
+                    {v.Brand} {v.Model} — Biển số: {v.LicensePlate} ({v.CurrentOdometer?.toLocaleString()} km)
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-semibold text-slate-750 dark:text-slate-300 mb-1">
               Chọn Gara đối tác <span className="text-rose-500">*</span>
@@ -190,7 +228,7 @@ const AppointmentModal = ({ isOpen, onClose, onSave, vehicle }) => {
             <button
               type="submit"
               disabled={submitLoading || garages.length === 0}
-              className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 transition flex items-center gap-1.5"
+              className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 transition flex items-center gap-1.5 cursor-pointer"
             >
               {submitLoading && <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>}
               Xác nhận đặt lịch

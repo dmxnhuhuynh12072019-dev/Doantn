@@ -1,0 +1,233 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 1620" width="100%" height="100%" style="background-color: #0f172a; font-family: 'Consolas', 'Courier New', monospace;">
+  <!-- Dark Background -->
+  <rect x="0" y="0" width="1100" height="1620" fill="#0f172a" />
+  
+  <!-- Terminal Header / Border -->
+  <rect x="15" y="15" width="1070" height="1590" rx="10" fill="#090d16" stroke="#1e293b" stroke-width="2" />
+  
+  <!-- Terminal Controls dots -->
+  <circle cx="45" cy="42" r="6" fill="#ef4444" />
+  <circle cx="65" cy="42" r="6" fill="#f59e0b" />
+  <circle cx="85" cy="42" r="6" fill="#10b981" />
+  <text x="550" y="47" fill="#94a3b8" font-size="14" font-weight="bold" text-anchor="middle">
+    acoh-backend - Cấu trúc mã nguồn Clean Architecture
+  </text>
+  <line x1="15" y1="65" x2="1085" y2="65" stroke="#1e293b" stroke-width="1.5" />
+
+  <!-- Code / Tree Content -->
+  <g transform="translate(40, 95)" font-size="14" line-height="24">
+    <!-- Line 1: Root -->
+    <text x="0" y="0" fill="#38bdf8" font-weight="bold">acoh-backend/</text>
+
+    <!-- Line 2: src -->
+    <text x="0" y="24" fill="#64748b">├── </text>
+    <text x="35" y="24" fill="#38bdf8" font-weight="bold">src/</text>
+
+    <!-- ================= 1. DOMAIN LAYER ================= -->
+    <text x="0" y="52" fill="#64748b">│   ├── </text>
+    <text x="65" y="52" fill="#fcd34d" font-weight="bold">domain/</text>
+    <text x="360" y="52" fill="#94a3b8" font-weight="bold"># 1. LỚP NGHIỆP VỤ CỐT LÕI (Không phụ thuộc Framework)</text>
+
+    <text x="0" y="76" fill="#64748b">│   │   ├── </text>
+    <text x="95" y="76" fill="#e2e8f0">entities/</text>
+    <text x="360" y="76" fill="#64748b"># - Chứa các thực thể nguyên bản (Pure Classes)</text>
+
+    <text x="0" y="100" fill="#64748b">│   │   │   ├── </text>
+    <text x="125" y="100" fill="#cbd5e1">vehicle.entity.ts</text>
+
+    <text x="0" y="124" fill="#64748b">│   │   │   ├── </text>
+    <text x="125" y="124" fill="#cbd5e1">legal-document.entity.ts</text>
+
+    <text x="0" y="148" fill="#64748b">│   │   │   ├── </text>
+    <text x="125" y="148" fill="#cbd5e1">maintenance-schedule.entity.ts</text>
+
+    <text x="0" y="172" fill="#64748b">│   │   │   └── </text>
+    <text x="125" y="172" fill="#cbd5e1">appointment.entity.ts</text>
+
+    <text x="0" y="198" fill="#64748b">│   │   ├── </text>
+    <text x="95" y="198" fill="#e2e8f0">repositories/</text>
+    <text x="360" y="198" fill="#64748b"># - Định nghĩa Interface (Hợp đồng giao tiếp với DB)</text>
+
+    <text x="0" y="222" fill="#64748b">│   │   │   ├── </text>
+    <text x="125" y="222" fill="#cbd5e1">i-vehicle.repository.ts</text>
+
+    <text x="0" y="246" fill="#64748b">│   │   │   ├── </text>
+    <text x="125" y="246" fill="#cbd5e1">i-legal.repository.ts</text>
+
+    <text x="0" y="270" fill="#64748b">│   │   │   └── </text>
+    <text x="125" y="270" fill="#cbd5e1">i-maintenance.repository.ts</text>
+
+    <text x="0" y="296" fill="#64748b">│   │   └── </text>
+    <text x="95" y="296" fill="#e2e8f0">exceptions/</text>
+    <text x="360" y="296" fill="#64748b"># - Các ngoại lệ (Errors) đặc thù của nghiệp vụ</text>
+
+    <text x="0" y="320" fill="#64748b">│   │       └── </text>
+    <text x="125" y="320" fill="#cbd5e1">invalid-odometer.exception.ts</text>
+
+    <text x="0" y="344" fill="#64748b">│   │</text>
+
+    <!-- ================= 2. APPLICATION LAYER ================= -->
+    <text x="0" y="370" fill="#64748b">│   ├── </text>
+    <text x="65" y="370" fill="#4ade80" font-weight="bold">application/</text>
+    <text x="360" y="370" fill="#94a3b8" font-weight="bold"># 2. LỚP ĐIỀU PHỐI ỨNG DỤNG (Use Cases &amp; Workflows)</text>
+
+    <text x="0" y="394" fill="#64748b">│   │   ├── </text>
+    <text x="95" y="394" fill="#e2e8f0">use-cases/</text>
+    <text x="360" y="394" fill="#64748b"># - Xử lý logic nghiệp vụ theo từng chức năng (Use Case)</text>
+
+    <text x="0" y="418" fill="#64748b">│   │   │   ├── </text>
+    <text x="125" y="418" fill="#a7f3d0">vehicle/</text>
+
+    <text x="0" y="442" fill="#64748b">│   │   │   │   ├── </text>
+    <text x="155" y="442" fill="#cbd5e1">create-vehicle.usecase.ts</text>
+
+    <text x="0" y="466" fill="#64748b">│   │   │   │   └── </text>
+    <text x="155" y="466" fill="#cbd5e1">update-odometer.usecase.ts</text>
+
+    <text x="0" y="490" fill="#64748b">│   │   │   ├── </text>
+    <text x="125" y="490" fill="#a7f3d0">legal/</text>
+
+    <text x="0" y="514" fill="#64748b">│   │   │   │   └── </text>
+    <text x="155" y="514" fill="#cbd5e1">check-expiry-alert.usecase.ts</text>
+
+    <text x="0" y="538" fill="#64748b">│   │   │   ├── </text>
+    <text x="125" y="538" fill="#a7f3d0">maintenance/</text>
+
+    <text x="0" y="562" fill="#64748b">│   │   │   │   ├── </text>
+    <text x="155" y="562" fill="#cbd5e1">complete-service-workflow.usecase.ts</text>
+
+    <text x="0" y="586" fill="#64748b">│   │   │   │   └── </text>
+    <text x="155" y="586" fill="#cbd5e1">generate-preset-schedule.usecase.ts</text>
+
+    <text x="0" y="610" fill="#64748b">│   │   │   └── </text>
+    <text x="125" y="610" fill="#a7f3d0">ocr/</text>
+
+    <text x="0" y="634" fill="#64748b">│   │   │       └── </text>
+    <text x="155" y="634" fill="#cbd5e1">scan-license-plate.usecase.ts</text>
+
+    <text x="0" y="660" fill="#64748b">│   │   └── </text>
+    <text x="95" y="660" fill="#e2e8f0">dtos/</text>
+    <text x="360" y="660" fill="#64748b"># - Đối tượng truyền dữ liệu (Data Transfer Objects)</text>
+
+    <text x="0" y="684" fill="#64748b">│   │       ├── </text>
+    <text x="125" y="684" fill="#cbd5e1">create-vehicle.dto.ts</text>
+
+    <text x="0" y="708" fill="#64748b">│   │       └── </text>
+    <text x="125" y="708" fill="#cbd5e1">complete-appointment.dto.ts</text>
+
+    <text x="0" y="732" fill="#64748b">│   │</text>
+
+    <!-- ================= 3. INFRASTRUCTURE LAYER ================= -->
+    <text x="0" y="758" fill="#64748b">│   ├── </text>
+    <text x="65" y="758" fill="#c084fc" font-weight="bold">infrastructure/</text>
+    <text x="360" y="758" fill="#94a3b8" font-weight="bold"># 3. LỚP HẠ TẦNG KỸ THUẬT (Database, Cron, OCR, Mail)</text>
+
+    <text x="0" y="782" fill="#64748b">│   │   ├── </text>
+    <text x="95" y="782" fill="#e2e8f0">database/</text>
+
+    <text x="0" y="806" fill="#64748b">│   │   │   ├── </text>
+    <text x="125" y="806" fill="#cbd5e1">mssql-config.service.ts</text>
+    <text x="360" y="806" fill="#64748b"># - Cấu hình kết nối SQL Server 2014+ (mssql driver)</text>
+
+    <text x="0" y="830" fill="#64748b">│   │   │   └── </text>
+    <text x="125" y="830" fill="#e2e8f0">repositories/</text>
+    <text x="360" y="830" fill="#64748b"># - Triển khai thực tế các Interface ở tầng Domain</text>
+
+    <text x="0" y="854" fill="#64748b">│   │   │       ├── </text>
+    <text x="155" y="854" fill="#cbd5e1">vehicle-impl.repository.ts</text>
+
+    <text x="0" y="878" fill="#64748b">│   │   │       └── </text>
+    <text x="155" y="878" fill="#cbd5e1">maintenance-impl.repository.ts</text>
+
+    <text x="0" y="904" fill="#64748b">│   │   ├── </text>
+    <text x="95" y="904" fill="#e2e8f0">cron/</text>
+    <text x="360" y="904" fill="#64748b"># - Tác vụ quét ngầm tự động định kỳ hàng ngày lúc 00:00</text>
+
+    <text x="0" y="928" fill="#64748b">│   │   │   └── </text>
+    <text x="125" y="928" fill="#cbd5e1">auto-scan.service.ts</text>
+
+    <text x="0" y="952" fill="#64748b">│   │   ├── </text>
+    <text x="95" y="952" fill="#e2e8f0">ocr/</text>
+    <text x="360" y="952" fill="#64748b"># - Tích hợp AI Tesseract OCR nhận diện biển số xe</text>
+
+    <text x="0" y="976" fill="#64748b">│   │   │   └── </text>
+    <text x="125" y="976" fill="#cbd5e1">tesseract-ocr.service.ts</text>
+
+    <text x="0" y="1000" fill="#64748b">│   │   ├── </text>
+    <text x="95" y="1000" fill="#e2e8f0">mailer/</text>
+    <text x="360" y="1000" fill="#64748b"># - Dịch vụ gửi email thông báo tự động (Nodemailer SMTP)</text>
+
+    <text x="0" y="1024" fill="#64748b">│   │   │   └── </text>
+    <text x="125" y="1024" fill="#cbd5e1">smtp-mailer.service.ts</text>
+
+    <text x="0" y="1048" fill="#64748b">│   │   └── </text>
+    <text x="95" y="1048" fill="#e2e8f0">payment/</text>
+    <text x="360" y="1048" fill="#64748b"># - Tích hợp cổng thanh toán trực tuyến (VNPAY / VietQR)</text>
+
+    <text x="0" y="1072" fill="#64748b">│   │       └── </text>
+    <text x="125" y="1072" fill="#cbd5e1">vnpay-payment.service.ts</text>
+
+    <text x="0" y="1096" fill="#64748b">│   │</text>
+
+    <!-- ================= 4. PRESENTATION LAYER ================= -->
+    <text x="0" y="1122" fill="#64748b">│   ├── </text>
+    <text x="65" y="1122" fill="#38bdf8" font-weight="bold">presentation/</text>
+    <text x="360" y="1122" fill="#94a3b8" font-weight="bold"># 4. LỚP GIAO TIẾP GIAO DIỆN (RESTful API &amp; WebSockets)</text>
+
+    <text x="0" y="1146" fill="#64748b">│   │   ├── </text>
+    <text x="95" y="1146" fill="#e2e8f0">controllers/</text>
+    <text x="360" y="1146" fill="#64748b"># - Tiếp nhận HTTP Request từ Client (REST Controllers)</text>
+
+    <text x="0" y="1170" fill="#64748b">│   │   │   ├── </text>
+    <text x="125" y="1170" fill="#cbd5e1">vehicles.controller.ts</text>
+
+    <text x="0" y="1194" fill="#64748b">│   │   │   ├── </text>
+    <text x="125" y="1194" fill="#cbd5e1">legal.controller.ts</text>
+
+    <text x="0" y="1218" fill="#64748b">│   │   │   ├── </text>
+    <text x="125" y="1218" fill="#cbd5e1">maintenances.controller.ts</text>
+
+    <text x="0" y="1242" fill="#64748b">│   │   │   └── </text>
+    <text x="125" y="1242" fill="#cbd5e1">appointments.controller.ts</text>
+
+    <text x="0" y="1268" fill="#64748b">│   │   ├── </text>
+    <text x="95" y="1268" fill="#e2e8f0">gateways/</text>
+    <text x="360" y="1268" fill="#64748b"># - Kênh thông báo đẩy thời gian thực (Socket.IO Gateway)</text>
+
+    <text x="0" y="1292" fill="#64748b">│   │   │   └── </text>
+    <text x="125" y="1292" fill="#cbd5e1">notification.gateway.ts</text>
+
+    <text x="0" y="1316" fill="#64748b">│   │   ├── </text>
+    <text x="95" y="1316" fill="#e2e8f0">guards/</text>
+    <text x="360" y="1316" fill="#64748b"># - Phân quyền (RBAC Roles) và Xác thực (JWT Auth Guard)</text>
+
+    <text x="0" y="1340" fill="#64748b">│   │   │   ├── </text>
+    <text x="125" y="1340" fill="#cbd5e1">jwt-auth.guard.ts</text>
+
+    <text x="0" y="1364" fill="#64748b">│   │   │   └── </text>
+    <text x="125" y="1364" fill="#cbd5e1">roles.guard.ts</text>
+
+    <text x="0" y="1388" fill="#64748b">│   │   └── </text>
+    <text x="95" y="1388" fill="#e2e8f0">interceptors/</text>
+    <text x="360" y="1388" fill="#64748b"># - Định dạng format dữ liệu trả về (Response Formatting)</text>
+
+    <text x="0" y="1412" fill="#64748b">│   │       └── </text>
+    <text x="125" y="1412" fill="#cbd5e1">response.interceptor.ts</text>
+
+    <!-- App Module & Main -->
+    <text x="0" y="1438" fill="#64748b">│   ├── </text>
+    <text x="65" y="1438" fill="#38bdf8" font-weight="bold">app.module.ts</text>
+    <text x="360" y="1438" fill="#64748b"># Nơi khai báo và liên kết các module (Dependency Injection)</text>
+
+    <text x="0" y="1464" fill="#64748b">│   └── </text>
+    <text x="65" y="1464" fill="#38bdf8" font-weight="bold">main.ts</text>
+    <text x="360" y="1464" fill="#64748b"># Điểm khởi chạy ứng dụng (Bootstrap, CORS, Port 3000)</text>
+
+    <!-- Root Configs -->
+    <text x="0" y="1496" fill="#64748b">├── </text>
+    <text x="35" y="1496" fill="#e2e8f0">package.json</text>
+
+    <text x="0" y="1522" fill="#64748b">└── </text>
+    <text x="35" y="1522" fill="#e2e8f0">tsconfig.json</text>
+  </g>
+</svg>

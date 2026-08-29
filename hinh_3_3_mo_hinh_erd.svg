@@ -1,0 +1,274 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1480 1260" width="100%" height="100%" style="background-color: #ffffff; font-family: 'Consolas', 'Segoe UI', sans-serif;">
+  <defs>
+    <!-- Crow's foot / One-to-Many markers -->
+    <marker id="one-start" viewBox="0 0 12 12" refX="0" refY="6" markerWidth="10" markerHeight="10" orient="auto">
+      <line x1="4" y1="0" x2="4" y2="12" stroke="#0284c7" stroke-width="1.8" />
+      <line x1="8" y1="0" x2="8" y2="12" stroke="#0284c7" stroke-width="1.8" />
+    </marker>
+    <marker id="many-end" viewBox="0 0 14 14" refX="14" refY="7" markerWidth="12" markerHeight="12" orient="auto">
+      <line x1="14" y1="1" x2="0" y2="7" stroke="#0284c7" stroke-width="1.6" />
+      <line x1="14" y1="13" x2="0" y2="7" stroke="#0284c7" stroke-width="1.6" />
+      <line x1="14" y1="7" x2="0" y2="7" stroke="#0284c7" stroke-width="1.6" />
+      <line x1="6" y1="1" x2="6" y2="13" stroke="#0284c7" stroke-width="1.6" />
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect x="0" y="0" width="1480" height="1260" fill="#ffffff" />
+
+  <!-- ==================== 1. ENTITY: USERS ==================== -->
+  <g id="entity-users" transform="translate(540, 40)">
+    <rect x="0" y="0" width="290" height="205" fill="#ffffff" stroke="#0284c7" stroke-width="1.5" rx="3" />
+    <rect x="0" y="0" width="290" height="30" fill="#f0f9ff" stroke="#0284c7" stroke-width="1.5" />
+    <text x="145" y="21" fill="#0369a1" font-size="14.5" font-weight="bold" text-anchor="middle">Users</text>
+    
+    <text x="14" y="50" fill="#0f172a" font-size="12" font-weight="bold">• UserID : INT «PK»</text>
+    <line x1="0" y1="62" x2="290" y2="62" stroke="#bae6fd" stroke-width="1" />
+    
+    <text x="14" y="80" fill="#334155" font-size="12">• FullName : NVARCHAR(100)</text>
+    <text x="14" y="99" fill="#334155" font-size="12">• Email : VARCHAR(100) «UNIQUE»</text>
+    <text x="14" y="118" fill="#334155" font-size="12">• PasswordHash : VARCHAR(255)</text>
+    <text x="14" y="137" fill="#334155" font-size="12">• PhoneNumber : VARCHAR(20)</text>
+    <text x="14" y="156" fill="#334155" font-size="12">• Role : VARCHAR(20)</text>
+    <text x="14" y="175" fill="#334155" font-size="12">• ThemePreference : VARCHAR(20)</text>
+    <text x="14" y="194" fill="#334155" font-size="12">• CreatedAt : DATETIME</text>
+  </g>
+
+  <!-- ==================== 2. ENTITY: NOTIFICATIONS ==================== -->
+  <g id="entity-notifications" transform="translate(60, 55)">
+    <rect x="0" y="0" width="270" height="175" fill="#ffffff" stroke="#0284c7" stroke-width="1.5" rx="3" />
+    <rect x="0" y="0" width="270" height="30" fill="#f0f9ff" stroke="#0284c7" stroke-width="1.5" />
+    <text x="135" y="21" fill="#0369a1" font-size="14.5" font-weight="bold" text-anchor="middle">Notifications</text>
+    
+    <text x="14" y="50" fill="#0f172a" font-size="12" font-weight="bold">• NotificationID : INT «PK»</text>
+    <line x1="0" y1="62" x2="270" y2="62" stroke="#bae6fd" stroke-width="1" />
+    
+    <text x="14" y="80" fill="#334155" font-size="12">• UserID : INT «FK»</text>
+    <text x="14" y="99" fill="#334155" font-size="12">• Title : NVARCHAR(200)</text>
+    <text x="14" y="118" fill="#334155" font-size="12">• Message : NVARCHAR(MAX)</text>
+    <text x="14" y="137" fill="#334155" font-size="12">• Type : VARCHAR(50)</text>
+    <text x="14" y="156" fill="#334155" font-size="12">• IsRead : BIT</text>
+    <text x="14" y="171" fill="#334155" font-size="11.5">• CreatedAt : DATETIME</text>
+  </g>
+
+  <!-- ==================== 3. ENTITY: GARAGES ==================== -->
+  <g id="entity-garages" transform="translate(1040, 55)">
+    <rect x="0" y="0" width="280" height="175" fill="#ffffff" stroke="#0284c7" stroke-width="1.5" rx="3" />
+    <rect x="0" y="0" width="280" height="30" fill="#f0f9ff" stroke="#0284c7" stroke-width="1.5" />
+    <text x="140" y="21" fill="#0369a1" font-size="14.5" font-weight="bold" text-anchor="middle">Garages</text>
+    
+    <text x="14" y="50" fill="#0f172a" font-size="12" font-weight="bold">• GarageID : INT «PK»</text>
+    <line x1="0" y1="62" x2="280" y2="62" stroke="#bae6fd" stroke-width="1" />
+    
+    <text x="14" y="80" fill="#334155" font-size="12">• UserID : INT «FK»</text>
+    <text x="14" y="99" fill="#334155" font-size="12">• GarageName : NVARCHAR(150)</text>
+    <text x="14" y="118" fill="#334155" font-size="12">• Address : NVARCHAR(255)</text>
+    <text x="14" y="137" fill="#334155" font-size="12">• PhoneNumber : VARCHAR(20)</text>
+    <text x="14" y="156" fill="#334155" font-size="12">• Rating : DECIMAL(2,1)</text>
+    <text x="14" y="171" fill="#334155" font-size="11.5">• IsActive : BIT</text>
+  </g>
+
+  <!-- ==================== 4. ENTITY: VEHICLES ==================== -->
+  <g id="entity-vehicles" transform="translate(500, 330)">
+    <rect x="0" y="0" width="370" height="280" fill="#ffffff" stroke="#0284c7" stroke-width="1.5" rx="3" />
+    <rect x="0" y="0" width="370" height="30" fill="#f0f9ff" stroke="#0284c7" stroke-width="1.5" />
+    <text x="185" y="21" fill="#0369a1" font-size="14.5" font-weight="bold" text-anchor="middle">Vehicles</text>
+    
+    <text x="14" y="50" fill="#0f172a" font-size="12" font-weight="bold">• VehicleID : INT «PK»</text>
+    <line x1="0" y1="62" x2="370" y2="62" stroke="#bae6fd" stroke-width="1" />
+    
+    <text x="14" y="80" fill="#334155" font-size="12">• UserID : INT «FK»</text>
+    <text x="14" y="99" fill="#334155" font-size="12">• LicensePlate : VARCHAR(20) «UNIQUE»</text>
+    <text x="14" y="118" fill="#334155" font-size="12">• VehicleType : VARCHAR(50)</text>
+    <text x="14" y="137" fill="#334155" font-size="12">• Brand : NVARCHAR(50)</text>
+    <text x="14" y="156" fill="#334155" font-size="12">• Model : NVARCHAR(50)</text>
+    <text x="14" y="175" fill="#334155" font-size="12">• ManufactureYear : INT</text>
+    <text x="14" y="194" fill="#334155" font-size="12">• PurchaseDate : DATE</text>
+    <text x="14" y="213" fill="#334155" font-size="12">• CurrentOdometer : INT</text>
+    <text x="14" y="232" fill="#334155" font-size="12">• IsCommercial : BIT</text>
+    <text x="14" y="251" fill="#334155" font-size="12">• HTXCode : VARCHAR(50)</text>
+    <text x="14" y="270" fill="#334155" font-size="12">• BadgeNumber : VARCHAR(50)</text>
+  </g>
+
+  <!-- ==================== 5. ENTITY: LEGALDOCUMENTS ==================== -->
+  <g id="entity-legal" transform="translate(60, 690)">
+    <rect x="0" y="0" width="290" height="215" fill="#ffffff" stroke="#0284c7" stroke-width="1.5" rx="3" />
+    <rect x="0" y="0" width="290" height="30" fill="#f0f9ff" stroke="#0284c7" stroke-width="1.5" />
+    <text x="145" y="21" fill="#0369a1" font-size="14.5" font-weight="bold" text-anchor="middle">LegalDocuments</text>
+    
+    <text x="14" y="50" fill="#0f172a" font-size="12" font-weight="bold">• DocumentID : INT «PK»</text>
+    <line x1="0" y1="62" x2="290" y2="62" stroke="#bae6fd" stroke-width="1" />
+    
+    <text x="14" y="80" fill="#334155" font-size="12">• VehicleID : INT «FK»</text>
+    <text x="14" y="99" fill="#334155" font-size="12">• DocumentType : VARCHAR(50)</text>
+    <text x="14" y="118" fill="#334155" font-size="12">• DocumentNumber : VARCHAR(100)</text>
+    <text x="14" y="137" fill="#334155" font-size="12">• IssueDate : DATE</text>
+    <text x="14" y="156" fill="#334155" font-size="12">• ExpiryDate : DATE</text>
+    <text x="14" y="175" fill="#334155" font-size="12">• AlertThresholdDays : INT</text>
+    <text x="14" y="194" fill="#334155" font-size="12">• Status : VARCHAR(50)</text>
+    <text x="14" y="210" fill="#334155" font-size="11.5">• Notes : NVARCHAR(255)</text>
+  </g>
+
+  <!-- ==================== 6. ENTITY: MAINTENANCESCHEDULES ==================== -->
+  <g id="entity-schedules" transform="translate(390, 690)">
+    <rect x="0" y="0" width="290" height="195" fill="#ffffff" stroke="#0284c7" stroke-width="1.5" rx="3" />
+    <rect x="0" y="0" width="290" height="30" fill="#f0f9ff" stroke="#0284c7" stroke-width="1.5" />
+    <text x="145" y="21" fill="#0369a1" font-size="14.5" font-weight="bold" text-anchor="middle">MaintenanceSchedules</text>
+    
+    <text x="14" y="50" fill="#0f172a" font-size="12" font-weight="bold">• ScheduleID : INT «PK»</text>
+    <line x1="0" y1="62" x2="290" y2="62" stroke="#bae6fd" stroke-width="1" />
+    
+    <text x="14" y="80" fill="#334155" font-size="12">• VehicleID : INT «FK»</text>
+    <text x="14" y="99" fill="#334155" font-size="12">• CategoryName : NVARCHAR(100)</text>
+    <text x="14" y="118" fill="#334155" font-size="12">• TargetOdometer : INT</text>
+    <text x="14" y="137" fill="#334155" font-size="12">• TargetDate : DATE</text>
+    <text x="14" y="156" fill="#334155" font-size="12">• IsCompleted : BIT</text>
+    <text x="14" y="175" fill="#334155" font-size="12">• Notes : NVARCHAR(255)</text>
+    <text x="14" y="190" fill="#334155" font-size="11.5">• CreatedAt : DATETIME</text>
+  </g>
+
+  <!-- ==================== 7. ENTITY: APPOINTMENTS ==================== -->
+  <g id="entity-appointments" transform="translate(1040, 340)">
+    <rect x="0" y="0" width="280" height="230" fill="#ffffff" stroke="#0284c7" stroke-width="1.5" rx="3" />
+    <rect x="0" y="0" width="280" height="30" fill="#f0f9ff" stroke="#0284c7" stroke-width="1.5" />
+    <text x="140" y="21" fill="#0369a1" font-size="14.5" font-weight="bold" text-anchor="middle">Appointments</text>
+    
+    <text x="14" y="50" fill="#0f172a" font-size="12" font-weight="bold">• AppointmentID : INT «PK»</text>
+    <line x1="0" y1="62" x2="280" y2="62" stroke="#bae6fd" stroke-width="1" />
+    
+    <text x="14" y="80" fill="#334155" font-size="12">• UserID : INT «FK»</text>
+    <text x="14" y="99" fill="#334155" font-size="12">• GarageID : INT «FK»</text>
+    <text x="14" y="118" fill="#334155" font-size="12">• VehicleID : INT «FK»</text>
+    <text x="14" y="137" fill="#334155" font-size="12">• AppointmentDate : DATETIME</text>
+    <text x="14" y="156" fill="#334155" font-size="12">• ServiceType : NVARCHAR(100)</text>
+    <text x="14" y="175" fill="#334155" font-size="12">• Status : VARCHAR(50)</text>
+    <text x="14" y="194" fill="#334155" font-size="12">• EstimatedCost : DECIMAL(18,2)</text>
+    <text x="14" y="213" fill="#334155" font-size="12">• CustomerNotes : NVARCHAR(MAX)</text>
+    <text x="14" y="226" fill="#334155" font-size="11.5">• CreatedAt : DATETIME</text>
+  </g>
+
+  <!-- ==================== 8. ENTITY: MAINTENANCEHISTORY ==================== -->
+  <g id="entity-history" transform="translate(720, 690)">
+    <rect x="0" y="0" width="290" height="215" fill="#ffffff" stroke="#0284c7" stroke-width="1.5" rx="3" />
+    <rect x="0" y="0" width="290" height="30" fill="#f0f9ff" stroke="#0284c7" stroke-width="1.5" />
+    <text x="145" y="21" fill="#0369a1" font-size="14.5" font-weight="bold" text-anchor="middle">MaintenanceHistory</text>
+    
+    <text x="14" y="50" fill="#0f172a" font-size="12" font-weight="bold">• HistoryID : INT «PK»</text>
+    <line x1="0" y1="62" x2="290" y2="62" stroke="#bae6fd" stroke-width="1" />
+    
+    <text x="14" y="80" fill="#334155" font-size="12">• VehicleID : INT «FK»</text>
+    <text x="14" y="99" fill="#334155" font-size="12">• GarageID : INT «FK»</text>
+    <text x="14" y="118" fill="#334155" font-size="12">• AppointmentID : INT «FK»</text>
+    <text x="14" y="137" fill="#334155" font-size="12">• ExecutionDate : DATE</text>
+    <text x="14" y="156" fill="#334155" font-size="12">• ExecutionOdometer : INT</text>
+    <text x="14" y="175" fill="#334155" font-size="12">• TotalCost : DECIMAL(18,2)</text>
+    <text x="14" y="194" fill="#334155" font-size="12">• ServiceDetails : NVARCHAR(MAX)</text>
+    <text x="14" y="210" fill="#334155" font-size="11.5">• CreatedAt : DATETIME</text>
+  </g>
+
+  <!-- ==================== 9. ENTITY: PAYMENTS ==================== -->
+  <g id="entity-payments" transform="translate(1040, 690)">
+    <rect x="0" y="0" width="280" height="195" fill="#ffffff" stroke="#0284c7" stroke-width="1.5" rx="3" />
+    <rect x="0" y="0" width="280" height="30" fill="#f0f9ff" stroke="#0284c7" stroke-width="1.5" />
+    <text x="140" y="21" fill="#0369a1" font-size="14.5" font-weight="bold" text-anchor="middle">Payments</text>
+    
+    <text x="14" y="50" fill="#0f172a" font-size="12" font-weight="bold">• PaymentID : INT «PK»</text>
+    <line x1="0" y1="62" x2="280" y2="62" stroke="#bae6fd" stroke-width="1" />
+    
+    <text x="14" y="80" fill="#334155" font-size="12">• AppointmentID : INT «FK» «UNIQUE»</text>
+    <text x="14" y="99" fill="#334155" font-size="12">• Amount : DECIMAL(18,2)</text>
+    <text x="14" y="118" fill="#334155" font-size="12">• PaymentMethod : VARCHAR(50)</text>
+    <text x="14" y="137" fill="#334155" font-size="12">• TransactionCode : VARCHAR(100)</text>
+    <text x="14" y="156" fill="#334155" font-size="12">• Status : VARCHAR(50)</text>
+    <text x="14" y="175" fill="#334155" font-size="12">• PaidAt : DATETIME</text>
+  </g>
+
+  <!-- ==================== 10. ENTITY: GARAGEREVIEWS ==================== -->
+  <g id="entity-reviews" transform="translate(1040, 940)">
+    <rect x="0" y="0" width="280" height="175" fill="#ffffff" stroke="#0284c7" stroke-width="1.5" rx="3" />
+    <rect x="0" y="0" width="280" height="30" fill="#f0f9ff" stroke="#0284c7" stroke-width="1.5" />
+    <text x="140" y="21" fill="#0369a1" font-size="14.5" font-weight="bold" text-anchor="middle">GarageReviews</text>
+    
+    <text x="14" y="50" fill="#0f172a" font-size="12" font-weight="bold">• ReviewID : INT «PK»</text>
+    <line x1="0" y1="62" x2="280" y2="62" stroke="#bae6fd" stroke-width="1" />
+    
+    <text x="14" y="80" fill="#334155" font-size="12">• AppointmentID : INT «FK» «UNIQUE»</text>
+    <text x="14" y="99" fill="#334155" font-size="12">• Rating : INT (1-5)</text>
+    <text x="14" y="118" fill="#334155" font-size="12">• Comment : NVARCHAR(MAX)</text>
+    <text x="14" y="137" fill="#334155" font-size="12">• CreatedAt : DATETIME</text>
+  </g>
+
+  <!-- ==================== RELATIONSHIPS & CONNECTORS ==================== -->
+  
+  <!-- 1. Users -> Vehicles (1:N) -->
+  <path d="M 685 245 L 685 330" fill="none" stroke="#0284c7" stroke-width="1.5" />
+  <text x="690" y="290" fill="#0369a1" font-size="11.5" font-weight="600" text-anchor="start">Sở hữu (1:N)</text>
+  <!-- Card markers -->
+  <line x1="680" y1="252" x2="690" y2="252" stroke="#0284c7" stroke-width="1.5" />
+  <line x1="680" y1="256" x2="690" y2="256" stroke="#0284c7" stroke-width="1.5" />
+  <circle cx="685" cy="320" r="3" fill="#ffffff" stroke="#0284c7" stroke-width="1.5" />
+  <line x1="685" y1="328" x2="678" y2="318" stroke="#0284c7" stroke-width="1.5" />
+  <line x1="685" y1="328" x2="692" y2="318" stroke="#0284c7" stroke-width="1.5" />
+
+  <!-- 2. Users -> Notifications (1:N) -->
+  <path d="M 540 130 L 330 130" fill="none" stroke="#0284c7" stroke-width="1.5" />
+  <text x="435" y="122" fill="#0369a1" font-size="11.5" font-weight="600" text-anchor="middle">Nhận (1:N)</text>
+  <!-- Markers -->
+  <line x1="530" y1="125" x2="530" y2="135" stroke="#0284c7" stroke-width="1.5" />
+  <circle cx="340" cy="130" r="3" fill="#ffffff" stroke="#0284c7" stroke-width="1.5" />
+  <line x1="332" y1="130" x2="342" y2="124" stroke="#0284c7" stroke-width="1.5" />
+  <line x1="332" y1="130" x2="342" y2="136" stroke="#0284c7" stroke-width="1.5" />
+
+  <!-- 3. Users -> Garages (1:1) -->
+  <path d="M 830 130 L 1040 130" fill="none" stroke="#0284c7" stroke-width="1.5" />
+  <text x="935" y="122" fill="#0369a1" font-size="11.5" font-weight="600" text-anchor="middle">Vận hành (1:1)</text>
+
+  <!-- 4. Vehicles -> LegalDocuments (1:N) -->
+  <path d="M 550 610 L 550 650 L 205 650 L 205 690" fill="none" stroke="#0284c7" stroke-width="1.5" />
+  <text x="330" y="643" fill="#0369a1" font-size="11.5" font-weight="600" text-anchor="middle">Bao gồm (1:N)</text>
+  <!-- Markers -->
+  <circle cx="205" cy="680" r="3" fill="#ffffff" stroke="#0284c7" stroke-width="1.5" />
+  <line x1="205" y1="688" x2="198" y2="678" stroke="#0284c7" stroke-width="1.5" />
+  <line x1="205" y1="688" x2="212" y2="678" stroke="#0284c7" stroke-width="1.5" />
+
+  <!-- 5. Vehicles -> MaintenanceSchedules (1:N) -->
+  <path d="M 640 610 L 640 650 L 535 650 L 535 690" fill="none" stroke="#0284c7" stroke-width="1.5" />
+  <text x="585" y="643" fill="#0369a1" font-size="11.5" font-weight="600" text-anchor="middle">Lập lịch (1:N)</text>
+  <!-- Markers -->
+  <circle cx="535" cy="680" r="3" fill="#ffffff" stroke="#0284c7" stroke-width="1.5" />
+  <line x1="535" y1="688" x2="528" y2="678" stroke="#0284c7" stroke-width="1.5" />
+  <line x1="535" y1="688" x2="542" y2="678" stroke="#0284c7" stroke-width="1.5" />
+
+  <!-- 6. Vehicles -> MaintenanceHistory (1:N) -->
+  <path d="M 760 610 L 760 650 L 865 650 L 865 690" fill="none" stroke="#0284c7" stroke-width="1.5" />
+  <text x="815" y="643" fill="#0369a1" font-size="11.5" font-weight="600" text-anchor="middle">Ghi sổ (1:N)</text>
+  <!-- Markers -->
+  <circle cx="865" cy="680" r="3" fill="#ffffff" stroke="#0284c7" stroke-width="1.5" />
+  <line x1="865" y1="688" x2="858" y2="678" stroke="#0284c7" stroke-width="1.5" />
+  <line x1="865" y1="688" x2="872" y2="678" stroke="#0284c7" stroke-width="1.5" />
+
+  <!-- 7. Vehicles -> Appointments (1:N) -->
+  <path d="M 870 450 L 1040 450" fill="none" stroke="#0284c7" stroke-width="1.5" />
+  <text x="955" y="442" fill="#0369a1" font-size="11.5" font-weight="600" text-anchor="middle">Đặt lịch (1:N)</text>
+
+  <!-- 8. Garages -> Appointments (1:N) -->
+  <path d="M 1180 230 L 1180 340" fill="none" stroke="#0284c7" stroke-width="1.5" />
+  <text x="1185" y="285" fill="#0369a1" font-size="11.5" font-weight="600" text-anchor="start">Tiếp nhận (1:N)</text>
+
+  <!-- 9. Appointments -> Payments (1:1) -->
+  <path d="M 1180 570 L 1180 690" fill="none" stroke="#0284c7" stroke-width="1.5" />
+  <text x="1185" y="630" fill="#0369a1" font-size="11.5" font-weight="600" text-anchor="start">Thanh toán (1:1)</text>
+
+  <!-- 10. Appointments -> GarageReviews (1:1) - routed with wide 100px padding from the right -->
+  <path d="M 1320 460 L 1370 460 L 1370 1000 L 1320 1000" fill="none" stroke="#0284c7" stroke-width="1.5" />
+  <text x="1375" y="740" fill="#0369a1" font-size="12" font-weight="bold" text-anchor="start">Đánh giá (1:1)</text>
+
+  <!-- 11. Appointments -> MaintenanceHistory (1:1) -->
+  <path d="M 1040 510 L 960 510 L 960 690" fill="none" stroke="#0284c7" stroke-width="1.5" />
+  <text x="965" y="600" fill="#0369a1" font-size="11.5" font-weight="600" text-anchor="start">Nghiệm thu (1:1)</text>
+
+  <!-- ==================== CAPTION ==================== -->
+  <text x="740" y="1225" fill="#0f172a" font-size="17" font-weight="bold" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif">
+    Hình 3.3 - Mô hình thực thể liên kết (ERD) cho hệ thống AutoCare Office Helper (ACOH)
+  </text>
+</svg>

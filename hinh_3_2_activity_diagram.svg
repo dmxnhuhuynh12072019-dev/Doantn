@@ -1,0 +1,178 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1140 1500" width="100%" height="100%" style="background-color: #ffffff; font-family: 'Segoe UI', Arial, sans-serif;">
+  <defs>
+    <!-- Arrowhead Marker -->
+    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#1e293b" />
+    </marker>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect x="0" y="0" width="1140" height="1500" fill="#ffffff" />
+
+  <!-- Outer Frame -->
+  <rect x="25" y="20" width="1090" height="1420" fill="#ffffff" stroke="#334155" stroke-width="1.8" />
+
+  <!-- ==================== SWIMLANE HEADERS ==================== -->
+  <line x1="25" y1="75" x2="1115" y2="75" stroke="#334155" stroke-width="1.8" />
+  
+  <!-- Lane Divider Lines -->
+  <line x1="300" y1="20" x2="300" y2="1440" stroke="#64748b" stroke-width="1.2" />
+  <line x1="575" y1="20" x2="575" y2="1440" stroke="#64748b" stroke-width="1.2" />
+  <line x1="850" y1="20" x2="850" y2="1440" stroke="#64748b" stroke-width="1.2" />
+
+  <!-- Lane Titles -->
+  <text x="162" y="52" fill="#0f172a" font-size="16" font-weight="bold" text-anchor="middle">Chủ xe (User)</text>
+  <text x="437" y="52" fill="#0f172a" font-size="16" font-weight="bold" text-anchor="middle">Nhân viên / Kỹ thuật Gara</text>
+  <text x="712" y="52" fill="#0f172a" font-size="16" font-weight="bold" text-anchor="middle">Hệ thống ACOH</text>
+  <text x="982" y="52" fill="#0f172a" font-size="16" font-weight="bold" text-anchor="middle">Bộ lập lịch Cron Job</text>
+
+  <!-- ==================== STAGE 1: KHỞI TẠO & CẢNH BÁO ==================== -->
+  <!-- 1. Start Node (Chủ xe) -->
+  <circle cx="162" cy="110" r="10" fill="#0f172a" />
+  <line x1="162" y1="120" x2="162" y2="148" stroke="#1e293b" stroke-width="1.5" marker-end="url(#arrow)" />
+
+  <!-- 2. Action: Khai báo phương tiện -->
+  <rect x="47" y="148" width="230" height="52" rx="18" fill="#e0f7fa" stroke="#00838f" stroke-width="1.5" />
+  <text x="162" y="170" fill="#006064" font-size="12" font-weight="600" text-anchor="middle">Khai báo phương tiện, giấy tờ</text>
+  <text x="162" y="188" fill="#006064" font-size="12" font-weight="600" text-anchor="middle">&amp; cập nhật số Odometer ban đầu</text>
+
+  <!-- Flow 2 -> 3: Chủ xe sang Hệ thống ACOH -->
+  <path d="M 277 174 L 712 174 L 712 218" fill="none" stroke="#1e293b" stroke-width="1.5" marker-end="url(#arrow)" />
+
+  <!-- 3. Action: Hệ thống tự động sinh lịch mẫu -->
+  <rect x="595" y="218" width="235" height="52" rx="18" fill="#e0f7fa" stroke="#00838f" stroke-width="1.5" />
+  <text x="712" y="240" fill="#006064" font-size="12" font-weight="600" text-anchor="middle">Tự động sinh lịch bảo dưỡng mẫu</text>
+  <text x="712" y="258" fill="#006064" font-size="12" font-weight="600" text-anchor="middle">&amp; tính toán hạn Đăng kiểm/Bảo hiểm</text>
+
+  <!-- 4. Action: Cron Job quét ngầm lúc 00:00 -->
+  <rect x="867" y="218" width="230" height="52" rx="18" fill="#e0f7fa" stroke="#00838f" stroke-width="1.5" />
+  <text x="982" y="240" fill="#006064" font-size="12" font-weight="600" text-anchor="middle">Quét ngầm lúc 00:00 hàng ngày</text>
+  <text x="982" y="258" fill="#006064" font-size="12" font-weight="600" text-anchor="middle">(Kiểm tra ngày &amp; Odometer xe)</text>
+
+  <!-- Flow 4 -> Decision: Đến hạn? -->
+  <line x1="982" y1="270" x2="982" y2="305" stroke="#1e293b" stroke-width="1.5" marker-end="url(#arrow)" />
+
+  <!-- Decision Node: Đến hạn? -->
+  <polygon points="982,305 1035,325 982,345 929,325" fill="#e0f7fa" stroke="#00838f" stroke-width="1.5" />
+  <text x="982" y="329" fill="#006064" font-size="11" font-weight="bold" text-anchor="middle">Đến hạn?</text>
+
+  <!-- Branch: Không -> Vòng lặp chờ chu kỳ tiếp -->
+  <path d="M 1035 325 L 1098 325 L 1098 185 L 982 185 L 982 218" fill="none" stroke="#1e293b" stroke-width="1.5" marker-end="url(#arrow)" />
+  <text x="1048" y="318" fill="#64748b" font-size="10.5" font-weight="bold">Không</text>
+
+  <!-- Branch: Có -> Gửi sang Hệ thống ACOH -->
+  <path d="M 929 325 L 712 325 L 712 360" fill="none" stroke="#1e293b" stroke-width="1.5" marker-end="url(#arrow)" />
+  <text x="890" y="318" fill="#006064" font-size="10.5" font-weight="bold">Có</text>
+
+  <!-- 5. Action: Hệ thống phát cảnh báo đa kênh -->
+  <rect x="595" y="360" width="235" height="52" rx="18" fill="#e0f7fa" stroke="#00838f" stroke-width="1.5" />
+  <text x="712" y="382" fill="#006064" font-size="12" font-weight="600" text-anchor="middle">Phát cảnh báo đa kênh tự động</text>
+  <text x="712" y="400" fill="#006064" font-size="12" font-weight="600" text-anchor="middle">(Socket.IO Real-time &amp; Email)</text>
+
+  <!-- Flow 5 -> Chủ xe nhận thông báo -->
+  <path d="M 595 386 L 162 386 L 162 430" fill="none" stroke="#1e293b" stroke-width="1.5" marker-end="url(#arrow)" />
+
+  <!-- 6. Action: Chủ xe nhận cảnh báo & Đặt lịch hẹn -->
+  <rect x="47" y="430" width="230" height="52" rx="18" fill="#e0f7fa" stroke="#00838f" stroke-width="1.5" />
+  <text x="162" y="452" fill="#006064" font-size="12" font-weight="600" text-anchor="middle">Nhận thông báo cảnh báo &amp;</text>
+  <text x="162" y="470" fill="#006064" font-size="12" font-weight="600" text-anchor="middle">Đặt lịch hẹn bảo dưỡng trực tuyến</text>
+
+  <!-- ==================== STAGE 2: TIẾP NHẬN & QUÉT AI OCR ==================== -->
+  <!-- Flow 6 -> Gara tiếp nhận xe -->
+  <path d="M 277 456 L 315 456 L 315 520 L 437 520" fill="none" stroke="#1e293b" stroke-width="1.5" marker-end="url(#arrow)" />
+
+  <!-- 7. Action: Gara quét biển số WebCam AI OCR -->
+  <rect x="322" y="520" width="230" height="52" rx="18" fill="#e0f7fa" stroke="#00838f" stroke-width="1.5" />
+  <text x="437" y="542" fill="#006064" font-size="12" font-weight="600" text-anchor="middle">Tiếp nhận xe tại xưởng &amp; Quét</text>
+  <text x="437" y="560" fill="#006064" font-size="12" font-weight="600" text-anchor="middle">biển số xe bằng WebCam AI OCR</text>
+
+  <!-- Flow 7 -> Hệ thống bóc tách OCR -->
+  <path d="M 552 546 L 712 546 L 712 590" fill="none" stroke="#1e293b" stroke-width="1.5" marker-end="url(#arrow)" />
+
+  <!-- 8. Action: Hệ thống bóc tách OCR & truy xuất hồ sơ -->
+  <rect x="595" y="590" width="235" height="52" rx="18" fill="#e0f7fa" stroke="#00838f" stroke-width="1.5" />
+  <text x="712" y="612" fill="#006064" font-size="12" font-weight="600" text-anchor="middle">Bóc tách Tesseract OCR &amp;</text>
+  <text x="712" y="630" fill="#006064" font-size="12" font-weight="600" text-anchor="middle">Truy xuất hồ sơ định danh xe</text>
+
+  <!-- Flow 8 -> Kỹ thuật viên kiểm tra mốc km -->
+  <path d="M 595 616 L 437 616 L 437 665" fill="none" stroke="#1e293b" stroke-width="1.5" marker-end="url(#arrow)" />
+
+  <!-- ==================== STAGE 3: BÁO GIÁ & PHÊ DUYỆT ==================== -->
+  <!-- 9. Action: Kỹ thuật viên kiểm tra mốc km & lập báo giá -->
+  <rect x="322" y="665" width="230" height="52" rx="18" fill="#e0f7fa" stroke="#00838f" stroke-width="1.5" />
+  <text x="437" y="687" fill="#006064" font-size="12" font-weight="600" text-anchor="middle">Kiểm tra xe thực tế &amp; Tích chọn</text>
+  <text x="437" y="705" fill="#006064" font-size="12" font-weight="600" text-anchor="middle">hạng mục theo Ma trận mốc km</text>
+
+  <!-- Flow 9 -> 10: Lập báo giá -->
+  <line x1="437" y1="717" x2="437" y2="750" stroke="#1e293b" stroke-width="1.5" marker-end="url(#arrow)" />
+
+  <!-- 10. Action: Lập báo giá dịch vụ -->
+  <rect x="322" y="750" width="230" height="52" rx="18" fill="#e0f7fa" stroke="#00838f" stroke-width="1.5" />
+  <text x="437" y="772" fill="#006064" font-size="12" font-weight="600" text-anchor="middle">Lập bảng Báo giá dịch vụ</text>
+  <text x="437" y="790" fill="#006064" font-size="12" font-weight="600" text-anchor="middle">(Phụ tùng + Tiền công) &amp; Gửi khách</text>
+
+  <!-- Flow 10 -> Cập nhật trạng thái Quoted (Hệ thống) -->
+  <path d="M 552 776 L 712 776 L 712 820" fill="none" stroke="#1e293b" stroke-width="1.5" marker-end="url(#arrow)" />
+
+  <!-- 11. Action: Hệ thống cập nhật Quoted & bắn Socket -->
+  <rect x="595" y="820" width="235" height="52" rx="18" fill="#e0f7fa" stroke="#00838f" stroke-width="1.5" />
+  <text x="712" y="842" fill="#006064" font-size="12" font-weight="600" text-anchor="middle">Cập nhật trạng thái Báo giá &amp;</text>
+  <text x="712" y="860" fill="#006064" font-size="12" font-weight="600" text-anchor="middle">Đẩy thông báo Real-time cho khách</text>
+
+  <!-- Flow 11 -> Chủ xe xem xét báo giá -->
+  <path d="M 595 846 L 162 846 L 162 890" fill="none" stroke="#1e293b" stroke-width="1.5" marker-end="url(#arrow)" />
+
+  <!-- 12. Action: Chủ xe xem xét báo giá -->
+  <rect x="47" y="890" width="230" height="46" rx="18" fill="#e0f7fa" stroke="#00838f" stroke-width="1.5" />
+  <text x="162" y="918" fill="#006064" font-size="12" font-weight="600" text-anchor="middle">Xem xét chi tiết Báo giá điện tử</text>
+
+  <!-- Flow 12 -> Decision: Duyệt báo giá? -->
+  <line x1="162" y1="936" x2="162" y2="965" stroke="#1e293b" stroke-width="1.5" marker-end="url(#arrow)" />
+
+  <!-- Decision Node: Duyệt báo giá? -->
+  <polygon points="162,965 220,985 162,1005 104,985" fill="#e0f7fa" stroke="#00838f" stroke-width="1.5" />
+  <text x="162" y="989" fill="#006064" font-size="11" font-weight="bold" text-anchor="middle">Duyệt?</text>
+
+  <!-- Branch: Yêu cầu sửa -> Quay lại bước lập báo giá của Gara -->
+  <path d="M 220 985 L 290 985 L 290 776 L 322 776" fill="none" stroke="#1e293b" stroke-width="1.5" marker-end="url(#arrow)" />
+  <text x="226" y="976" fill="#dc2626" font-size="10" font-weight="bold">Yêu cầu sửa</text>
+
+  <!-- Branch: Phê duyệt -> Chuyển sang Gara thi công -->
+  <path d="M 162 1005 L 162 1045 L 437 1045 L 437 1075" fill="none" stroke="#1e293b" stroke-width="1.5" marker-end="url(#arrow)" />
+  <text x="175" y="1035" fill="#15803d" font-size="10.5" font-weight="bold">Phê duyệt (Đồng ý)</text>
+
+  <!-- ==================== STAGE 4: THI CÔNG & HOÀN TẤT ==================== -->
+  <!-- 13. Action: Gara thi công & Nghiệm thu -->
+  <rect x="322" y="1075" width="230" height="52" rx="18" fill="#e0f7fa" stroke="#00838f" stroke-width="1.5" />
+  <text x="437" y="1097" fill="#006064" font-size="12" font-weight="600" text-anchor="middle">Tiến hành thi công bảo dưỡng &amp;</text>
+  <text x="437" y="1115" fill="#006064" font-size="12" font-weight="600" text-anchor="middle">Nghiệm thu, nhập Odometer bàn giao</text>
+
+  <!-- Flow 13 -> Hệ thống thực thi giao dịch CSDL -->
+  <path d="M 552 1101 L 712 1101 L 712 1145" fill="none" stroke="#1e293b" stroke-width="1.5" marker-end="url(#arrow)" />
+
+  <!-- 14. Action: Hệ thống ghi CSDL & Xuất hóa đơn -->
+  <rect x="590" y="1145" width="244" height="64" rx="18" fill="#e0f7fa" stroke="#00838f" stroke-width="1.5" />
+  <text x="712" y="1166" fill="#006064" font-size="11.5" font-weight="bold" text-anchor="middle">Thực thi Giao dịch CSDL (Transaction):</text>
+  <text x="712" y="1183" fill="#006064" font-size="11" text-anchor="middle">Lưu History, Cập nhật Odo &amp; Xuất Hóa đơn</text>
+  <text x="712" y="1199" fill="#006064" font-size="11" font-weight="600" text-anchor="middle">Phát thông báo mời nhận xe</text>
+
+  <!-- Flow 14 -> Chủ xe nhận xe & thanh toán (starts cleanly below box at y=1209, goes to y=1220, then left to Lane 1) -->
+  <path d="M 712 1209 L 712 1228 L 162 1228 L 162 1248" fill="none" stroke="#1e293b" stroke-width="1.5" marker-end="url(#arrow)" />
+
+  <!-- 15. Action: Chủ xe nhận xe & thanh toán -->
+  <rect x="47" y="1248" width="230" height="52" rx="18" fill="#e0f7fa" stroke="#00838f" stroke-width="1.5" />
+  <text x="162" y="1270" fill="#006064" font-size="12" font-weight="600" text-anchor="middle">Đến xưởng nhận xe &amp; Thanh toán</text>
+  <text x="162" y="1288" fill="#006064" font-size="12" font-weight="600" text-anchor="middle">(VNPAY / VietQR / Tiền mặt)</text>
+
+  <!-- Flow 15 -> End Node -->
+  <line x1="162" y1="1300" x2="162" y2="1350" stroke="#1e293b" stroke-width="1.5" marker-end="url(#arrow)" />
+
+  <!-- 16. End Node (Bullseye / Final State) -->
+  <circle cx="162" cy="1370" r="14" fill="#ffffff" stroke="#0f172a" stroke-width="2" />
+  <circle cx="162" cy="1370" r="8" fill="#0f172a" />
+
+  <!-- Bottom Caption -->
+  <text x="570" y="1475" fill="#0f172a" font-size="16" font-weight="bold" text-anchor="middle">
+    Hình 3.2 - Biểu đồ hoạt động (Activity Diagram) luồng nghiệp vụ tổng thể ACOH
+  </text>
+</svg>

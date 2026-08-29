@@ -1,5 +1,5 @@
-import { Controller, Get, Post, Patch, Body, Param, UseGuards, ParseIntPipe } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards, ParseIntPipe } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
@@ -16,8 +16,21 @@ import { User } from '../auth/decorators/user.decorator';
 export class AppointmentsController {
   constructor(private appointmentsService: AppointmentsService) {}
 
+  @Get('slots')
+  @ApiOperation({ summary: 'Lấy danh sách số lượng đặt lịch của từng khung giờ tại Gara trong ngày' })
+  @ApiQuery({ name: 'garageId', description: 'ID của Gara', type: Number })
+  @ApiQuery({ name: 'date', description: 'Ngày cần kiểm tra (YYYY-MM-DD)', type: String })
+  @ApiResponse({ status: 200, description: 'Trả về danh sách các khung giờ và số lượt đã đặt' })
+  async getSlotAvailability(
+    @Query('garageId') garageId: string,
+    @Query('date') date: string,
+  ) {
+    if (!garageId || !date) return [];
+    return this.appointmentsService.getSlotAvailability(parseInt(garageId, 10), date);
+  }
+
   @Post()
-  @Roles('User')
+  @Roles('User', 'Admin')
   @UseGuards(RolesGuard)
   @ApiOperation({ summary: 'Khách hàng đặt lịch hẹn bảo dưỡng sửa xe tại Gara' })
   @ApiResponse({ status: 201, description: 'Đặt lịch thành công.' })
@@ -26,7 +39,7 @@ export class AppointmentsController {
   }
 
   @Get('user')
-  @Roles('User')
+  @Roles('User', 'Admin')
   @UseGuards(RolesGuard)
   @ApiOperation({ summary: 'Khách hàng xem danh sách các lịch đặt hẹn của mình' })
   @ApiResponse({ status: 200, description: 'Trả về mảng lịch hẹn của khách hàng.' })

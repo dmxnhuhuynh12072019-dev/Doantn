@@ -16,7 +16,9 @@ import MaintenanceHistoryTab from '../../components/maintenances/MaintenanceHist
 import MaintenanceMatrixView from '../../components/maintenances/MaintenanceMatrixView';
 import LegalDocumentsTab from '../../components/legal/LegalDocumentsTab';
 import Header from '../../components/common/Header';
+import MobileGreetingCard from '../../components/common/MobileGreetingCard';
 import BannerSlider from '../../components/common/BannerSlider';
+import MobileQuickActions from '../../components/common/MobileQuickActions';
 import NewServicesSection from '../../components/common/NewServicesSection';
 import OperatingCriteriaSection from '../../components/common/OperatingCriteriaSection';
 import CustomerReviewsSection from '../../components/common/CustomerReviewsSection';
@@ -26,6 +28,12 @@ import AboutSection from '../../components/common/AboutSection';
 import ServicesPageSection from '../../components/common/ServicesPageSection';
 import NewsPageSection from '../../components/common/NewsPageSection';
 import ContactPageSection from '../../components/common/ContactPageSection';
+import AppointmentsPageSection from '../../components/appointments/AppointmentsPageSection';
+import BookingAppointmentPage from '../../components/appointments/BookingAppointmentPage';
+import ServiceDetailPage from '../../components/common/ServiceDetailPage';
+import AccountPageSection from '../../components/common/AccountPageSection';
+import GarageChatSection from '../../components/chat/GarageChatSection';
+import NotificationsPageSection from '../../components/common/NotificationsPageSection';
 
 const UserDashboard = () => {
   const { user, logout, themePreference, updateThemePreference } = useAuth();
@@ -48,11 +56,12 @@ const UserDashboard = () => {
 
   // Detail view state
   const [selectedVehicleForDetail, setSelectedVehicleForDetail] = useState(null);
+  const [selectedServiceItem, setSelectedServiceItem] = useState(null);
   const [activeTab, setActiveTab] = useState('schedules'); // 'schedules' | 'history'
 
   // Main Page sub-tab (Module 7 Expense Analytics)
   const [mainTab, setMainTab] = useState('vehicles');
-  const [currentView, setCurrentView] = useState('home'); // 'home' | 'about' | 'services' | 'news' | 'contact'
+  const [currentView, setCurrentView] = useState('home'); // 'home' | 'about' | 'services' | 'service-detail' | 'news' | 'contact'
   const [selectedServiceCategory, setSelectedServiceCategory] = useState(null);
   const [expensesData, setExpensesData] = useState(null);
   const [loadingExpenses, setLoadingExpenses] = useState(false);
@@ -242,71 +251,91 @@ const UserDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col pb-20 md:pb-0">
       {/* Header */}
-      {/* Header */}
-      <Header
-        dashboardType="user"
-        currentView={currentView}
-        onMenuClick={(menuId, categoryId) => {
-          setSelectedVehicleForDetail(null);
-          setCurrentView(menuId);
-          if (categoryId) {
-            setSelectedServiceCategory(categoryId);
-          } else {
-            setSelectedServiceCategory(null);
-          }
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
-      />
+      {currentView !== 'messages' && currentView !== 'notifications' && currentView !== 'news' && (
+        <Header
+          dashboardType="user"
+          currentView={currentView}
+          onMenuClick={(menuId, categoryId) => {
+            setSelectedVehicleForDetail(null);
+            setCurrentView(menuId);
+            if (categoryId) {
+              setSelectedServiceCategory(categoryId);
+            } else {
+              setSelectedServiceCategory(null);
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        />
+      )}
 
-      {/* Hero Banner Slider (Horizontal Slide Banner matching sample image) */}
+      {/* Hero Banner Slider & Mobile First Sections */}
       {!selectedVehicleForDetail && currentView === 'home' && (
         <>
+          {/* Top Greeting Header Card (Circle 1 from sample image) */}
+          <MobileGreetingCard />
+
+          {/* Banner Slider */}
           <BannerSlider
             onOpenAppointment={() => {
-              if (vehicles.length > 0) {
-                setSelectedVehicle(vehicles[0]);
-                setIsAppointmentOpen(true);
-              } else {
-                handleAddClick();
-              }
+              setSelectedVehicleForDetail(null);
+              setCurrentView('services');
+              setSelectedServiceCategory(null);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onOpenContact={() => {
+              setSelectedVehicleForDetail(null);
+              setCurrentView('contact');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
           />
-          {/* Section: Dịch vụ mới */}
-          <NewServicesSection
-            onOpenAppointment={(serviceName) => {
-              if (vehicles.length > 0) {
-                setSelectedVehicle(vehicles[0]);
-              }
-              setIsAppointmentOpen(true);
-            }}
-          />
-          {/* Section: Tiêu chí hoạt động */}
-          <OperatingCriteriaSection />
 
-          {/* Home Page Quick Vehicle Banner */}
-          <div className="max-w-7xl mx-auto px-6 mt-8">
-            <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 rounded-3xl p-6 sm:p-8 text-white shadow-lg flex flex-col sm:flex-row justify-between items-center gap-6">
-              <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-xs font-bold mb-2">
+          {/* Quick 4-Action Grid (Circle 2 from sample image: Dịch vụ, Lịch hẹn, Tin tức, Chuyên gia) */}
+          <MobileQuickActions
+            onOpenServices={() => {
+              setSelectedVehicleForDetail(null);
+              setCurrentView('services');
+              setSelectedServiceCategory(null);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onOpenAppointments={() => {
+              setSelectedVehicleForDetail(null);
+              setCurrentView('appointments');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onOpenNews={() => {
+              setSelectedVehicleForDetail(null);
+              setCurrentView('news');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onOpenExpert={() => {
+              window.dispatchEvent(new CustomEvent('open-acoh-ai-chat'));
+            }}
+          />
+
+          {/* Home Page Quick Vehicle Banner (Placed above Dịch vụ quanh bạn) */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 my-2 sm:my-3">
+            <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 rounded-2xl sm:rounded-3xl p-5 sm:p-7 text-white shadow-md flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-6">
+              <div className="text-center sm:text-left">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 text-xs font-bold mb-2">
                   🚗 Quản lý phương tiện thông minh
                 </div>
-                <h3 className="text-xl sm:text-2xl font-black mb-1">
+                <h3 className="text-lg sm:text-2xl font-black mb-1">
                   Bạn đang có {vehicles.length} phương tiện trong danh sách
                 </h3>
                 <p className="text-indigo-100 text-xs sm:text-sm">
                   Theo dõi số km, lập kế hoạch bảo dưỡng định kỳ và kiểm soát chi phí nuôi xe.
                 </p>
               </div>
-              <div className="flex flex-wrap items-center gap-3 shrink-0">
+              <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2.5 sm:gap-3 shrink-0 w-full sm:w-auto">
                 <button
                   onClick={() => {
                     setCurrentView('vehicles');
                     setMainTab('vehicles');
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
-                  className="px-5 py-3 rounded-2xl bg-white text-indigo-700 font-bold text-xs sm:text-sm shadow-md hover:bg-indigo-50 transition cursor-pointer flex items-center gap-2"
+                  className="flex-1 sm:flex-initial px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-white text-indigo-700 font-bold text-xs sm:text-sm shadow-md hover:bg-indigo-50 transition cursor-pointer flex items-center justify-center gap-2"
                 >
                   <span>Xem danh sách xe</span>
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -320,13 +349,55 @@ const UserDashboard = () => {
                     handleAddClick();
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
-                  className="px-4 py-3 rounded-2xl bg-indigo-500/50 hover:bg-indigo-500/70 border border-white/20 text-white font-bold text-xs sm:text-sm transition cursor-pointer"
+                  className="flex-1 sm:flex-initial px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-indigo-500/50 hover:bg-indigo-500/70 border border-white/20 text-white font-bold text-xs sm:text-sm transition cursor-pointer text-center"
                 >
                   + Thêm xe mới
                 </button>
               </div>
             </div>
           </div>
+
+          {/* Section: Dịch vụ mới / Dịch vụ quanh bạn */}
+          <NewServicesSection
+            onSelectService={(service) => {
+              setSelectedServiceItem(service);
+              setSelectedVehicleForDetail(null);
+              setCurrentView('service-detail');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onOpenAppointment={(serviceName) => {
+              if (vehicles.length > 0) {
+                setSelectedVehicle(vehicles[0]);
+              }
+              setSelectedVehicleForDetail(null);
+              setCurrentView('booking');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onViewAll={() => {
+              setSelectedVehicleForDetail(null);
+              setCurrentView('services');
+              setSelectedServiceCategory(null);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          />
+          {/* Section: Tiêu chí hoạt động */}
+          <OperatingCriteriaSection
+            onOpenAppointment={() => {
+              setSelectedVehicleForDetail(null);
+              setCurrentView('services');
+              setSelectedServiceCategory(null);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          />
+
+          {/* Section: Tin tức nổi bật */}
+          <NewsSection
+            onViewAll={() => {
+              setSelectedVehicleForDetail(null);
+              setCurrentView('news');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          />
         </>
       )}
 
@@ -338,25 +409,218 @@ const UserDashboard = () => {
       {!selectedVehicleForDetail && currentView === 'services' && (
         <ServicesPageSection
           selectedCategory={selectedServiceCategory}
+          onBack={() => {
+            setCurrentView('home');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onSelectService={(service) => {
+            setSelectedServiceItem(service);
+            setSelectedVehicleForDetail(null);
+            setCurrentView('service-detail');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
           onOpenAppointment={(serviceName) => {
             if (vehicles.length > 0) {
               setSelectedVehicle(vehicles[0]);
             }
-            setIsAppointmentOpen(true);
+            setSelectedVehicleForDetail(null);
+            setCurrentView('booking');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        />
+      )}
+
+      {!selectedVehicleForDetail && currentView === 'service-detail' && (
+        <ServiceDetailPage
+          service={selectedServiceItem}
+          onBack={() => {
+            setCurrentView('services');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onBookAppointment={(service) => {
+            if (vehicles.length > 0) {
+              setSelectedVehicle(vehicles[0]);
+            }
+            setSelectedVehicleForDetail(null);
+            setCurrentView('booking');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
         />
       )}
 
       {!selectedVehicleForDetail && currentView === 'news' && (
-        <NewsPageSection />
+        <NewsPageSection
+          onBack={() => {
+            setCurrentView('home');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        />
       )}
 
       {!selectedVehicleForDetail && currentView === 'contact' && (
         <ContactPageSection />
       )}
 
-      {/* Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-8 pb-24 md:pb-8">
+      {!selectedVehicleForDetail && currentView === 'appointments' && (
+        <AppointmentsPageSection
+          onBack={() => {
+            setCurrentView('home');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onOpenNewAppointment={() => {
+            if (vehicles.length > 0) {
+              setSelectedVehicle(vehicles[0]);
+            }
+            setSelectedVehicleForDetail(null);
+            setCurrentView('booking');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onOpenPayment={(appt) => {
+            setSelectedPaymentAppt(appt);
+            setIsPaymentOpen(true);
+          }}
+          onOpenReview={(appt) => {
+            handleOpenReviewModal(appt);
+          }}
+          onCancelAppointment={(apptId, refreshCallback) => {
+            handleCancelAppointment(apptId).then(() => {
+              if (refreshCallback) refreshCallback();
+            });
+          }}
+          onExportInvoice={handleExportInvoice}
+        />
+      )}
+
+      {!selectedVehicleForDetail && currentView === 'booking' && (
+        <BookingAppointmentPage
+          onBack={() => {
+            if (selectedServiceItem) {
+              setCurrentView('service-detail');
+            } else {
+              setCurrentView('appointments');
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onBookingSuccess={() => {
+            toast.success('Đặt lịch hẹn bảo dưỡng thành công!');
+            setSelectedServiceItem(null);
+            setCurrentView('appointments');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          selectedService={selectedServiceItem}
+          preselectedVehicle={selectedVehicle}
+          vehicles={vehicles}
+          onAddNewVehicle={() => {
+            setCurrentView('vehicles');
+            setMainTab('vehicles');
+            handleAddClick();
+          }}
+        />
+      )}
+
+      {!selectedVehicleForDetail && currentView === 'account' && (
+        <AccountPageSection
+          onBack={() => {
+            setCurrentView('home');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onNavigateHome={() => {
+            setCurrentView('home');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onNavigateServices={() => {
+            setCurrentView('services');
+            setSelectedServiceCategory(null);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onNavigateAppointments={() => {
+            setCurrentView('appointments');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onNavigateVehicles={() => {
+            setCurrentView('vehicles');
+            setMainTab('vehicles');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onNavigateMessages={() => {
+            setCurrentView('messages');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onNavigateNotifications={() => {
+            setCurrentView('notifications');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        />
+      )}
+
+      {!selectedVehicleForDetail && currentView === 'notifications' && (
+        <NotificationsPageSection
+          onBack={() => {
+            setCurrentView('home');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onNavigateHome={() => {
+            setCurrentView('home');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onNavigateServices={() => {
+            setCurrentView('services');
+            setSelectedServiceCategory(null);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onNavigateMessages={() => {
+            setCurrentView('messages');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onNavigateAccount={() => {
+            setCurrentView('account');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        />
+      )}
+
+      {!selectedVehicleForDetail && currentView === 'messages' && (
+        <GarageChatSection
+          onBack={() => {
+            setCurrentView('home');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onNavigateHome={() => {
+            setCurrentView('home');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onNavigateServices={() => {
+            setCurrentView('services');
+            setSelectedServiceCategory(null);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onNavigateAppointments={() => {
+            setCurrentView('appointments');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onNavigateVehicles={() => {
+            setCurrentView('vehicles');
+            setMainTab('vehicles');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onNavigateAccount={() => {
+            setCurrentView('account');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onOpenBookingWithGarage={() => {
+            if (vehicles.length > 0) {
+              setSelectedVehicle(vehicles[0]);
+            }
+            setSelectedVehicleForDetail(null);
+            setCurrentView('booking');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        />
+      )}
+
+      {/* Main Content (Only for Vehicle Detail / Vehicles List) */}
+      {(selectedVehicleForDetail || currentView === 'vehicles') && (
+        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 pb-24 md:pb-8">
 
         {/* Detail View của một chiếc xe */}
         {selectedVehicleForDetail ? (
@@ -626,11 +890,50 @@ const UserDashboard = () => {
           /* Grid Danh sách xe */
           currentView === 'vehicles' && (
             <>
+            {/* Mobile Top Header Bar with Back Arrow to Account */}
+            <div className="md:hidden -mx-4 -mt-6 mb-5 bg-gradient-to-r from-indigo-600 to-indigo-800 text-white px-4 py-3.5 shadow-md sticky top-0 z-30 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => {
+                    setCurrentView('account');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="w-8 h-8 rounded-full hover:bg-white/15 flex items-center justify-center transition cursor-pointer active:scale-95"
+                  title="Quay lại tài khoản"
+                >
+                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <h1 className="!text-white text-base font-black tracking-tight !m-0 !p-0" style={{ color: '#ffffff' }}>
+                  Xe của tôi
+                </h1>
+              </div>
+
+              <button
+                onClick={handleAddClick}
+                className="px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition flex items-center gap-1 cursor-pointer border border-white/25 active:scale-95"
+              >
+                <span>+ Thêm xe</span>
+              </button>
+            </div>
+
             {/* Welcome Section */}
             <div className="mb-8 flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 p-6 sm:p-8 shadow-sm">
               <div className="text-center sm:text-left">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-xs font-bold mb-2">
-                  🚘 Quản lý xe Mobile First
+                <div className="flex items-center gap-2 mb-2 justify-center sm:justify-start">
+                  <button
+                    onClick={() => {
+                      setCurrentView('account');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-xs font-bold transition cursor-pointer"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    <span>Quay lại Tài khoản</span>
+                  </button>
                 </div>
                 <h2 className="text-2xl font-black text-slate-800 dark:text-white mb-1">Góc Quản lý Phương tiện</h2>
                 <p className="text-slate-500 dark:text-slate-400 text-sm">Theo dõi số kilomet đi được để lập kế hoạch bảo dưỡng định kỳ.</p>
@@ -937,18 +1240,10 @@ const UserDashboard = () => {
           )
         )}
       </main>
-
-      {/* Section: Khách hàng nhận xét (Dưới cùng trang chủ) */}
-      {!selectedVehicleForDetail && currentView === 'home' && (
-        <>
-          <CustomerReviewsSection />
-          {/* Section: Tin tức */}
-          <NewsSection />
-        </>
       )}
 
       {/* Footer */}
-      {!selectedVehicleForDetail && <Footer />}
+      {!selectedVehicleForDetail && currentView !== 'messages' && <Footer />}
 
       {/* Modals */}
       <VehicleFormModal
@@ -967,9 +1262,13 @@ const UserDashboard = () => {
 
       <AppointmentModal
         isOpen={isAppointmentOpen}
-        onClose={() => setIsAppointmentOpen(false)}
+        onClose={() => {
+          setIsAppointmentOpen(false);
+          setSelectedVehicle(null);
+        }}
         onSave={handleSaveAppointment}
-        vehicle={selectedVehicleForDetail}
+        vehicle={selectedVehicle || selectedVehicleForDetail}
+        vehicles={vehicles}
       />
 
       <ReviewModal
@@ -995,69 +1294,108 @@ const UserDashboard = () => {
         onPaymentSuccess={fetchAppointments}
       />
 
-      <AiAssistantChat />
+      {currentView !== 'messages' && <AiAssistantChat />}
 
-      {/* Bottom Navigation for Mobile */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 shadow-lg px-4 py-2 z-40 flex justify-around items-center">
-        <button
-          onClick={() => {
-            setSelectedVehicleForDetail(null);
-            setCurrentView('home');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }}
-          className={`flex flex-col items-center gap-1 text-xxs font-bold cursor-pointer ${
-            !selectedVehicleForDetail && currentView === 'home'
-              ? 'text-indigo-600 dark:text-indigo-400'
-              : 'text-slate-500 dark:text-slate-400'
-          }`}
-        >
-          <span className="text-xl">🏠</span>
-          Trang chủ
-        </button>
-        <button
-          onClick={() => {
-            setSelectedVehicleForDetail(null);
-            setCurrentView('vehicles');
-            setMainTab('vehicles');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }}
-          className={`flex flex-col items-center gap-1 text-xxs font-bold cursor-pointer ${
-            !selectedVehicleForDetail && currentView === 'vehicles'
-              ? 'text-indigo-600 dark:text-indigo-400'
-              : 'text-slate-500 dark:text-slate-400'
-          }`}
-        >
-          <span className="text-xl">🚗</span>
-          Danh sách xe
-        </button>
-        <button
-          onClick={() => {
-            if (selectedVehicleForDetail) {
-              setActiveTab('appointments');
-            } else if (vehicles.length > 0) {
-              setSelectedVehicleForDetail(vehicles[0]);
-              setActiveTab('appointments');
-            } else {
-              setIsFormOpen(true);
-            }
-          }}
-          className={`flex flex-col items-center gap-1 text-xxs font-bold cursor-pointer ${
-            selectedVehicleForDetail && activeTab === 'appointments'
-              ? 'text-indigo-600 dark:text-indigo-400'
-              : 'text-slate-500 dark:text-slate-400'
-          }`}
-        >
-          <span className="text-xl">📅</span>
-          Đặt lịch
-        </button>
-        <a
-          href="/profile"
-          className="flex flex-col items-center gap-1 text-xxs font-bold text-slate-500 dark:text-slate-400 cursor-pointer"
-        >
-          <span className="text-xl">👤</span>
-          Tài khoản
-        </a>
-      </div>
+      {/* Bottom Navigation for Mobile matching sample screenshot */}
+      {!selectedVehicleForDetail && currentView !== 'booking' && currentView !== 'service-detail' && currentView !== 'account' && currentView !== 'messages' && currentView !== 'notifications' && (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 shadow-xl px-4 py-2 z-40 flex justify-around items-center">
+          {/* 1. Trang chủ */}
+          <button
+            onClick={() => {
+              setSelectedVehicleForDetail(null);
+              setCurrentView('home');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className={`flex flex-col items-center gap-1 text-xxs font-bold cursor-pointer transition-colors ${
+              !selectedVehicleForDetail && currentView === 'home'
+                ? 'text-indigo-600 dark:text-indigo-400'
+                : 'text-slate-500 dark:text-slate-400'
+            }`}
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+            <span>Trang chủ</span>
+          </button>
+
+          {/* 2. Gọi thợ */}
+          <button
+            onClick={() => {
+              setSelectedVehicleForDetail(null);
+              setCurrentView('services');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className={`flex flex-col items-center gap-1 text-xxs font-bold cursor-pointer transition-colors ${
+              !selectedVehicleForDetail && currentView === 'services'
+                ? 'text-indigo-600 dark:text-indigo-400'
+                : 'text-slate-500 dark:text-slate-400'
+            }`}
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span>Gọi thợ</span>
+          </button>
+
+          {/* 3. Tin nhắn */}
+          <button
+            onClick={() => {
+              setSelectedVehicleForDetail(null);
+              setCurrentView('messages');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className={`flex flex-col items-center gap-1 text-xxs font-bold cursor-pointer transition-colors ${
+              !selectedVehicleForDetail && currentView === 'messages'
+                ? 'text-indigo-600 dark:text-indigo-400'
+                : 'text-slate-500 dark:text-slate-400 hover:text-indigo-600'
+            }`}
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            <span>Tin nhắn</span>
+          </button>
+
+          {/* 4. Thông báo */}
+          <button
+            onClick={() => {
+              setSelectedVehicleForDetail(null);
+              setCurrentView('notifications');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className={`flex flex-col items-center gap-1 text-xxs font-bold cursor-pointer transition-colors relative ${
+              !selectedVehicleForDetail && currentView === 'notifications'
+                ? 'text-indigo-600 dark:text-indigo-400'
+                : 'text-slate-500 dark:text-slate-400 hover:text-indigo-600'
+            }`}
+          >
+            <svg className="w-5 h-5" fill={!selectedVehicleForDetail && currentView === 'notifications' ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            <span>Thông báo</span>
+          </button>
+
+          {/* 5. Tài khoản */}
+          <button
+            onClick={() => {
+              setSelectedVehicleForDetail(null);
+              setCurrentView('account');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className={`flex flex-col items-center gap-1 text-xxs font-bold cursor-pointer transition-colors ${
+              !selectedVehicleForDetail && currentView === 'account'
+                ? 'text-indigo-600 dark:text-indigo-400'
+                : 'text-slate-500 dark:text-slate-400'
+            }`}
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            <span>Tài khoản</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 };
