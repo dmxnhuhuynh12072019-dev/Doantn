@@ -7,7 +7,6 @@ const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [role, setRole] = useState('User'); // Mặc định là User
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,7 +20,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-      await register(fullName, email, password, phoneNumber, role);
+      await register(fullName, email, password, phoneNumber, 'User');
       setSuccess('Đăng ký tài khoản thành công! Hệ thống sẽ tự động chuyển hướng về trang Đăng nhập sau 3 giây.');
       
       // Tự động chuyển hướng sau 3 giây
@@ -40,7 +39,7 @@ const Register = () => {
       <div className="w-full max-w-md backdrop-blur-xl bg-white/90 dark:bg-slate-900/90 shadow-2xl rounded-3xl border border-white/20 p-8">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-black text-slate-800 dark:text-white mb-2 tracking-tight">Tạo tài khoản</h2>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">Điền thông tin của bạn để bắt đầu sử dụng</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">Đăng ký tài khoản Chủ phương tiện để quản lý xe và đặt lịch bảo dưỡng</p>
         </div>
 
         {error && (
@@ -110,22 +109,18 @@ const Register = () => {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Loại tài khoản</label>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-            >
-              <option value="User">Chủ phương tiện (User)</option>
-              <option value="Garage">Chủ Gara đối tác (Garage)</option>
-            </select>
+          {/* Garage partner note */}
+          <div className="p-3 bg-indigo-50/70 dark:bg-indigo-950/30 rounded-2xl border border-indigo-100 dark:border-indigo-900/30 text-xs text-indigo-800 dark:text-indigo-300 flex items-start gap-2">
+            <span className="text-base">🏢</span>
+            <span>
+              <strong>Bạn là chủ Gara đối tác?</strong> Tài khoản xưởng dịch vụ được cấp bởi Quản trị viên hệ thống. Vui lòng liên hệ Admin để được cấp quyền quản lý Gara.
+            </span>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 px-4 mt-2 rounded-2xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 transition flex items-center justify-center gap-2"
+            className="w-full py-3 px-4 mt-2 rounded-2xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 transition flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-indigo-600/20"
           >
             {loading ? (
               <>
@@ -133,7 +128,7 @@ const Register = () => {
                 Đang xử lý...
               </>
             ) : (
-              'Đăng ký'
+              'Đăng ký tài khoản'
             )}
           </button>
         </form>

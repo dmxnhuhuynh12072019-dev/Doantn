@@ -36,12 +36,12 @@ export class RegisterDto {
   phoneNumber?: string;
 
   @ApiPropertyOptional({
-    description: 'Vai trò trong hệ thống',
-    enum: ['User', 'Garage', 'Admin'],
+    description: 'Vai trò trong hệ thống (Chỉ cho phép đăng ký User thông thường)',
+    enum: ['User'],
     example: 'User',
     default: 'User',
   })
   @IsOptional()
-  @IsIn(['User', 'Garage', 'Admin'], { message: 'Vai trò không hợp lệ' })
+  @IsIn(['User'], { message: 'Đăng ký công khai chỉ áp dụng cho vai trò User (Chủ phương tiện)' })
   role?: string;
 }

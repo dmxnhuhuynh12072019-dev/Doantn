@@ -51,82 +51,119 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
         {
           name: 'Add ReceiveZaloNotif to Users',
           sql: `
+            SET LOCK_TIMEOUT 5000;
             IF NOT EXISTS (
               SELECT 1 FROM sys.columns 
               WHERE (object_id = OBJECT_ID('Users') OR object_id = OBJECT_ID('dbo.Users')) 
               AND name = 'ReceiveZaloNotif'
             )
             BEGIN
-                ALTER TABLE Users ADD ReceiveZaloNotif BIT NOT NULL DEFAULT 1;
+                EXEC('ALTER TABLE Users ADD ReceiveZaloNotif BIT NOT NULL DEFAULT 1;');
             END;
           `,
         },
         {
           name: 'Add ReceiveSmsNotif to Users',
           sql: `
+            SET LOCK_TIMEOUT 5000;
             IF NOT EXISTS (
               SELECT 1 FROM sys.columns 
               WHERE (object_id = OBJECT_ID('Users') OR object_id = OBJECT_ID('dbo.Users')) 
               AND name = 'ReceiveSmsNotif'
             )
             BEGIN
-                ALTER TABLE Users ADD ReceiveSmsNotif BIT NOT NULL DEFAULT 1;
+                EXEC('ALTER TABLE Users ADD ReceiveSmsNotif BIT NOT NULL DEFAULT 1;');
             END;
           `,
         },
         {
           name: 'Add ZaloPhoneNumber to Users',
           sql: `
+            SET LOCK_TIMEOUT 5000;
             IF NOT EXISTS (
               SELECT 1 FROM sys.columns 
               WHERE (object_id = OBJECT_ID('Users') OR object_id = OBJECT_ID('dbo.Users')) 
               AND name = 'ZaloPhoneNumber'
             )
             BEGIN
-                ALTER TABLE Users ADD ZaloPhoneNumber VARCHAR(15) NULL;
+                EXEC('ALTER TABLE Users ADD ZaloPhoneNumber VARCHAR(15) NULL;');
             END;
           `,
         },
         {
           name: 'Create NotificationLogs table',
           sql: `
+            SET LOCK_TIMEOUT 5000;
             IF OBJECT_ID('NotificationLogs', 'U') IS NULL
             BEGIN
-                CREATE TABLE NotificationLogs (
-                    LogID INT IDENTITY(1,1) PRIMARY KEY,
-                    UserID INT NOT NULL,
-                    Channel VARCHAR(20) NOT NULL,
-                    Recipient VARCHAR(100) NOT NULL,
-                    Title NVARCHAR(200) NULL,
-                    Message NVARCHAR(MAX) NOT NULL,
-                    Status NVARCHAR(30) NOT NULL,
-                    ErrorMessage NVARCHAR(MAX) NULL,
-                    SentAt DATETIME NOT NULL DEFAULT GETDATE(),
-                    CONSTRAINT FK_NotificationLogs_Users FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE
-                );
+                EXEC('
+                    CREATE TABLE NotificationLogs (
+                        LogID INT IDENTITY(1,1) PRIMARY KEY,
+                        UserID INT NOT NULL,
+                        Channel VARCHAR(20) NOT NULL,
+                        Recipient VARCHAR(100) NOT NULL,
+                        Title NVARCHAR(200) NULL,
+                        Message NVARCHAR(MAX) NOT NULL,
+                        Status NVARCHAR(30) NOT NULL,
+                        ErrorMessage NVARCHAR(MAX) NULL,
+                        SentAt DATETIME NOT NULL DEFAULT GETDATE(),
+                        CONSTRAINT FK_NotificationLogs_Users FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE
+                    );
+                ');
             END;
           `,
         },
         {
           name: 'Update CHK_Notifications_Type constraint',
           sql: `
-            IF EXISTS (
-              SELECT 1 FROM sys.check_constraints 
-              WHERE parent_object_id = OBJECT_ID('Notifications') 
-                AND name = 'CHK_Notifications_Type' 
-                AND LOWER(definition) NOT LIKE '%zalozns%'
-            )
+            SET LOCK_TIMEOUT 3000;
+            IF OBJECT_ID('Notifications', 'U') IS NOT NULL
             BEGIN
-                ALTER TABLE Notifications DROP CONSTRAINT CHK_Notifications_Type;
-                ALTER TABLE Notifications ADD CONSTRAINT CHK_Notifications_Type CHECK (NotificationType IN ('Email', 'InApp', 'ZaloZNS', 'SMS', 'All'));
-            END
-            ELSE IF NOT EXISTS (
-              SELECT 1 FROM sys.check_constraints 
-              WHERE parent_object_id = OBJECT_ID('Notifications') 
-                AND name = 'CHK_Notifications_Type'
-            )
+                IF EXISTS (
+                  SELECT 1 FROM sys.check_constraints 
+                  WHERE parent_object_id = OBJECT_ID('Notifications') 
+                    AND name = 'CHK_Notifications_Type' 
+                    AND LOWER(definition) NOT LIKE '%zalozns%'
+                )
+                BEGIN
+                    EXEC('ALTER TABLE Notifications DROP CONSTRAINT CHK_Notifications_Type;');
+                    EXEC('ALTER TABLE Notifications WITH NOCHECK ADD CONSTRAINT CHK_Notifications_Type CHECK (NotificationType IN (''Email'', ''InApp'', ''ZaloZNS'', ''SMS'', ''All''));');
+                END
+                ELSE IF NOT EXISTS (
+                  SELECT 1 FROM sys.check_constraints 
+                  WHERE parent_object_id = OBJECT_ID('Notifications') 
+                    AND name = 'CHK_Notifications_Type'
+                )
+                BEGIN
+                    EXEC('ALTER TABLE Notifications WITH NOCHECK ADD CONSTRAINT CHK_Notifications_Type CHECK (NotificationType IN (''Email'', ''InApp'', ''ZaloZNS'', ''SMS'', ''All''));');
+                END;
+            END;
+          `,
+        },
+        {
+          name: 'Auto-link Unlinked Garages to Garage Accounts',
+          sql: `
+            SET LOCK_TIMEOUT 5000;
+            IF OBJECT_ID('Garages', 'U') IS NOT NULL AND OBJECT_ID('Users', 'U') IS NOT NULL
             BEGIN
-                ALTER TABLE Notifications ADD CONSTRAINT CHK_Notifications_Type CHECK (NotificationType IN ('Email', 'InApp', 'ZaloZNS', 'SMS', 'All'));
+                -- 1. Khớp theo Email hoặc Số điện thoại
+                UPDATE g
+                SET g.UserID = u.UserID
+                FROM Garages g
+                JOIN Users u ON (g.Email = u.Email OR g.Phone = u.PhoneNumber OR g.GarageName LIKE '%' + u.FullName + '%')
+                WHERE g.UserID IS NULL OR g.UserID NOT IN (SELECT UserID FROM Users);
+
+                -- 2. Gán cho tài khoản Role = 'Garage' đầu tiên nếu vẫn còn Gara chưa có UserID
+                UPDATE g
+                SET g.UserID = u.UserID
+                FROM Garages g
+                CROSS APPLY (
+                    SELECT TOP 1 u2.UserID 
+                    FROM Users u2 
+                    WHERE u2.Role = 'Garage' 
+                    ORDER BY u2.UserID ASC
+                ) u
+                WHERE g.UserID IS NULL OR g.UserID NOT IN (SELECT UserID FROM Users);
             END;
           `,
         },

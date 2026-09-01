@@ -5,7 +5,15 @@ export default function PresetOdometerChecklist({ vehicle, isOpen, onClose, onSu
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedItemIds, setSelectedItemIds] = useState([]);
-  const [odometer, setOdometer] = useState(vehicle?.currentOdometer || 0);
+
+  const vId = vehicle?.VehicleID || vehicle?.vehicleID || vehicle?.vehicleId || vehicle?.id;
+  const vCurrentOdometer = vehicle?.CurrentOdometer ?? vehicle?.currentOdometer ?? 0;
+  const vBrand = vehicle?.Brand || vehicle?.brand || '';
+  const vModel = vehicle?.Model || vehicle?.model || '';
+  const vLicensePlate = vehicle?.LicensePlate || vehicle?.licensePlate || '';
+  const vVehicleType = vehicle?.VehicleType || vehicle?.vehicleType || 'Ô tô';
+
+  const [odometer, setOdometer] = useState(vCurrentOdometer);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -13,7 +21,7 @@ export default function PresetOdometerChecklist({ vehicle, isOpen, onClose, onSu
 
   useEffect(() => {
     if (isOpen && vehicle) {
-      setOdometer(vehicle.currentOdometer || 0);
+      setOdometer(vCurrentOdometer);
       setNotes('');
       setError('');
       fetchCategories();
@@ -23,11 +31,11 @@ export default function PresetOdometerChecklist({ vehicle, isOpen, onClose, onSu
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      const data = await getMaintenanceCategories(vehicle?.vehicleType || 'Ô tô');
+      const data = await getMaintenanceCategories(vVehicleType);
       setCategories(data);
       if (data.length > 0) {
         // Auto select the first category or nearest category matching current odometer
-        const nearest = data.find(c => c.targetOdometer >= (vehicle?.currentOdometer || 0)) || data[0];
+        const nearest = data.find(c => c.targetOdometer >= vCurrentOdometer) || data[0];
         handleSelectCategory(nearest);
       }
     } catch (err) {
@@ -43,7 +51,7 @@ export default function PresetOdometerChecklist({ vehicle, isOpen, onClose, onSu
     const defaultIds = cat.items.map(i => i.itemId);
     setSelectedItemIds(defaultIds);
     if (cat.targetOdometer) {
-      setOdometer(Math.max(vehicle?.currentOdometer || 0, cat.targetOdometer));
+      setOdometer(Math.max(vCurrentOdometer, cat.targetOdometer));
     }
   };
 
@@ -60,12 +68,18 @@ export default function PresetOdometerChecklist({ vehicle, isOpen, onClose, onSu
       return;
     }
 
+    const targetVehicleId = Number(vId);
+    if (!targetVehicleId || isNaN(targetVehicleId)) {
+      setError('Không xác định được ID phương tiện. Vui lòng chọn xe và thử lại!');
+      return;
+    }
+
     setSubmitting(true);
     setError('');
 
     try {
       await saveMatrixChecklist({
-        vehicleId: vehicle.vehicleID,
+        vehicleId: targetVehicleId,
         odometer: Number(odometer),
         selectedItemIds,
         notes,
@@ -74,7 +88,8 @@ export default function PresetOdometerChecklist({ vehicle, isOpen, onClose, onSu
       if (onSuccess) onSuccess();
       onClose();
     } catch (err) {
-      setError(err.message || 'Lưu bảo dưỡng theo mốc km thất bại');
+      const msg = err.response?.data?.message || err.message || 'Lưu bảo dưỡng theo mốc km thất bại';
+      setError(Array.isArray(msg) ? msg.join(', ') : msg);
     } finally {
       setSubmitting(false);
     }
@@ -91,7 +106,7 @@ export default function PresetOdometerChecklist({ vehicle, isOpen, onClose, onSu
               🛠️ Chuẩn hóa Khung Bảo Dưỡng Theo Mốc Km
             </h3>
             <p className="text-xs text-slate-400 mt-1">
-              Phương tiện: <span className="text-blue-400 font-medium">{vehicle?.brand} {vehicle?.model} ({vehicle?.licensePlate})</span>
+              Phương tiện: <span className="text-blue-400 font-medium">{vBrand} {vModel} ({vLicensePlate})</span>
             </p>
           </div>
           <button

@@ -41,6 +41,15 @@ export const getExportInvoiceURL = (appointmentId) => {
   return `http://localhost:3000/api/extensions/export/invoice/${appointmentId}?token=${token}`;
 };
 
+export const getInvoiceData = async (appointmentId) => {
+  try {
+    const res = await api.get(`/api/extensions/invoice-data/${appointmentId}`);
+    return res.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Không thể tải thông tin hóa đơn' };
+  }
+};
+
 // Hàm phụ hỗ trợ trigger tải file bằng Axios đính kèm token chuẩn REST
 export const downloadFileWithAuth = async (url, filename) => {
   try {

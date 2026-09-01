@@ -1,6 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import * as sql from 'mssql';
+import * as bcrypt from 'bcrypt';
 import { DatabaseService } from '../database/database.service';
+import { CreateGarageDto } from './dto/create-garage.dto';
 
 @Injectable()
 export class AdminService {
@@ -140,5 +142,71 @@ export class AdminService {
     );
 
     return { message: 'Cập nhật trạng thái Gara thành công!' };
+  }
+
+  async createGarage(dto: CreateGarageDto) {
+    // 1. Kiểm tra xem email đã tồn tại trong Users chưa
+    const checkEmail = await this.dbService.query(
+      'SELECT UserID FROM Users WHERE Email = @email',
+      [{ name: 'email', type: sql.VarChar, value: dto.email.trim() }]
+    );
+
+    if (checkEmail.recordset.length > 0) {
+      throw new ConflictException('Email này đã được sử dụng bởi một tài khoản khác trong hệ thống.');
+    }
+
+    // 2. Mã hóa mật khẩu
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(dto.password, salt);
+
+    // 3. Tạo tài khoản User với vai trò 'Garage'
+    const insertUserRes = await this.dbService.query(
+      `INSERT INTO Users (FullName, Email, PhoneNumber, PasswordHash, Role, Status, CreatedAt)
+       OUTPUT INSERTED.UserID
+       VALUES (@fullName, @email, @phoneNumber, @passwordHash, 'Garage', N'Hoạt động', GETDATE())`,
+      [
+        { name: 'fullName', type: sql.NVarChar, value: dto.fullName.trim() },
+        { name: 'email', type: sql.VarChar, value: dto.email.trim() },
+        { name: 'phoneNumber', type: sql.VarChar, value: dto.phoneNumber?.trim() || null },
+        { name: 'passwordHash', type: sql.VarChar, value: passwordHash },
+      ]
+    );
+
+    const newUserId = insertUserRes.recordset[0]?.UserID;
+    if (!newUserId) {
+      throw new BadRequestException('Không thể tạo tài khoản người dùng cho Gara.');
+    }
+
+    // 4. Tạo bản ghi Gara trong bảng Garages
+    const garagePhone = dto.phone?.trim() || dto.phoneNumber?.trim() || '0900000000';
+    const garageEmail = dto.garageEmail?.trim() || dto.email.trim();
+    const rating = dto.rating !== undefined ? dto.rating : 5.0;
+
+    const insertGarageRes = await this.dbService.query(
+      `INSERT INTO Garages (UserID, GarageName, Address, Phone, Email, Rating, IsActive)
+       OUTPUT INSERTED.GarageID
+       VALUES (@userId, @garageName, @address, @phone, @email, @rating, 1)`,
+      [
+        { name: 'userId', type: sql.Int, value: newUserId },
+        { name: 'garageName', type: sql.NVarChar, value: dto.garageName.trim() },
+        { name: 'address', type: sql.NVarChar, value: dto.address.trim() },
+        { name: 'phone', type: sql.VarChar, value: garagePhone },
+        { name: 'email', type: sql.VarChar, value: garageEmail },
+        { name: 'rating', type: sql.Decimal, value: rating },
+      ]
+    );
+
+    const newGarageId = insertGarageRes.recordset[0]?.GarageID;
+
+    return {
+      message: 'Khởi tạo tài khoản và hồ sơ Gara thành công!',
+      data: {
+        garageId: newGarageId,
+        userId: newUserId,
+        garageName: dto.garageName,
+        email: dto.email,
+        fullName: dto.fullName,
+      },
+    };
   }
 }

@@ -53,3 +53,12 @@ export const updateGarageStatus = async (garageId, isActive) => {
     throw error.response?.data || { message: 'Không thể cập nhật trạng thái Gara' };
   }
 };
+
+export const createGarage = async (garageData) => {
+  try {
+    const res = await api.post('/api/admin/garages', garageData);
+    return res.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Không thể khởi tạo tài khoản Gara' };
+  }
+};

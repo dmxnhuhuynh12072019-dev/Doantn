@@ -2,6 +2,16 @@
 
 @variant dark (&:where(.dark, .dark *));
 
+@theme {
+  --color-slate-350: #b0bcd0;
+  --color-slate-450: #8896ab;
+  --color-slate-550: #5d6d84;
+  --color-slate-650: #404e68;
+  --color-slate-750: #243044;
+  --color-slate-850: #1e293b;
+  --color-slate-925: #0b1120;
+}
+
 :root {
   --text: #6b6375;
   --text-h: #08060d;

@@ -91,3 +91,22 @@ export const batchImportInvoice = async (data) => {
   }
 };
 
+export const getVehicleHealth = async (vehicleId) => {
+  try {
+    const res = await api.get(`/api/maintenances/advisor/health/${vehicleId}`);
+    return res.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Không thể tải báo cáo sức khỏe phương tiện' };
+  }
+};
+
+export const applyAdvisorRecommendations = async (vehicleId) => {
+  try {
+    const res = await api.post(`/api/maintenances/advisor/apply-recommendations/${vehicleId}`);
+    return res.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Không thể tự động áp dụng khuyến nghị bảo dưỡng' };
+  }
+};
+
+

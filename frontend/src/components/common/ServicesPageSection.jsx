@@ -227,11 +227,11 @@ const ServicesPageSection = ({ onOpenAppointment, onSelectService, onBack, selec
       </div>
 
       {/* 2. Top Search & Filter Bar */}
-      <div className="bg-white dark:bg-slate-800 border-b border-slate-200/80 dark:border-slate-700/80 px-4 sm:px-6 md:px-8 py-3.5 sticky top-0 md:top-0 z-20 shadow-2xs">
+      <div className="bg-white dark:bg-slate-800 border-b border-slate-200/80 dark:border-slate-700/80 px-4 sm:px-6 lg:px-8 py-3.5 sticky top-0 z-20 shadow-2xs">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3">
           {/* Search Box & Filter Button Row */}
-          <div className="flex items-center gap-2.5 w-full md:w-auto md:min-w-[360px] lg:min-w-[420px]">
-            {/* Filter Button */}
+          <div className="flex items-center gap-2.5 w-full md:w-auto md:min-w-[340px] lg:min-w-[420px]">
+            {/* Filter Button (Visible on mobile, optional drawer on desktop) */}
             <button
               onClick={() => setShowFilterDrawer(true)}
               className="px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-650 text-slate-700 dark:text-slate-200 text-xs font-bold transition flex items-center gap-1.5 shrink-0 border border-slate-200/60 dark:border-slate-600 cursor-pointer"
@@ -265,34 +265,71 @@ const ServicesPageSection = ({ onOpenAppointment, onSelectService, onBack, selec
             </div>
           </div>
 
-          {/* Category Filter Pills */}
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pt-0.5 md:pt-0">
-            {serviceCategories.map((cat) => {
-              const isActive = activeCategory === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => setActiveCategory(cat.id)}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-200 cursor-pointer ${
-                    isActive
-                      ? 'bg-indigo-600 text-white shadow-xs'
-                      : 'bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                  }`}
-                >
-                  {cat.label}
-                </button>
-              );
-            })}
+          {/* Category Filter Pills & Desktop Sort */}
+          <div className="flex items-center justify-between md:justify-end gap-2.5 overflow-x-auto no-scrollbar pt-0.5 md:pt-0">
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+              {serviceCategories.map((cat) => {
+                const isActive = activeCategory === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => setActiveCategory(cat.id)}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-200 cursor-pointer ${
+                      isActive
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Desktop Sort Dropdown */}
+            <div className="hidden lg:flex items-center gap-1.5 pl-2 border-l border-slate-200 dark:border-slate-700 shrink-0">
+              <span className="text-xs text-slate-400 font-medium">Sắp xếp:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold px-2.5 py-1.5 rounded-lg border-0 focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+              >
+                <option value="default">Mặc định</option>
+                <option value="discount">Ưu đãi cao</option>
+                <option value="price_asc">Giá tăng dần</option>
+                <option value="price_desc">Giá giảm dần</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* 3. Service Cards Container matching News page layout & borders */}
-      <div className="max-w-3xl w-full mx-auto px-3.5 sm:px-4 py-4 space-y-3.5">
+      {/* 3. Service Cards Container: Responsive max-w-7xl with Grid on Desktop & List on Mobile */}
+      <div className="max-w-7xl w-full mx-auto px-3.5 sm:px-6 lg:px-8 py-4 sm:py-6">
+        
+        {/* Results summary header (Desktop only) */}
+        <div className="hidden md:flex items-center justify-between mb-4 pb-2 border-b border-slate-200/60 dark:border-slate-750">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+              Hiển thị <span className="text-indigo-600 dark:text-indigo-400 font-black">{filteredServices.length}</span> dịch vụ phù hợp
+            </span>
+            {activeCategory !== 'all' && (
+              <span className="text-xxs font-bold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
+                {serviceCategories.find(c => c.id === activeCategory)?.label}
+              </span>
+            )}
+          </div>
+          {searchQuery && (
+            <span className="text-xs text-slate-400">
+              Từ khóa: "{searchQuery}"
+            </span>
+          )}
+        </div>
+
         {filteredServices.length === 0 ? (
-          <div className="text-center py-16 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-8 shadow-2xs max-w-lg mx-auto">
+          <div className="text-center py-16 bg-white dark:bg-slate-800 rounded-3xl border border-slate-200/80 dark:border-slate-700/80 p-8 shadow-2xs max-w-lg mx-auto">
             <div className="text-4xl mb-3">🔍</div>
-            <h3 className="text-sm font-black text-slate-800 dark:text-white mb-1">
+            <h3 className="text-sm sm:text-base font-black text-slate-800 dark:text-white mb-1">
               Không tìm thấy dịch vụ
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -300,17 +337,18 @@ const ServicesPageSection = ({ onOpenAppointment, onSelectService, onBack, selec
             </p>
           </div>
         ) : (
-          <div className="space-y-3.5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-5 lg:gap-6">
             {filteredServices.map((service) => (
               <div
                 key={service.id}
                 onClick={() => (onSelectService ? onSelectService(service) : onOpenAppointment(service.title))}
-                className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs hover:shadow-md transition duration-200 cursor-pointer flex flex-col justify-between space-y-3 group"
+                className="bg-white dark:bg-slate-800 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 cursor-pointer flex flex-col justify-between group active:scale-[0.99]"
               >
-                {/* Top Service Content */}
-                <div className="flex gap-3.5 sm:gap-4 items-start">
-                  {/* Thumbnail with discount badge */}
-                  <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-700 shrink-0 border border-slate-100 dark:border-slate-700">
+                {/* Top Section: Responsive Mobile (Horizontal) & Desktop (Vertical Banner) */}
+                <div className="flex md:flex-col gap-3.5 sm:gap-4 items-start">
+                  
+                  {/* Thumbnail Image */}
+                  <div className="relative w-24 h-24 sm:w-28 sm:h-28 md:w-full md:h-44 md:aspect-[16/10] rounded-xl sm:rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-700 shrink-0 border border-slate-100 dark:border-slate-700">
                     <img
                       src={service.image}
                       alt={service.title}
@@ -318,15 +356,19 @@ const ServicesPageSection = ({ onOpenAppointment, onSelectService, onBack, selec
                       loading="lazy"
                     />
                     {service.discount && (
-                      <div className="absolute top-0 left-0 bg-rose-500 text-white font-black text-[10px] px-2 py-0.5 rounded-br-lg shadow-xs">
+                      <div className="absolute top-0 left-0 bg-rose-500 text-white font-black text-[10px] sm:text-xs px-2.5 py-1 rounded-br-xl shadow-xs z-10">
                         {service.discount}
                       </div>
                     )}
+                    {/* Category tag on desktop banner */}
+                    <div className="hidden md:block absolute top-2 right-2 bg-slate-900/70 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-lg">
+                      {serviceCategories.find(c => c.id === service.category)?.label || 'Dịch vụ'}
+                    </div>
                   </div>
 
                   {/* Service Details */}
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <h3 className="text-xs sm:text-sm md:text-base font-bold text-indigo-600 dark:text-indigo-400 leading-snug line-clamp-2">
+                  <div className="flex-1 min-w-0 space-y-1.5 md:w-full">
+                    <h3 className="text-xs sm:text-sm md:text-base font-bold text-indigo-600 dark:text-indigo-400 leading-snug line-clamp-2 group-hover:text-indigo-700 dark:group-hover:text-indigo-300 transition-colors">
                       {service.title}
                     </h3>
 
@@ -336,11 +378,11 @@ const ServicesPageSection = ({ onOpenAppointment, onSelectService, onBack, selec
 
                     {/* Price Row */}
                     <div className="flex items-baseline gap-2 pt-1">
-                      <span className="text-sm sm:text-base font-black text-indigo-600 dark:text-indigo-400 tracking-tight">
+                      <span className="text-sm sm:text-base md:text-lg font-black text-indigo-600 dark:text-indigo-400 tracking-tight">
                         {formatCurrency(service.price)}
                       </span>
                       {service.oldPrice && (
-                        <span className="text-xs text-slate-400 dark:text-slate-500 line-through">
+                        <span className="text-xs sm:text-sm text-slate-400 dark:text-slate-500 line-through">
                           {formatCurrency(service.oldPrice)}
                         </span>
                       )}
@@ -349,7 +391,7 @@ const ServicesPageSection = ({ onOpenAppointment, onSelectService, onBack, selec
                 </div>
 
                 {/* Bottom Garage Partner Strip */}
-                <div className="pt-3 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
+                <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
                   <div className="flex items-center gap-2.5 min-w-0">
                     {/* Garage Logo Badge */}
                     <div className={`w-8 h-8 rounded-xl ${service.garageLogoBg} text-white flex items-center justify-center font-black text-[10px] uppercase tracking-tighter shrink-0 shadow-2xs`}>
@@ -366,9 +408,14 @@ const ServicesPageSection = ({ onOpenAppointment, onSelectService, onBack, selec
                     </div>
                   </div>
 
-                  <svg className="w-4 h-4 text-slate-400 shrink-0 ml-2 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                  </svg>
+                  <div className="flex items-center gap-1 shrink-0 ml-2">
+                    <span className="hidden lg:inline-block text-[11px] font-bold text-indigo-600 dark:text-indigo-400 group-hover:underline">
+                      Đặt lịch
+                    </span>
+                    <svg className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
                 </div>
               </div>
             ))}

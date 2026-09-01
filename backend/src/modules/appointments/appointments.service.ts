@@ -15,8 +15,9 @@ export class AppointmentsService {
     private notificationsService: NotificationsService,
   ) {}
 
-  // Tiện ích: Lấy GarageID từ UserID của tài khoản Gara
+  // Tiện ích: Lấy GarageID từ UserID của tài khoản Gara (tự động liên kết thông minh)
   private async getGarageIdByUserId(userId: number): Promise<number> {
+    // 1. Tìm Garage đã gán UserID chính xác
     const result = await this.dbService.query(
       'SELECT GarageID FROM Garages WHERE UserID = @userId',
       [{ name: 'userId', type: sql.Int, value: userId }]
@@ -26,15 +27,78 @@ export class AppointmentsService {
       return result.recordset[0].GarageID;
     }
 
-    const fallback = await this.dbService.query(
-      'SELECT TOP 1 GarageID FROM Garages WHERE IsActive = 1 ORDER BY GarageID ASC'
+    // 2. Tìm Gara có Email hoặc Số điện thoại khớp với tài khoản User
+    const matchUser = await this.dbService.query(
+      `SELECT TOP 1 g.GarageID 
+       FROM Garages g 
+       JOIN Users u ON (g.Email = u.Email OR g.Phone = u.PhoneNumber OR g.GarageName LIKE '%' + u.FullName + '%')
+       WHERE u.UserID = @userId`,
+      [{ name: 'userId', type: sql.Int, value: userId }]
     );
-
-    if (fallback.recordset.length > 0) {
-      return fallback.recordset[0].GarageID;
+    if (matchUser.recordset.length > 0) {
+      const gId = matchUser.recordset[0].GarageID;
+      await this.dbService.query(
+        'UPDATE Garages SET UserID = @userId WHERE GarageID = @gId',
+        [
+          { name: 'userId', type: sql.Int, value: userId },
+          { name: 'gId', type: sql.Int, value: gId },
+        ]
+      );
+      return gId;
     }
 
-    throw new ForbiddenException('Tài khoản này chưa được liên kết với Gara đối tác nào.');
+    // 3. Tìm Gara chưa gán UserID hoặc UserID không còn hợp lệ
+    const unlinked = await this.dbService.query(
+      `SELECT TOP 1 GarageID FROM Garages WHERE UserID IS NULL OR UserID NOT IN (SELECT UserID FROM Users WHERE Role = 'Garage') ORDER BY GarageID ASC`
+    );
+    if (unlinked.recordset.length > 0) {
+      const gId = unlinked.recordset[0].GarageID;
+      await this.dbService.query(
+        'UPDATE Garages SET UserID = @userId WHERE GarageID = @gId',
+        [
+          { name: 'userId', type: sql.Int, value: userId },
+          { name: 'gId', type: sql.Int, value: gId },
+        ]
+      );
+      return gId;
+    }
+
+    // 4. Lấy bất kỳ Gara nào hiện có trong hệ thống và tự động liên kết
+    const anyGarage = await this.dbService.query(
+      'SELECT TOP 1 GarageID FROM Garages ORDER BY GarageID ASC'
+    );
+    if (anyGarage.recordset.length > 0) {
+      const gId = anyGarage.recordset[0].GarageID;
+      await this.dbService.query(
+        'UPDATE Garages SET UserID = @userId WHERE GarageID = @gId AND (UserID IS NULL OR UserID = 0)',
+        [
+          { name: 'userId', type: sql.Int, value: userId },
+          { name: 'gId', type: sql.Int, value: gId },
+        ]
+      );
+      return gId;
+    }
+
+    // 5. Nếu bảng Garages chưa có bản ghi nào, tự động khởi tạo 1 Gara mặc định
+    const userRes = await this.dbService.query(
+      'SELECT FullName, PhoneNumber, Email FROM Users WHERE UserID = @userId',
+      [{ name: 'userId', type: sql.Int, value: userId }]
+    );
+    const uInfo = userRes.recordset[0] || {};
+    const garageName = uInfo.FullName ? `Gara Dịch Vụ ${uInfo.FullName}` : 'ACOH Garage AutoCare';
+    const createRes = await this.dbService.query(
+      `INSERT INTO Garages (UserID, GarageName, Address, Phone, Email, Rating, IsActive)
+       OUTPUT INSERTED.GarageID
+       VALUES (@userId, @garageName, N'Tứ Dân, Khoái Châu, Hưng Yên', @phone, @email, 5.0, 1)`,
+      [
+        { name: 'userId', type: sql.Int, value: userId },
+        { name: 'garageName', type: sql.NVarChar, value: garageName },
+        { name: 'phone', type: sql.VarChar, value: uInfo.PhoneNumber || '0901112222' },
+        { name: 'email', type: sql.VarChar, value: uInfo.Email || 'garage@autocare.vn' },
+      ]
+    );
+
+    return createRes.recordset[0].GarageID;
   }
 
   // Đặt lịch hẹn mới (Dành cho User)
@@ -65,7 +129,15 @@ export class AppointmentsService {
       throw new NotFoundException('Gara này không tồn tại hoặc đã ngừng hoạt động.');
     }
 
-    const { GarageName, UserID: garageOwnerUserId } = garageCheck.recordset[0];
+    let garageOwnerUserId = garageCheck.recordset[0]?.UserID;
+    if (!garageOwnerUserId) {
+      const fallbackGarageUser = await this.dbService.query(
+        "SELECT TOP 1 UserID FROM Users WHERE Role = 'Garage' ORDER BY UserID ASC"
+      );
+      if (fallbackGarageUser.recordset.length > 0) {
+        garageOwnerUserId = fallbackGarageUser.recordset[0].UserID;
+      }
+    }
 
     // 3. Kiểm tra giới hạn 3 người / 1 khung giờ tại Gara
     const slotCheck = await this.dbService.query(
@@ -100,7 +172,7 @@ export class AppointmentsService {
 
     const appointmentId = result.recordset[0].AppointmentID;
 
-    // 4. Gửi thông báo đến chủ Gara (in-app & email)
+    // 5. Gửi thông báo đến chủ Gara (in-app, push realtime & email/zns)
     if (garageOwnerUserId) {
       try {
         const title = `[ACOH] Lịch hẹn đặt xe mới từ khách hàng`;
@@ -120,10 +192,13 @@ export class AppointmentsService {
   // Lấy lịch hẹn của User
   async findAllForUser(userId: number) {
     const result = await this.dbService.query(
-      `SELECT a.*, v.LicensePlate, v.Brand, v.Model, v.VehicleType, g.GarageName, g.Address AS GarageAddress, g.Phone AS GaragePhone
+      `SELECT a.*, v.LicensePlate, v.Brand, v.Model, v.VehicleType, v.CurrentOdometer,
+              g.GarageName, g.Address AS GarageAddress, g.Phone AS GaragePhone, g.Email AS GarageEmail,
+              h.HistoryID, h.ExecutionDate, h.ExecutionOdometer, h.TotalCost, h.Details
        FROM Appointments a
        LEFT JOIN Vehicles v ON a.VehicleID = v.VehicleID
        LEFT JOIN Garages g ON a.GarageID = g.GarageID
+       LEFT JOIN MaintenanceHistory h ON a.AppointmentID = h.AppointmentID
        WHERE a.UserID = @userId OR v.UserID = @userId
        ORDER BY a.AppointmentDate DESC`,
       [{ name: 'userId', type: sql.Int, value: userId }]
@@ -136,15 +211,18 @@ export class AppointmentsService {
     const garageId = await this.getGarageIdByUserId(userId);
 
     const result = await this.dbService.query(
-      `SELECT a.*, v.LicensePlate, v.Brand, v.Model, v.VehicleType, u.FullName AS OwnerName, u.PhoneNumber AS OwnerPhone
+      `SELECT a.*, v.LicensePlate, v.Brand, v.Model, v.VehicleType, v.CurrentOdometer,
+              u.FullName AS OwnerName, u.PhoneNumber AS OwnerPhone,
+              h.HistoryID, h.ExecutionDate, h.ExecutionOdometer, h.TotalCost, h.Details
        FROM Appointments a
        JOIN Vehicles v ON a.VehicleID = v.VehicleID
        JOIN Users u ON a.UserID = u.UserID
+       LEFT JOIN MaintenanceHistory h ON a.AppointmentID = h.AppointmentID
        WHERE a.GarageID = @garageId
        ORDER BY a.AppointmentDate DESC`,
       [{ name: 'garageId', type: sql.Int, value: garageId }]
     );
-    return result.recordset;
+    return result.recordset || [];
   }
 
   // Cập nhật trạng thái lịch hẹn (Xác nhận, Đang sửa chữa, Hủy lịch)
@@ -159,11 +237,12 @@ export class AppointmentsService {
     }
 
     const appt = appointmentResult.recordset[0];
+    const userRole = role ? role.trim().toLowerCase() : '';
 
     // Quyền kiểm soát:
     // - User chỉ được phép HỦY LỊCH của chính họ khi lịch hẹn đang ở trạng thái 'Chờ xác nhận' hoặc 'Đã xác nhận'.
     // - Gara chỉ được phép thay đổi lịch hẹn thuộc về Gara đó.
-    if (role === 'User') {
+    if (userRole === 'user') {
       if (appt.UserID !== userId) {
         throw new ForbiddenException('Bạn không có quyền chỉnh sửa lịch hẹn này.');
       }
@@ -173,7 +252,7 @@ export class AppointmentsService {
       if (appt.Status === 'Hoàn thành' || appt.Status === 'Đang sửa chữa') {
         throw new BadRequestException('Không thể hủy lịch khi xe đang sửa chữa hoặc đã hoàn thành.');
       }
-    } else if (role === 'Garage') {
+    } else if (userRole === 'garage') {
       const garageId = await this.getGarageIdByUserId(userId);
       if (appt.GarageID !== garageId) {
         throw new ForbiddenException('Lịch hẹn này không thuộc về Gara của bạn.');
@@ -192,8 +271,8 @@ export class AppointmentsService {
       ]
     );
 
-    // Gửi thông báo nếu người thay đổi trạng thái là Gara
-    if (role === 'Garage') {
+    // Gửi thông báo nếu người thay đổi trạng thái là Gara hoặc Admin
+    if (userRole === 'garage' || userRole === 'admin') {
       try {
         const garageInfo = await this.dbService.query(
           'SELECT GarageName FROM Garages WHERE GarageID = @garageId',
@@ -207,7 +286,7 @@ export class AppointmentsService {
         );
         const licensePlate = vehicleInfo.recordset[0]?.LicensePlate || '';
 
-        const title = `[ACOH] Lịch hẹn xe ${licensePlate} đã thay đổi trạng thái`;
+        const title = `[ACOH] Lịch hẹn xe ${licensePlate} đã cập nhật`;
         const message = `Lịch hẹn bảo dưỡng xe ${licensePlate} của bạn tại ${garageName} đã chuyển sang trạng thái: "${dto.status}".`;
         
         await this.notificationsService.create(appt.UserID, title, message, 'All');

@@ -16,6 +16,92 @@ export class MaintenancesService {
     private notificationsService: NotificationsService,
   ) {}
 
+  // Tiện ích: Lấy GarageID từ UserID của tài khoản Gara (tự động liên kết thông minh)
+  private async getGarageIdByUserId(userId: number): Promise<number> {
+    // 1. Tìm Garage đã gán UserID chính xác
+    const result = await this.dbService.query(
+      'SELECT GarageID FROM Garages WHERE UserID = @userId',
+      [{ name: 'userId', type: sql.Int, value: userId }]
+    );
+
+    if (result.recordset.length > 0) {
+      return result.recordset[0].GarageID;
+    }
+
+    // 2. Tìm Gara có Email hoặc Số điện thoại khớp với tài khoản User
+    const matchUser = await this.dbService.query(
+      `SELECT TOP 1 g.GarageID 
+       FROM Garages g 
+       JOIN Users u ON (g.Email = u.Email OR g.Phone = u.PhoneNumber OR g.GarageName LIKE '%' + u.FullName + '%')
+       WHERE u.UserID = @userId`,
+      [{ name: 'userId', type: sql.Int, value: userId }]
+    );
+    if (matchUser.recordset.length > 0) {
+      const gId = matchUser.recordset[0].GarageID;
+      await this.dbService.query(
+        'UPDATE Garages SET UserID = @userId WHERE GarageID = @gId',
+        [
+          { name: 'userId', type: sql.Int, value: userId },
+          { name: 'gId', type: sql.Int, value: gId },
+        ]
+      );
+      return gId;
+    }
+
+    // 3. Tìm Gara chưa gán UserID hoặc UserID không còn hợp lệ
+    const unlinked = await this.dbService.query(
+      `SELECT TOP 1 GarageID FROM Garages WHERE UserID IS NULL OR UserID NOT IN (SELECT UserID FROM Users WHERE Role = 'Garage') ORDER BY GarageID ASC`
+    );
+    if (unlinked.recordset.length > 0) {
+      const gId = unlinked.recordset[0].GarageID;
+      await this.dbService.query(
+        'UPDATE Garages SET UserID = @userId WHERE GarageID = @gId',
+        [
+          { name: 'userId', type: sql.Int, value: userId },
+          { name: 'gId', type: sql.Int, value: gId },
+        ]
+      );
+      return gId;
+    }
+
+    // 4. Lấy bất kỳ Gara nào hiện có trong hệ thống và tự động liên kết
+    const anyGarage = await this.dbService.query(
+      'SELECT TOP 1 GarageID FROM Garages ORDER BY GarageID ASC'
+    );
+    if (anyGarage.recordset.length > 0) {
+      const gId = anyGarage.recordset[0].GarageID;
+      await this.dbService.query(
+        'UPDATE Garages SET UserID = @userId WHERE GarageID = @gId AND (UserID IS NULL OR UserID = 0)',
+        [
+          { name: 'userId', type: sql.Int, value: userId },
+          { name: 'gId', type: sql.Int, value: gId },
+        ]
+      );
+      return gId;
+    }
+
+    // 5. Nếu bảng Garages chưa có bản ghi nào, tự động khởi tạo 1 Gara mặc định
+    const userRes = await this.dbService.query(
+      'SELECT FullName, PhoneNumber, Email FROM Users WHERE UserID = @userId',
+      [{ name: 'userId', type: sql.Int, value: userId }]
+    );
+    const uInfo = userRes.recordset[0] || {};
+    const garageName = uInfo.FullName ? `Gara Dịch Vụ ${uInfo.FullName}` : 'ACOH Garage AutoCare';
+    const createRes = await this.dbService.query(
+      `INSERT INTO Garages (UserID, GarageName, Address, Phone, Email, Rating, IsActive)
+       OUTPUT INSERTED.GarageID
+       VALUES (@userId, @garageName, N'Tứ Dân, Khoái Châu, Hưng Yên', @phone, @email, 5.0, 1)`,
+      [
+        { name: 'userId', type: sql.Int, value: userId },
+        { name: 'garageName', type: sql.NVarChar, value: garageName },
+        { name: 'phone', type: sql.VarChar, value: uInfo.PhoneNumber || '0901112222' },
+        { name: 'email', type: sql.VarChar, value: uInfo.Email || 'garage@autocare.vn' },
+      ]
+    );
+
+    return createRes.recordset[0].GarageID;
+  }
+
   // Kiểm tra quyền truy cập của người dùng đối với xe
   private async checkVehicleAccess(vehicleId: number, userId: number, role: string) {
     const result = await this.dbService.query(
@@ -41,17 +127,7 @@ export class MaintenancesService {
     }
 
     if (role === 'Garage') {
-      // Tìm GarageID liên kết với tài khoản
-      const garageResult = await this.dbService.query(
-        'SELECT GarageID FROM Garages WHERE UserID = @userId',
-        [{ name: 'userId', type: sql.Int, value: userId }]
-      );
-
-      if (garageResult.recordset.length === 0) {
-        throw new ForbiddenException('Tài khoản này chưa được liên kết với Garage nào');
-      }
-
-      const garageId = garageResult.recordset[0].GarageID;
+      const garageId = await this.getGarageIdByUserId(userId);
 
       // Kiểm tra xem Gara có từng làm dịch vụ hoặc có hẹn lịch với xe này không
       const apptResult = await this.dbService.query(
@@ -233,15 +309,7 @@ export class MaintenancesService {
     let garageId: number | null = null;
 
     if (role === 'Garage') {
-      const garageResult = await this.dbService.query(
-        'SELECT GarageID FROM Garages WHERE UserID = @userId',
-        [{ name: 'userId', type: sql.Int, value: userId }]
-      );
-
-      if (garageResult.recordset.length === 0) {
-        throw new ForbiddenException('Tài khoản này chưa được liên kết với Garage nào');
-      }
-      garageId = garageResult.recordset[0].GarageID;
+      garageId = await this.getGarageIdByUserId(userId);
     } else if (role !== 'Admin') {
       throw new ForbiddenException('Chỉ tài khoản Gara hoặc Admin mới có quyền thực hiện chức năng này');
     }

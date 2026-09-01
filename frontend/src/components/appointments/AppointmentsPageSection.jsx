@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import * as appointmentService from '../../services/appointmentService';
+import AppointmentDetailViewModal from './AppointmentDetailViewModal';
 
 const statusTabs = [
   { id: 'all', label: 'Tất cả' },
@@ -21,6 +22,8 @@ const AppointmentsPageSection = ({
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selectedApptForDetail, setSelectedApptForDetail] = useState(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   const fetchAppointments = async () => {
     setLoading(true);
@@ -45,7 +48,6 @@ const AppointmentsPageSection = ({
     fetchAppointments();
   }, []);
 
-  // Filter appointments according to status tab
   const filteredAppointments = appointments.filter((appt) => {
     const status = appt.Status || '';
     if (activeFilter === 'all') return true;
@@ -58,7 +60,7 @@ const AppointmentsPageSection = ({
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col pb-20 select-none">
-      {/* 1. Header Bar: Mobile top bar + Desktop Breadcrumb Banner */}
+      {/* 1. Header Bar */}
       <div className="md:hidden bg-gradient-to-r from-indigo-600 to-indigo-800 text-white px-4 sm:px-6 py-3.5 shadow-md sticky top-0 z-30 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
@@ -75,7 +77,6 @@ const AppointmentsPageSection = ({
           </h1>
         </div>
 
-        {/* Plus action to book appointment directly from header */}
         <button
           onClick={onOpenNewAppointment}
           className="px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition flex items-center gap-1 cursor-pointer border border-white/25 active:scale-95"
@@ -144,9 +145,7 @@ const AppointmentsPageSection = ({
             ))}
           </div>
         ) : filteredAppointments.length === 0 ? (
-          /* Empty State Matching Sample Image */
           <div className="flex-1 flex flex-col items-center justify-center text-center py-16 sm:py-24">
-            {/* Circular calendar icon */}
             <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/40 flex items-center justify-center mb-4 shadow-2xs">
               <svg className="w-10 h-10 sm:w-11 sm:h-11 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -166,7 +165,6 @@ const AppointmentsPageSection = ({
             </button>
           </div>
         ) : (
-          /* Appointments Responsive Grid Cards */
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
             {filteredAppointments.map((appt) => (
               <div
@@ -238,55 +236,84 @@ const AppointmentsPageSection = ({
                 </div>
 
                 {/* Bottom Actions */}
-                <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/50">
-                  {(appt.Status === 'Chờ xác nhận' || appt.Status === 'Đã xác nhận') && (
-                    <>
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-slate-100 dark:border-slate-700/50">
+                  <button
+                    onClick={() => {
+                      setSelectedApptForDetail(appt);
+                      setIsDetailModalOpen(true);
+                    }}
+                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <span>🔍</span>
+                    <span>Xem xe đã sửa những gì</span>
+                  </button>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    {(appt.Status === 'Chờ xác nhận' || appt.Status === 'Đã xác nhận') && (
+                      <>
+                        <button
+                          onClick={() => onOpenPayment && onOpenPayment(appt)}
+                          className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+                        >
+                          💳 Thanh toán cọc
+                        </button>
+                        <button
+                          onClick={() => onCancelAppointment && onCancelAppointment(appt.AppointmentID, fetchAppointments)}
+                          className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 border border-rose-200 dark:border-rose-900/30 transition cursor-pointer"
+                        >
+                          Hủy lịch
+                        </button>
+                      </>
+                    )}
+
+                    {appt.Status === 'Đã cọc' && (
                       <button
                         onClick={() => onOpenPayment && onOpenPayment(appt)}
-                        className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+                        className="px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/40 transition flex items-center gap-1 cursor-pointer"
                       >
-                        💳 Thanh toán cọc giữ chỗ
+                        🧾 Biên nhận cọc
                       </button>
-                      <button
-                        onClick={() => onCancelAppointment && onCancelAppointment(appt.AppointmentID, fetchAppointments)}
-                        className="px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 border border-rose-200 dark:border-rose-900/30 transition cursor-pointer"
-                      >
-                        Hủy lịch hẹn
-                      </button>
-                    </>
-                  )}
+                    )}
 
-                  {appt.Status === 'Đã cọc' && (
-                    <button
-                      onClick={() => onOpenPayment && onOpenPayment(appt)}
-                      className="px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/40 transition flex items-center gap-1 cursor-pointer"
-                    >
-                      🧾 Xem biên nhận thanh toán cọc
-                    </button>
-                  )}
-
-                  {appt.Status === 'Hoàn thành' && (
-                    <>
-                      <button
-                        onClick={() => onExportInvoice && onExportInvoice(appt.AppointmentID)}
-                        className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900/30 transition flex items-center gap-1.5 cursor-pointer"
-                      >
-                        📥 Xuất hóa đơn (CSV)
-                      </button>
-                      <button
-                        onClick={() => onOpenReview && onOpenReview(appt)}
-                        className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-amber-600 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 transition flex items-center gap-1.5 cursor-pointer"
-                      >
-                        ⭐ Đánh giá Gara
-                      </button>
-                    </>
-                  )}
+                    {appt.Status === 'Hoàn thành' && (
+                      <>
+                        <button
+                          onClick={() => onExportInvoice && onExportInvoice(appt.AppointmentID)}
+                          className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900/30 transition flex items-center gap-1.5 cursor-pointer"
+                        >
+                          🧾 In hóa đơn
+                        </button>
+                        <button
+                          onClick={() => onOpenReview && onOpenReview(appt)}
+                          className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-amber-600 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 transition flex items-center gap-1.5 cursor-pointer"
+                        >
+                          ⭐ Đánh giá
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Appointment & Vehicle Service Details Modal */}
+      <AppointmentDetailViewModal
+        isOpen={isDetailModalOpen}
+        onClose={() => {
+          setIsDetailModalOpen(false);
+          setSelectedApptForDetail(null);
+        }}
+        appointment={selectedApptForDetail}
+        onOpenInvoice={(apptId) => {
+          if (onExportInvoice) onExportInvoice(apptId);
+        }}
+        onOpenReview={(appt) => {
+          if (onOpenReview) onOpenReview(appt);
+        }}
+      />
     </div>
   );
 };

@@ -30,7 +30,7 @@ export class AppointmentsController {
   }
 
   @Post()
-  @Roles('User', 'Admin')
+  @Roles('User', 'Garage', 'Admin')
   @UseGuards(RolesGuard)
   @ApiOperation({ summary: 'Khách hàng đặt lịch hẹn bảo dưỡng sửa xe tại Gara' })
   @ApiResponse({ status: 201, description: 'Đặt lịch thành công.' })
@@ -39,7 +39,7 @@ export class AppointmentsController {
   }
 
   @Get('user')
-  @Roles('User', 'Admin')
+  @Roles('User', 'Garage', 'Admin')
   @UseGuards(RolesGuard)
   @ApiOperation({ summary: 'Khách hàng xem danh sách các lịch đặt hẹn của mình' })
   @ApiResponse({ status: 200, description: 'Trả về mảng lịch hẹn của khách hàng.' })
@@ -48,7 +48,7 @@ export class AppointmentsController {
   }
 
   @Get('garage')
-  @Roles('Garage')
+  @Roles('Garage', 'Admin')
   @UseGuards(RolesGuard)
   @ApiOperation({ summary: 'Gara đối tác xem danh sách các lịch hẹn của xưởng mình' })
   @ApiResponse({ status: 200, description: 'Trả về mảng lịch hẹn đặt tại Gara.' })

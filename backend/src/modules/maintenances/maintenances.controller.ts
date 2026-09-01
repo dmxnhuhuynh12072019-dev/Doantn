@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { MaintenancesService } from './maintenances.service';
+import { AdvisorService } from './advisor.service';
 import { CreateScheduleDto } from './dto/create-schedule.dto';
 import { UpdateScheduleDto } from './dto/update-schedule.dto';
 import { CreateHistoryGarageDto } from './dto/create-history-garage.dto';
@@ -16,7 +17,26 @@ import { User } from '../auth/decorators/user.decorator';
 @Controller('api/maintenances')
 @UseGuards(JwtAuthGuard)
 export class MaintenancesController {
-  constructor(private maintenancesService: MaintenancesService) {}
+  constructor(
+    private maintenancesService: MaintenancesService,
+    private advisorService: AdvisorService,
+  ) {}
+
+  @Get('advisor/health/:vehicleId')
+  @ApiOperation({ summary: 'Lấy báo cáo chẩn đoán Sức Khỏe Xe & Dự báo Odometer thông minh từ AI Advisor' })
+  @ApiParam({ name: 'vehicleId', description: 'ID của phương tiện', type: Number })
+  @ApiResponse({ status: 200, description: 'Trả về Điểm sức khỏe, Mốc km kế tiếp, Dự báo Odo và Danh mục cảnh báo.' })
+  async getVehicleHealth(@Param('vehicleId', ParseIntPipe) vehicleId: number, @User() user: any) {
+    return this.advisorService.getVehicleHealth(vehicleId, user.userId, user.role);
+  }
+
+  @Post('advisor/apply-recommendations/:vehicleId')
+  @ApiOperation({ summary: 'Tự động đồng bộ và áp dụng các khuyến nghị của Trợ lý vào danh sách lịch nhắc' })
+  @ApiParam({ name: 'vehicleId', description: 'ID của phương tiện', type: Number })
+  @ApiResponse({ status: 201, description: 'Tạo lịch nhắc tự động thành công.' })
+  async applyRecommendations(@Param('vehicleId', ParseIntPipe) vehicleId: number, @User() user: any) {
+    return this.advisorService.applyRecommendations(vehicleId, user.userId, user.role);
+  }
 
   @Get('schedules/:vehicleId')
   @ApiOperation({ summary: 'Lấy kế hoạch nhắc bảo dưỡng dự kiến của xe' })

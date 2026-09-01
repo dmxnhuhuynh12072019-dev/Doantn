@@ -188,6 +188,9 @@ const Header = ({ dashboardType = 'user', currentView, onOpenOcrScanner, onMenuC
                 </button>
               )}
 
+              {/* Notification Bell */}
+              <NotificationBell />
+
               {/* Theme Toggle */}
               <button
                 onClick={() => {

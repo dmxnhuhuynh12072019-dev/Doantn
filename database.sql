@@ -174,9 +174,64 @@ CREATE TABLE MaintenanceItems (
 );
 GO
 
+-- 11. Bảng Thanh toán & Đặt cọc (Payments)
+CREATE TABLE Payments (
+    PaymentID INT IDENTITY(1,1),
+    AppointmentID INT NULL,
+    UserID INT NOT NULL,
+    Amount DECIMAL(18,2) NOT NULL,
+    PaymentMethod NVARCHAR(50) NOT NULL DEFAULT N'VNPAY',
+    TxnRef NVARCHAR(100) NOT NULL,
+    TransactionNo NVARCHAR(100) NULL,
+    OrderInfo NVARCHAR(255) NULL,
+    Status NVARCHAR(50) NOT NULL DEFAULT N'Pending',
+    CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
+    PaidAt DATETIME NULL,
+    
+    CONSTRAINT PK_Payments PRIMARY KEY (PaymentID),
+    CONSTRAINT FK_Payments_Users FOREIGN KEY (UserID) REFERENCES Users(UserID),
+    CONSTRAINT FK_Payments_Appointments FOREIGN KEY (AppointmentID) REFERENCES Appointments(AppointmentID)
+);
+
+-- 12. Bảng Đánh giá chất lượng Gara (Reviews)
+CREATE TABLE Reviews (
+    ReviewID INT IDENTITY(1,1),
+    GarageID INT NOT NULL,
+    UserID INT NOT NULL,
+    Rating INT NOT NULL,
+    Comment NVARCHAR(MAX) NULL,
+    CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
+    
+    CONSTRAINT PK_Reviews PRIMARY KEY (ReviewID),
+    CONSTRAINT FK_Reviews_Garages FOREIGN KEY (GarageID) REFERENCES Garages(GarageID),
+    CONSTRAINT FK_Reviews_Users FOREIGN KEY (UserID) REFERENCES Users(UserID),
+    CONSTRAINT CHK_Reviews_Rating CHECK (Rating >= 1 AND Rating <= 5)
+);
+
+-- 13. Bảng Nhật ký gửi thông báo đa kênh (NotificationLogs)
+CREATE TABLE NotificationLogs (
+    LogID INT IDENTITY(1,1),
+    UserID INT NOT NULL,
+    Channel VARCHAR(20) NOT NULL,
+    Recipient VARCHAR(100) NOT NULL,
+    Title NVARCHAR(200) NULL,
+    Message NVARCHAR(MAX) NOT NULL,
+    Status NVARCHAR(30) NOT NULL,
+    ErrorMessage NVARCHAR(MAX) NULL,
+    SentAt DATETIME NOT NULL DEFAULT GETDATE(),
+    
+    CONSTRAINT PK_NotificationLogs PRIMARY KEY (LogID),
+    CONSTRAINT FK_NotificationLogs_Users FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE
+);
+GO
+
 -- TẠO CHỈ MỤC TỐI ƯU (INDEXES)
 CREATE NONCLUSTERED INDEX IX_Vehicles_UserID ON Vehicles(UserID);
 CREATE NONCLUSTERED INDEX IX_MaintenanceHistory_GarageID ON MaintenanceHistory(GarageID);
 CREATE NONCLUSTERED INDEX IX_Appointments_Status_Date ON Appointments(Status, AppointmentDate);
 CREATE NONCLUSTERED INDEX IX_MaintenanceCategories_Odometer ON MaintenanceCategories(TargetOdometer, VehicleType);
+CREATE NONCLUSTERED INDEX IX_Payments_UserID ON Payments(UserID);
+CREATE NONCLUSTERED INDEX IX_Payments_TxnRef ON Payments(TxnRef);
+CREATE NONCLUSTERED INDEX IX_Reviews_GarageID ON Reviews(GarageID);
+CREATE NONCLUSTERED INDEX IX_NotificationLogs_UserID ON NotificationLogs(UserID);
 GO

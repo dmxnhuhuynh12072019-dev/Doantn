@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useModal } from '../../context/ModalContext';
+import { useSocket } from '../../context/SocketContext';
 import * as vehicleService from '../../services/vehicleService';
 import * as appointmentService from '../../services/appointmentService';
 import * as garageService from '../../services/garageService';
 import * as extensionService from '../../services/extensionService';
+import * as notificationService from '../../services/notificationService';
 import VehicleFormModal from '../../components/vehicles/VehicleFormModal';
 import OdometerModal from '../../components/vehicles/OdometerModal';
 import AppointmentModal from '../../components/appointments/AppointmentModal';
@@ -33,15 +35,20 @@ import BookingAppointmentPage from '../../components/appointments/BookingAppoint
 import ServiceDetailPage from '../../components/common/ServiceDetailPage';
 import AccountPageSection from '../../components/common/AccountPageSection';
 import GarageChatSection from '../../components/chat/GarageChatSection';
-import NotificationsPageSection from '../../components/common/NotificationsPageSection';
+import InvoicePreviewModal from '../../components/invoices/InvoicePreviewModal';
+import AppointmentDetailViewModal from '../../components/appointments/AppointmentDetailViewModal';
+import SmartMaintenanceAdvisorWidget from '../../components/maintenances/SmartMaintenanceAdvisorWidget';
 
 const UserDashboard = () => {
   const { user, logout, themePreference, updateThemePreference } = useAuth();
   const { confirm, toast } = useModal();
+  const { socket } = useSocket();
 
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+  const [advisorVehicleId, setAdvisorVehicleId] = useState(null);
 
   // Modals state
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -49,15 +56,22 @@ const UserDashboard = () => {
   const [isAppointmentOpen, setIsAppointmentOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
 
+  // Invoice Modal State
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [selectedInvoiceApptId, setSelectedInvoiceApptId] = useState(null);
+
+  // Appointment Detail Modal State
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedApptForDetail, setSelectedApptForDetail] = useState(null);
+
   // Module 5 Payment Modal State
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [selectedPaymentAppt, setSelectedPaymentAppt] = useState(null);
 
-
   // Detail view state
   const [selectedVehicleForDetail, setSelectedVehicleForDetail] = useState(null);
   const [selectedServiceItem, setSelectedServiceItem] = useState(null);
-  const [activeTab, setActiveTab] = useState('schedules'); // 'schedules' | 'history'
+  const [activeTab, setActiveTab] = useState('advisor'); // 'advisor' | 'schedules' | 'history' | 'legal' | 'appointments'
 
   // Main Page sub-tab (Module 7 Expense Analytics)
   const [mainTab, setMainTab] = useState('vehicles');
@@ -103,9 +117,9 @@ const UserDashboard = () => {
     setIsReviewOpen(true);
   };
 
-  const handleExportInvoice = async (appointmentId) => {
-    const url = `/api/extensions/export/invoice/${appointmentId}`;
-    await extensionService.downloadFileWithAuth(url, `invoice_appointment_${appointmentId}.csv`);
+  const handleExportInvoice = (appointmentId) => {
+    setSelectedInvoiceApptId(appointmentId);
+    setIsInvoiceModalOpen(true);
   };
 
   const handleExportExpenses = async () => {
@@ -171,6 +185,10 @@ const UserDashboard = () => {
       const data = await vehicleService.getMyVehicles();
       setVehicles(data);
 
+      if (data && data.length > 0) {
+        setAdvisorVehicleId((prev) => (prev ? prev : data[0].VehicleID));
+      }
+
       // Update selected detail vehicle info if it is currently open
       if (selectedVehicleForDetail) {
         const updated = data.find(v => v.VehicleID === selectedVehicleForDetail.VehicleID);
@@ -188,9 +206,49 @@ const UserDashboard = () => {
     }
   };
 
+  const fetchUnreadNotifications = useCallback(async () => {
+    try {
+      const data = await notificationService.getNotifications();
+      if (Array.isArray(data)) {
+        setUnreadNotificationsCount(data.filter(n => !n.IsRead).length);
+      }
+    } catch (err) {
+      console.warn('Không thể tải số lượng thông báo:', err.message);
+    }
+  }, []);
+
   useEffect(() => {
     fetchVehicles();
-  }, []);
+    fetchUnreadNotifications();
+  }, [fetchUnreadNotifications]);
+
+  // Real-time Socket.IO listener for live notification events & badges
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUnreadCountUpdated = (data) => {
+      if (data && typeof data.unreadCount === 'number') {
+        setUnreadNotificationsCount(data.unreadCount);
+      }
+    };
+
+    const handleNotificationReceived = (notif) => {
+      setUnreadNotificationsCount(prev => prev + 1);
+      toast.success(notif?.Title || 'Bạn có thông báo mới!', { duration: 6000 });
+      if (selectedVehicleForDetail) {
+        fetchAppointments();
+      }
+      fetchVehicles();
+    };
+
+    socket.on('unread_count_updated', handleUnreadCountUpdated);
+    socket.on('notification_received', handleNotificationReceived);
+
+    return () => {
+      socket.off('unread_count_updated', handleUnreadCountUpdated);
+      socket.off('notification_received', handleNotificationReceived);
+    };
+  }, [socket, toast, selectedVehicleForDetail]);
 
   const handleAddClick = () => {
     setSelectedVehicle(null);
@@ -356,6 +414,30 @@ const UserDashboard = () => {
               </div>
             </div>
           </div>
+
+          {/* Smart Maintenance Advisor Doctor Widget */}
+          {vehicles.length > 0 && (
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 my-4 sm:my-6">
+              <SmartMaintenanceAdvisorWidget
+                vehicleId={advisorVehicleId || vehicles[0]?.VehicleID}
+                vehicles={vehicles}
+                onSelectVehicle={(vId) => setAdvisorVehicleId(vId)}
+                onOpenBookingModal={(advisorData) => {
+                  const found = vehicles.find(v => v.VehicleID === advisorData.vehicleId) || vehicles[0];
+                  setSelectedVehicle(found);
+                  setSelectedServiceItem({
+                    name: advisorData.suggestedPackage,
+                    price: 'Tối ưu theo AI',
+                    category: 'Bảo dưỡng AI Advisor',
+                    description: advisorData.suggestedNotes,
+                  });
+                  setSelectedVehicleForDetail(null);
+                  setCurrentView('booking');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+              />
+            </div>
+          )}
 
           {/* Section: Dịch vụ mới / Dịch vụ quanh bạn */}
           <NewServicesSection
@@ -686,8 +768,17 @@ const UserDashboard = () => {
             <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
               <div className="flex border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30 overflow-x-auto">
                 <button
+                  onClick={() => setActiveTab('advisor')}
+                  className={`flex-1 sm:flex-initial px-6 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition cursor-pointer ${activeTab === 'advisor'
+                      ? 'border-indigo-600 text-indigo-600 bg-white dark:bg-slate-800 dark:text-indigo-400'
+                      : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white'
+                    }`}
+                >
+                  🩺 Trợ lý Sức Khỏe (AI)
+                </button>
+                <button
                   onClick={() => setActiveTab('schedules')}
-                  className={`flex-1 sm:flex-initial px-6 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${activeTab === 'schedules'
+                  className={`flex-1 sm:flex-initial px-6 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition cursor-pointer ${activeTab === 'schedules'
                       ? 'border-indigo-600 text-indigo-600 bg-white dark:bg-slate-800 dark:text-indigo-400'
                       : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white'
                     }`}
@@ -696,7 +787,7 @@ const UserDashboard = () => {
                 </button>
                 <button
                   onClick={() => setActiveTab('history')}
-                  className={`flex-1 sm:flex-initial px-6 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${activeTab === 'history'
+                  className={`flex-1 sm:flex-initial px-6 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition cursor-pointer ${activeTab === 'history'
                       ? 'border-indigo-600 text-indigo-600 bg-white dark:bg-slate-800 dark:text-indigo-400'
                       : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white'
                     }`}
@@ -705,7 +796,7 @@ const UserDashboard = () => {
                 </button>
                 <button
                   onClick={() => setActiveTab('legal')}
-                  className={`flex-1 sm:flex-initial px-6 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${activeTab === 'legal'
+                  className={`flex-1 sm:flex-initial px-6 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition cursor-pointer ${activeTab === 'legal'
                       ? 'border-indigo-600 text-indigo-600 bg-white dark:bg-slate-800 dark:text-indigo-400'
                       : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white'
                     }`}
@@ -714,7 +805,7 @@ const UserDashboard = () => {
                 </button>
                 <button
                   onClick={() => setActiveTab('appointments')}
-                  className={`flex-1 sm:flex-initial px-6 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${activeTab === 'appointments'
+                  className={`flex-1 sm:flex-initial px-6 py-4 text-sm font-bold border-b-2 whitespace-nowrap transition cursor-pointer ${activeTab === 'appointments'
                       ? 'border-indigo-600 text-indigo-600 bg-white dark:bg-slate-800 dark:text-indigo-400'
                       : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white'
                     }`}
@@ -724,6 +815,26 @@ const UserDashboard = () => {
               </div>
 
               <div className="p-6 sm:p-8">
+                {activeTab === 'advisor' && (
+                  <div className="space-y-6">
+                    <SmartMaintenanceAdvisorWidget
+                      vehicleId={selectedVehicleForDetail.VehicleID}
+                      vehicles={[selectedVehicleForDetail]}
+                      onOpenBookingModal={(advisorData) => {
+                        setSelectedVehicle(selectedVehicleForDetail);
+                        setSelectedServiceItem({
+                          name: advisorData.suggestedPackage,
+                          price: 'Tối ưu theo AI',
+                          category: 'Bảo dưỡng AI Advisor',
+                          description: advisorData.suggestedNotes,
+                        });
+                        setSelectedVehicleForDetail(null);
+                        setCurrentView('booking');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                    />
+                  </div>
+                )}
                 {activeTab === 'schedules' && (
                   <div className="space-y-6">
                     <MaintenanceMatrixView
@@ -826,57 +937,69 @@ const UserDashboard = () => {
                               </div>
                             </div>
 
-                            {(appt.Status === 'Chờ xác nhận' || appt.Status === 'Đã xác nhận') && (
-                              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-750/50 mt-1">
-                                <button
-                                  onClick={() => {
-                                    setSelectedPaymentAppt(appt);
-                                    setIsPaymentOpen(true);
-                                  }}
-                                  className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition flex items-center gap-1.5 shadow-xs cursor-pointer"
-                                >
-                                  💳 Thanh toán cọc giữ chỗ
-                                </button>
-                                <button
-                                  onClick={() => handleCancelAppointment(appt.AppointmentID)}
-                                  className="px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 transition cursor-pointer"
-                                >
-                                  Hủy lịch hẹn
-                                </button>
-                              </div>
-                            )}
+                            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-750/50 mt-1">
+                              <button
+                                onClick={() => {
+                                  setSelectedApptForDetail(appt);
+                                  setIsDetailModalOpen(true);
+                                }}
+                                className="px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition flex items-center gap-1.5 cursor-pointer"
+                              >
+                                <span>🔍</span>
+                                <span>Xem xe đã sửa những gì</span>
+                              </button>
 
-                            {appt.Status === 'Đã cọc' && (
-                              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-750/50 mt-1">
-                                <button
-                                  onClick={() => {
-                                    setSelectedPaymentAppt(appt);
-                                    setIsPaymentOpen(true);
-                                  }}
-                                  className="px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/40 transition flex items-center gap-1 cursor-pointer"
-                                >
-                                  🧾 Xem biên nhận thanh toán cọc
-                                </button>
-                              </div>
-                            )}
+                              <div className="flex flex-wrap items-center gap-2">
+                                {(appt.Status === 'Chờ xác nhận' || appt.Status === 'Đã xác nhận') && (
+                                  <>
+                                    <button
+                                      onClick={() => {
+                                        setSelectedPaymentAppt(appt);
+                                        setIsPaymentOpen(true);
+                                      }}
+                                      className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+                                    >
+                                      💳 Thanh toán cọc
+                                    </button>
+                                    <button
+                                      onClick={() => handleCancelAppointment(appt.AppointmentID)}
+                                      className="px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 transition cursor-pointer"
+                                    >
+                                      Hủy lịch
+                                    </button>
+                                  </>
+                                )}
 
+                                {appt.Status === 'Đã cọc' && (
+                                  <button
+                                    onClick={() => {
+                                      setSelectedPaymentAppt(appt);
+                                      setIsPaymentOpen(true);
+                                    }}
+                                    className="px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/40 transition flex items-center gap-1 cursor-pointer"
+                                  >
+                                    🧾 Xem biên nhận cọc
+                                  </button>
+                                )}
 
-                            {appt.Status === 'Hoàn thành' && (
-                              <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-slate-750/50 mt-1 gap-2">
-                                <button
-                                  onClick={() => handleExportInvoice(appt.AppointmentID)}
-                                  className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900/30 transition flex items-center gap-1.5"
-                                >
-                                  📥 Xuất hóa đơn (CSV)
-                                </button>
-                                <button
-                                  onClick={() => handleOpenReviewModal(appt)}
-                                  className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-amber-600 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 transition flex items-center gap-1.5"
-                                >
-                                  ⭐ Đánh giá Gara
-                                </button>
+                                {appt.Status === 'Hoàn thành' && (
+                                  <>
+                                    <button
+                                      onClick={() => handleExportInvoice(appt.AppointmentID)}
+                                      className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900/30 transition flex items-center gap-1.5 cursor-pointer"
+                                    >
+                                      🧾 In hóa đơn
+                                    </button>
+                                    <button
+                                      onClick={() => handleOpenReviewModal(appt)}
+                                      className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-amber-600 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 transition flex items-center gap-1.5 cursor-pointer"
+                                    >
+                                      ⭐ Đánh giá
+                                    </button>
+                                  </>
+                                )}
                               </div>
-                            )}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -1294,6 +1417,32 @@ const UserDashboard = () => {
         onPaymentSuccess={fetchAppointments}
       />
 
+      {/* Invoice Preview & Print Modal matching sample */}
+      <InvoicePreviewModal
+        isOpen={isInvoiceModalOpen}
+        onClose={() => {
+          setIsInvoiceModalOpen(false);
+          setSelectedInvoiceApptId(null);
+        }}
+        appointmentId={selectedInvoiceApptId}
+      />
+
+      {/* Appointment & Vehicle Service Details Modal */}
+      <AppointmentDetailViewModal
+        isOpen={isDetailModalOpen}
+        onClose={() => {
+          setIsDetailModalOpen(false);
+          setSelectedApptForDetail(null);
+        }}
+        appointment={selectedApptForDetail}
+        onOpenInvoice={(apptId) => {
+          handleExportInvoice(apptId);
+        }}
+        onOpenReview={(appt) => {
+          handleOpenReviewModal(appt);
+        }}
+      />
+
       {currentView !== 'messages' && <AiAssistantChat />}
 
       {/* Bottom Navigation for Mobile matching sample screenshot */}
@@ -1318,27 +1467,7 @@ const UserDashboard = () => {
             <span>Trang chủ</span>
           </button>
 
-          {/* 2. Gọi thợ */}
-          <button
-            onClick={() => {
-              setSelectedVehicleForDetail(null);
-              setCurrentView('services');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-            className={`flex flex-col items-center gap-1 text-xxs font-bold cursor-pointer transition-colors ${
-              !selectedVehicleForDetail && currentView === 'services'
-                ? 'text-indigo-600 dark:text-indigo-400'
-                : 'text-slate-500 dark:text-slate-400'
-            }`}
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            <span>Gọi thợ</span>
-          </button>
-
-          {/* 3. Tin nhắn */}
+          {/* 2. Tin nhắn */}
           <button
             onClick={() => {
               setSelectedVehicleForDetail(null);
@@ -1362,6 +1491,7 @@ const UserDashboard = () => {
             onClick={() => {
               setSelectedVehicleForDetail(null);
               setCurrentView('notifications');
+              setUnreadNotificationsCount(0);
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
             className={`flex flex-col items-center gap-1 text-xxs font-bold cursor-pointer transition-colors relative ${
@@ -1370,9 +1500,16 @@ const UserDashboard = () => {
                 : 'text-slate-500 dark:text-slate-400 hover:text-indigo-600'
             }`}
           >
-            <svg className="w-5 h-5" fill={!selectedVehicleForDetail && currentView === 'notifications' ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
+            <div className="relative">
+              <svg className="w-5 h-5" fill={!selectedVehicleForDetail && currentView === 'notifications' ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+              {unreadNotificationsCount > 0 && (
+                <span className="absolute -top-1.5 -right-2 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-rose-600 text-[9px] font-black text-white ring-2 ring-white dark:ring-slate-900 animate-bounce">
+                  {unreadNotificationsCount > 99 ? '99+' : unreadNotificationsCount}
+                </span>
+              )}
+            </div>
             <span>Thông báo</span>
           </button>
 

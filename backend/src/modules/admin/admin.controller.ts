@@ -1,9 +1,10 @@
-import { Controller, Get, Put, Body, Param, Query, UseGuards, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param, Query, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { CreateGarageDto } from './dto/create-garage.dto';
 
 @ApiTags('Admin')
 @ApiBearerAuth('JWT-auth')
@@ -53,6 +54,12 @@ export class AdminController {
   @ApiOperation({ summary: 'Lấy danh sách Gara' })
   async getGarages() {
     return this.adminService.getGarages();
+  }
+
+  @Post('garages')
+  @ApiOperation({ summary: 'Khởi tạo tài khoản và hồ sơ Gara mới (Dành cho Admin)' })
+  async createGarage(@Body() dto: CreateGarageDto) {
+    return this.adminService.createGarage(dto);
   }
 
   @Put('garages/:garageId/status')

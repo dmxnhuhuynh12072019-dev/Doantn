@@ -36,8 +36,11 @@ export class AuthService {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(dto.password, salt);
 
-    // 3. Thiết lập các giá trị mặc định nếu thiếu
-    const role = dto.role || 'User';
+    // 3. Thiết lập các giá trị mặc định (Đăng ký bên ngoài chỉ cho phép tài khoản User)
+    if (dto.role && dto.role !== 'User') {
+      throw new BadRequestException('Tài khoản Gara phải do Quản trị viên (Admin) khởi tạo trực tiếp trong hệ thống.');
+    }
+    const role = 'User';
     const status = 'Hoạt động';
 
     // 4. Thêm vào database

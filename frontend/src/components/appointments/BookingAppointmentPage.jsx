@@ -550,7 +550,7 @@ const BookingAppointmentPage = ({
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Mô tả vấn đề hoặc yêu cầu gọi thợ của bạn..."
+                placeholder="Mô tả vấn đề hoặc yêu cầu của bạn..."
                 rows="3"
                 className="w-full p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-150 dark:border-slate-700 text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-xs sm:text-sm resize-none shadow-2xs"
               ></textarea>

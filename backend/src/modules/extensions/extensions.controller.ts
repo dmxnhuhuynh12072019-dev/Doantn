@@ -85,7 +85,7 @@ export class ExtensionsController {
   }
 
   @Post('garages/:id/reviews')
-  @Roles('User', 'Admin')
+  @Roles('User', 'Garage', 'Admin')
   @UseGuards(RolesGuard)
   @ApiOperation({ summary: 'Viết đánh giá chất lượng cho Gara' })
   @ApiParam({ name: 'id', description: 'ID của Gara', type: Number })
@@ -107,7 +107,7 @@ export class ExtensionsController {
   }
 
   @Get('export/expenses')
-  @Roles('User', 'Admin')
+  @Roles('User', 'Garage', 'Admin')
   @UseGuards(RolesGuard)
   @ApiOperation({ summary: 'Xuất báo cáo chi tiêu cá nhân ra file CSV' })
   async exportExpenses(@User() user: any, @Res() res: any) {
@@ -117,10 +117,22 @@ export class ExtensionsController {
     res.status(200).send(csvContent);
   }
 
+  @Get('invoice-data/:appointmentId')
+  @Roles('User', 'Garage', 'Admin')
+  @UseGuards(RolesGuard)
+  @ApiOperation({ summary: 'Lấy cấu trúc dữ liệu chi tiết hóa đơn bảo dưỡng' })
+  @ApiParam({ name: 'appointmentId', description: 'ID của lịch hẹn', type: Number })
+  async getInvoiceData(
+    @Param('appointmentId', ParseIntPipe) appointmentId: number,
+    @User() user: any,
+  ) {
+    return this.extensionsService.getInvoiceData(appointmentId, user.userId, user.role);
+  }
+
   @Get('export/invoice/:appointmentId')
   @Roles('User', 'Garage', 'Admin')
   @UseGuards(RolesGuard)
-  @ApiOperation({ summary: 'Xuất hóa đơn bảo dưỡng chi tiết ra file CSV' })
+  @ApiOperation({ summary: 'Xuất hóa đơn bảo dưỡng chi tiết chuẩn mẫu in ấn HTML/PDF' })
   @ApiParam({ name: 'appointmentId', description: 'ID của lịch hẹn', type: Number })
   async exportInvoice(
     @Param('appointmentId', ParseIntPipe) appointmentId: number,
@@ -128,10 +140,9 @@ export class ExtensionsController {
     @Res() res: any,
   ) {
     try {
-      const csvContent = await this.extensionsService.exportInvoice(appointmentId, user.userId, user.role);
-      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-      res.setHeader('Content-Disposition', `attachment; filename=invoice_appt_${appointmentId}.csv`);
-      res.status(200).send(csvContent);
+      const htmlContent = await this.extensionsService.exportInvoice(appointmentId, user.userId, user.role);
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.status(200).send(htmlContent);
     } catch (err) {
       res.status(400).json({ message: err.message || 'Xuất hóa đơn thất bại' });
     }

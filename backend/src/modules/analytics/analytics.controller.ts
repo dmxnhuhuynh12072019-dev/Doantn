@@ -23,7 +23,7 @@ export class AnalyticsController {
   }
 
   @Get('user/expenses')
-  @Roles('User', 'Admin')
+  @Roles('User', 'Garage', 'Admin')
   @UseGuards(RolesGuard)
   @ApiOperation({ summary: 'Lấy dữ liệu báo cáo phân tích chi tiêu cá nhân của Chủ xe (User Dashboard)' })
   @ApiResponse({ status: 200, description: 'Trả về dữ liệu thống kê chi phí nuôi xe theo tháng và theo đầu xe.' })
