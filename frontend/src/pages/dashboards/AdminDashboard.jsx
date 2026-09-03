@@ -64,6 +64,23 @@ const AdminDashboard = () => {
     rating: 5.0,
   });
 
+  // Link Garage Account Modal States
+  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+  const [selectedGarageForLink, setSelectedGarageForLink] = useState(null);
+  const [linkTab, setLinkTab] = useState('create'); // 'create' | 'existing' | 'reset'
+  const [linkingLoading, setLinkingLoading] = useState(false);
+  const [linkError, setLinkError] = useState('');
+  const [createdCredentials, setCreatedCredentials] = useState(null);
+
+  const [newAccountForm, setNewAccountForm] = useState({
+    fullName: '',
+    email: '',
+    password: 'password123',
+    phoneNumber: '',
+  });
+  const [selectedUserIdToLink, setSelectedUserIdToLink] = useState('');
+  const [resetPasswordVal, setResetPasswordVal] = useState('password123');
+
   // --- FETCHERS ---
   const fetchStats = async () => {
     setLoadingStats(true);
@@ -284,6 +301,96 @@ const AdminDashboard = () => {
   const handleViewAppointmentDetail = (appt) => {
     setSelectedApptForDetail(appt);
     setIsDetailModalOpen(true);
+  };
+
+  const handleOpenLinkModal = (gara) => {
+    setSelectedGarageForLink(gara);
+    setLinkError('');
+    setCreatedCredentials(null);
+    setNewAccountForm({
+      fullName: gara.GarageName ? `Quản lý ${gara.GarageName}` : 'Đại diện Gara',
+      email: gara.Email || `garage${gara.GarageID}@autocare.vn`,
+      password: 'password123',
+      phoneNumber: gara.Phone || '',
+    });
+    setLinkTab(gara.UserID ? 'existing' : 'create');
+    setSelectedUserIdToLink(gara.UserID ? String(gara.UserID) : '');
+    setResetPasswordVal('password123');
+    setIsLinkModalOpen(true);
+  };
+
+  const handleLinkSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedGarageForLink) return;
+    setLinkingLoading(true);
+    setLinkError('');
+    try {
+      if (linkTab === 'create') {
+        if (!newAccountForm.fullName || !newAccountForm.email || !newAccountForm.password) {
+          throw new Error('Vui lòng điền đầy đủ họ tên, email và mật khẩu!');
+        }
+        const res = await adminService.linkGarageUser(selectedGarageForLink.GarageID, {
+          createNewUser: true,
+          fullName: newAccountForm.fullName.trim(),
+          email: newAccountForm.email.trim(),
+          password: newAccountForm.password,
+          phoneNumber: newAccountForm.phoneNumber?.trim() || undefined,
+        });
+        toast.success(res.message || 'Đã tạo và liên kết tài khoản thành công!');
+        setCreatedCredentials({
+          email: newAccountForm.email.trim(),
+          password: newAccountForm.password,
+          fullName: newAccountForm.fullName.trim(),
+        });
+        fetchGarages();
+        fetchUsers();
+      } else if (linkTab === 'existing') {
+        if (!selectedUserIdToLink) {
+          throw new Error('Vui lòng chọn một tài khoản người dùng!');
+        }
+        const res = await adminService.linkGarageUser(selectedGarageForLink.GarageID, {
+          createNewUser: false,
+          userId: Number(selectedUserIdToLink),
+        });
+        toast.success(res.message || 'Đã liên kết tài khoản thành công!');
+        setIsLinkModalOpen(false);
+        fetchGarages();
+        fetchUsers();
+      } else if (linkTab === 'reset') {
+        if (!resetPasswordVal) {
+          throw new Error('Vui lòng nhập mật khẩu mới!');
+        }
+        const res = await adminService.resetGaragePassword(selectedGarageForLink.GarageID, resetPasswordVal);
+        toast.success(res.message || 'Đã đổi mật khẩu tài khoản thành công!');
+        setCreatedCredentials({
+          email: selectedGarageForLink.OwnerEmail || selectedGarageForLink.Email,
+          password: resetPasswordVal,
+          fullName: selectedGarageForLink.OwnerName,
+        });
+      }
+    } catch (err) {
+      setLinkError(err.message || 'Thao tác liên kết tài khoản thất bại.');
+    } finally {
+      setLinkingLoading(false);
+    }
+  };
+
+  const handleQuickLoginAsGarage = async (gara) => {
+    if (!gara.UserID) {
+      handleOpenLinkModal(gara);
+      return;
+    }
+    try {
+      toast.info(`Đang xác thực vào Gara "${gara.GarageName}"...`);
+      const res = await adminService.impersonateGarage(gara.GarageID);
+      toast.success(`Đăng nhập thành công! Đang chuyển hướng...`);
+      localStorage.setItem('token', res.token);
+      setTimeout(() => {
+        window.location.href = '/garage/dashboard';
+      }, 400);
+    } catch (err) {
+      toast.error(err.message || 'Không thể đăng nhập vào Gara này.');
+    }
   };
 
   // --- FORMATTING UTILITIES ---
@@ -1305,10 +1412,41 @@ const AdminDashboard = () => {
 
                             {/* Owner */}
                             <td className="px-6 py-4">
-                              <div className="font-bold text-slate-800 dark:text-slate-200">
-                                {gara.OwnerName || <span className="text-slate-400 italic">Chưa liên kết</span>}
-                              </div>
-                              <div className="text-[11px] text-slate-400 mt-0.5">{gara.OwnerEmail}</div>
+                              {gara.OwnerName ? (
+                                <div>
+                                  <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                                    <span className="text-xs">👤</span>
+                                    <span>{gara.OwnerName}</span>
+                                  </div>
+                                  <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{gara.OwnerEmail}</div>
+                                  {gara.OwnerPhone && (
+                                    <div className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1">
+                                      <span>📞</span>
+                                      <span>{gara.OwnerPhone}</span>
+                                    </div>
+                                  )}
+                                  <button
+                                    onClick={() => handleOpenLinkModal(gara)}
+                                    className="mt-1 text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 inline-flex items-center gap-1 cursor-pointer transition hover:underline"
+                                  >
+                                    <span>🔄</span> Đổi liên kết
+                                  </button>
+                                </div>
+                              ) : (
+                                <div>
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/40">
+                                    <span>⚠️</span> Chưa liên kết
+                                  </span>
+                                  <div className="mt-1.5">
+                                    <button
+                                      onClick={() => handleOpenLinkModal(gara)}
+                                      className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 px-2.5 py-1 rounded-lg border border-indigo-200 dark:border-indigo-800 transition cursor-pointer shadow-xs"
+                                    >
+                                      <span>🔗</span> + Liên kết tài khoản
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
                             </td>
 
                             {/* Rating */}
@@ -1332,16 +1470,39 @@ const AdminDashboard = () => {
 
                             {/* Action */}
                             <td className="px-6 py-4 text-center">
-                              <button
-                                onClick={() => handleToggleGarageStatus(gara)}
-                                className={`px-3 py-1.5 rounded-xl font-bold text-xs uppercase tracking-wide border transition cursor-pointer ${
-                                  gara.IsActive
-                                    ? 'border-rose-200 text-rose-600 bg-rose-50 hover:bg-rose-100 dark:border-rose-900/40 dark:text-rose-400 dark:bg-rose-950/30'
-                                    : 'border-emerald-200 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 dark:border-emerald-900/40 dark:text-emerald-400 dark:bg-emerald-950/30'
-                                }`}
-                              >
-                                {gara.IsActive ? 'Tạm dừng' : 'Kích hoạt'}
-                              </button>
+                              <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                                {/* Quick Login into Garage */}
+                                <button
+                                  onClick={() => handleQuickLoginAsGarage(gara)}
+                                  title="Đăng nhập trực tiếp vào Gara này để quản lý và xác nhận đặt lịch"
+                                  className="px-2.5 py-1.5 rounded-xl font-bold text-xs border border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/40 hover:bg-violet-100 dark:hover:bg-violet-900/50 transition cursor-pointer flex items-center gap-1 shadow-xs"
+                                >
+                                  <span>⚡</span>
+                                  <span>Vào Gara</span>
+                                </button>
+
+                                {/* Link Modal Button */}
+                                <button
+                                  onClick={() => handleOpenLinkModal(gara)}
+                                  title="Cấp hoặc thay đổi tài khoản liên kết"
+                                  className="px-2.5 py-1.5 rounded-xl font-bold text-xs border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer flex items-center gap-1 shadow-xs"
+                                >
+                                  <span>🔗</span>
+                                  <span>{gara.UserID ? 'Đổi TK' : 'Liên kết'}</span>
+                                </button>
+
+                                {/* Toggle Active */}
+                                <button
+                                  onClick={() => handleToggleGarageStatus(gara)}
+                                  className={`px-2.5 py-1.5 rounded-xl font-bold text-xs uppercase tracking-wide border transition cursor-pointer ${
+                                    gara.IsActive
+                                      ? 'border-rose-200 text-rose-600 bg-rose-50 hover:bg-rose-100 dark:border-rose-900/40 dark:text-rose-400 dark:bg-rose-950/30'
+                                      : 'border-emerald-200 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 dark:border-emerald-900/40 dark:text-emerald-400 dark:bg-emerald-950/30'
+                                  }`}
+                                >
+                                  {gara.IsActive ? 'Tạm dừng' : 'Kích hoạt'}
+                                </button>
+                              </div>
                             </td>
 
                           </tr>
@@ -1886,6 +2047,330 @@ const AdminDashboard = () => {
 
             </form>
 
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: LIÊN KẾT TÀI KHOẢN GARA                                            */}
+      {/* ========================================================================= */}
+      {isLinkModalOpen && selectedGarageForLink && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 w-full max-w-lg overflow-hidden animate-scale-up">
+            
+            {/* Modal Header */}
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-gradient-to-r from-indigo-50/50 via-white to-violet-50/50 dark:from-indigo-950/20 dark:via-slate-900 dark:to-violet-950/20">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-black text-lg shadow-md shadow-indigo-600/30">
+                  🔗
+                </div>
+                <div>
+                  <h3 className="font-black text-slate-900 dark:text-white text-base">
+                    Liên kết Tài khoản Gara
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">
+                    {selectedGarageForLink.GarageName} (#{selectedGarageForLink.GarageID})
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsLinkModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center justify-center text-sm transition cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
+              
+              {/* Success Credentials Banner */}
+              {createdCredentials ? (
+                <div className="p-5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 space-y-4">
+                  <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-bold text-sm">
+                    <span>🎉</span>
+                    <span>Liên kết tài khoản thành công!</span>
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-300">
+                    Bạn có thể sử dụng thông tin sau để đăng nhập vào Gara hoặc bấm nút <strong>"Vào Gara ngay"</strong> bên dưới để hệ thống tự động đăng nhập:
+                  </p>
+                  <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200/80 dark:border-emerald-900/60 text-xs space-y-1.5 font-mono">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Chủ tài khoản:</span>
+                      <span className="font-bold text-slate-900 dark:text-white">{createdCredentials.fullName}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Email đăng nhập:</span>
+                      <span className="font-bold text-indigo-600 dark:text-indigo-400 select-all">{createdCredentials.email}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Mật khẩu:</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400 select-all">{createdCredentials.password}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => handleQuickLoginAsGarage(selectedGarageForLink)}
+                      className="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 shadow-md shadow-indigo-600/20 transition cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      <span>⚡</span>
+                      <span>Vào Gara ngay (Tự động đăng nhập)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(`Email: ${createdCredentials.email} | Mật khẩu: ${createdCredentials.password}`);
+                        toast.success('Đã sao chép tài khoản vào bộ nhớ tạm!');
+                      }}
+                      className="py-2.5 px-3 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer"
+                      title="Sao chép thông tin"
+                    >
+                      📋 Copy
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* Current Status Info */}
+                  <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60 text-xs flex items-center justify-between">
+                    <div>
+                      <span className="text-slate-400">Trạng thái hiện tại: </span>
+                      {selectedGarageForLink.OwnerName ? (
+                        <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                          Đã liên kết với {selectedGarageForLink.OwnerName} ({selectedGarageForLink.OwnerEmail})
+                        </span>
+                      ) : (
+                        <span className="font-bold text-amber-600 dark:text-amber-400">Chưa liên kết tài khoản nào</span>
+                      )}
+                    </div>
+                    {selectedGarageForLink.UserID && (
+                      <button
+                        type="button"
+                        onClick={() => handleQuickLoginAsGarage(selectedGarageForLink)}
+                        className="px-2.5 py-1 rounded-lg text-[11px] font-bold text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-950/60 hover:bg-violet-100 border border-violet-200 dark:border-violet-800 transition cursor-pointer"
+                      >
+                        ⚡ Vào Gara
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Tabs Navigation */}
+                  <div className="flex rounded-2xl bg-slate-100 dark:bg-slate-800 p-1 text-xs font-bold">
+                    <button
+                      type="button"
+                      onClick={() => setLinkTab('create')}
+                      className={`flex-1 py-2 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                        linkTab === 'create'
+                          ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-white shadow-xs'
+                          : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <span>⚡</span>
+                      <span>Cấp tài khoản mới</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLinkTab('existing')}
+                      className={`flex-1 py-2 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                        linkTab === 'existing'
+                          ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-white shadow-xs'
+                          : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <span>👥</span>
+                      <span>Chọn tài khoản có sẵn</span>
+                    </button>
+                    {selectedGarageForLink.UserID && (
+                      <button
+                        type="button"
+                        onClick={() => setLinkTab('reset')}
+                        className={`flex-1 py-2 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                          linkTab === 'reset'
+                            ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-white shadow-xs'
+                            : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                      >
+                        <span>🔑</span>
+                        <span>Đổi mật khẩu</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Error Alert */}
+                  {linkError && (
+                    <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs font-medium border border-rose-200 dark:border-rose-900/40 flex items-center gap-2">
+                      <span>⚠️</span>
+                      <span>{linkError}</span>
+                    </div>
+                  )}
+
+                  {/* Form Handling */}
+                  <form onSubmit={handleLinkSubmit} className="space-y-4">
+                    {/* TAB 1: TẠO MỚI TÀI KHOẢN */}
+                    {linkTab === 'create' && (
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                            Họ và tên người đại diện <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={newAccountForm.fullName}
+                            onChange={(e) => setNewAccountForm({ ...newAccountForm, fullName: e.target.value })}
+                            className="w-full px-3.5 py-2 rounded-xl text-xs border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            placeholder="Ví dụ: Trần Văn Quản Lý"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                            Email đăng nhập (Dùng để đăng nhập vào Gara) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="email"
+                            required
+                            value={newAccountForm.email}
+                            onChange={(e) => setNewAccountForm({ ...newAccountForm, email: e.target.value })}
+                            className="w-full px-3.5 py-2 rounded-xl text-xs border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            placeholder="gara@autocare.vn"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                              Mật khẩu <span className="text-rose-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              minLength={6}
+                              value={newAccountForm.password}
+                              onChange={(e) => setNewAccountForm({ ...newAccountForm, password: e.target.value })}
+                              className="w-full px-3.5 py-2 rounded-xl text-xs border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono"
+                              placeholder="Mật khẩu"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                              Số điện thoại liên hệ
+                            </label>
+                            <input
+                              type="tel"
+                              value={newAccountForm.phoneNumber}
+                              onChange={(e) => setNewAccountForm({ ...newAccountForm, phoneNumber: e.target.value })}
+                              className="w-full px-3.5 py-2 rounded-xl text-xs border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                              placeholder="09..."
+                            />
+                          </div>
+                        </div>
+
+                        <p className="text-[11px] text-slate-400 italic">
+                          💡 Sau khi tạo, tài khoản sẽ được cấp vai trò <strong>Garage</strong> và tự động liên kết quyền quản lý Gara này.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* TAB 2: CHỌN TÀI KHOẢN CÓ SẴN */}
+                    {linkTab === 'existing' && (
+                      <div className="space-y-3">
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                          Chọn tài khoản người dùng <span className="text-rose-500">*</span>
+                        </label>
+                        <select
+                          value={selectedUserIdToLink}
+                          onChange={(e) => setSelectedUserIdToLink(e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl text-xs border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+                          required
+                        >
+                          <option value="">-- Chọn một tài khoản --</option>
+                          {users
+                            .filter(u => u.Role === 'Garage' || u.UserID === selectedGarageForLink.UserID)
+                            .map(u => (
+                              <option key={u.UserID} value={u.UserID}>
+                                {u.FullName} ({u.Email}) - {u.Role}
+                              </option>
+                            ))}
+                          <option disabled>────────── Các tài khoản khác ──────────</option>
+                          {users
+                            .filter(u => u.Role !== 'Garage' && u.UserID !== selectedGarageForLink.UserID)
+                            .map(u => (
+                              <option key={u.UserID} value={u.UserID}>
+                                {u.FullName} ({u.Email}) - Hiện tại là {u.Role} (Sẽ tự chuyển sang Garage)
+                              </option>
+                            ))}
+                        </select>
+                        <p className="text-[11px] text-slate-400 italic">
+                          💡 Tài khoản được chọn sẽ trở thành người quản trị đại diện của Gara này.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* TAB 3: ĐỔI MẬT KHẨU */}
+                    {linkTab === 'reset' && (
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                            Mật khẩu mới cho tài khoản đại diện ({selectedGarageForLink.OwnerEmail}) <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            minLength={6}
+                            value={resetPasswordVal}
+                            onChange={(e) => setResetPasswordVal(e.target.value)}
+                            className="w-full px-3.5 py-2 rounded-xl text-xs border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono"
+                            placeholder="Nhập mật khẩu mới"
+                          />
+                        </div>
+                        <p className="text-[11px] text-slate-400 italic">
+                          💡 Đặt lại mật khẩu giúp bạn hoặc chủ xưởng đăng nhập vào Gara ngay lập tức nếu quên mật khẩu cũ.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Footer Actions */}
+                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setIsLinkModalOpen(false)}
+                        className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
+                      >
+                        Hủy
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={linkingLoading}
+                        className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 disabled:opacity-50 transition shadow-md shadow-indigo-600/20 flex items-center gap-2 cursor-pointer"
+                      >
+                        {linkingLoading ? (
+                          <>
+                            <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            <span>Đang lưu...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>✔️</span>
+                            <span>
+                              {linkTab === 'create'
+                                ? 'Tạo & Liên kết ngay'
+                                : linkTab === 'existing'
+                                ? 'Xác nhận liên kết'
+                                : 'Lưu mật khẩu mới'}
+                            </span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                </>
+              )}
+
+            </div>
           </div>
         </div>
       )}

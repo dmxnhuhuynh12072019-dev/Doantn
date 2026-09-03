@@ -28,10 +28,11 @@ export class GaragesService {
 
     // 2. Tìm Gara có Email hoặc Số điện thoại khớp với tài khoản User
     const matchUser = await this.dbService.query(
-      `SELECT TOP 1 g.GarageID 
+      `SELECT g.GarageID 
        FROM Garages g 
-       JOIN Users u ON (g.Email = u.Email OR g.Phone = u.PhoneNumber OR g.GarageName LIKE '%' + u.FullName + '%')
-       WHERE u.UserID = @userId`,
+       JOIN Users u ON (g.Email = u.Email OR g.Phone = u.PhoneNumber OR g.GarageName LIKE '%' || u.FullName || '%')
+       WHERE u.UserID = @userId
+       LIMIT 1`,
       [{ name: 'userId', type: sql.Int, value: userId }]
     );
     if (matchUser.recordset.length > 0) {
@@ -48,7 +49,7 @@ export class GaragesService {
 
     // 3. Tìm Gara chưa gán UserID hoặc UserID không còn hợp lệ
     const unlinked = await this.dbService.query(
-      `SELECT TOP 1 GarageID FROM Garages WHERE UserID IS NULL OR UserID NOT IN (SELECT UserID FROM Users WHERE Role = 'Garage') ORDER BY GarageID ASC`
+      `SELECT GarageID FROM Garages WHERE UserID IS NULL OR UserID NOT IN (SELECT UserID FROM Users WHERE Role = 'Garage') ORDER BY GarageID ASC LIMIT 1`
     );
     if (unlinked.recordset.length > 0) {
       const gId = unlinked.recordset[0].GarageID;
@@ -64,7 +65,7 @@ export class GaragesService {
 
     // 4. Lấy bất kỳ Gara nào hiện có trong hệ thống và tự động liên kết
     const anyGarage = await this.dbService.query(
-      'SELECT TOP 1 GarageID FROM Garages ORDER BY GarageID ASC'
+      'SELECT GarageID FROM Garages ORDER BY GarageID ASC LIMIT 1'
     );
     if (anyGarage.recordset.length > 0) {
       const gId = anyGarage.recordset[0].GarageID;
@@ -87,8 +88,8 @@ export class GaragesService {
     const garageName = uInfo.FullName ? `Gara Dịch Vụ ${uInfo.FullName}` : 'ACOH Garage AutoCare';
     const createRes = await this.dbService.query(
       `INSERT INTO Garages (UserID, GarageName, Address, Phone, Email, Rating, IsActive)
-       OUTPUT INSERTED.GarageID
-       VALUES (@userId, @garageName, N'Tứ Dân, Khoái Châu, Hưng Yên', @phone, @email, 5.0, 1)`,
+       VALUES (@userId, @garageName, N'Tứ Dân, Khoái Châu, Hưng Yên', @phone, @email, 5.0, true)
+       RETURNING GarageID`,
       [
         { name: 'userId', type: sql.Int, value: userId },
         { name: 'garageName', type: sql.NVarChar, value: garageName },
@@ -104,16 +105,12 @@ export class GaragesService {
   async getServicedVehicles(userId: number, role: string, search: string = '') {
     let garageId: number;
     if (role === 'Admin') {
-      // Admin xem tất cả xe, nhưng tạm thời lấy theo một Gara bất kỳ hoặc bỏ qua lọc.
-      // Tuy nhiên theo đặc tả, chủ yếu phục vụ cho Gara xem xe của chính họ.
-      // Nếu Admin gọi, ta sẽ cố tìm Gara đầu tiên hoặc ném lỗi nếu muốn xem cụ thể.
-      // Để tiện lợi, nếu Admin gọi, ta lấy danh sách tất cả xe trong hệ thống.
       const query = `
         SELECT DISTINCT v.VehicleID, v.LicensePlate, v.Brand, v.Model, v.VehicleType, v.CurrentOdometer,
                         u.FullName AS OwnerName, u.Email AS OwnerEmail, u.PhoneNumber AS OwnerPhone
         FROM Vehicles v
         JOIN Users u ON v.UserID = u.UserID
-        WHERE (@search = '' OR v.LicensePlate LIKE '%' + @search + '%')
+        WHERE (@search = '' OR v.LicensePlate ILIKE '%' || @search || '%')
       `;
       const result = await this.dbService.query(query, [
         { name: 'search', type: sql.VarChar, value: search.trim() }
@@ -132,7 +129,7 @@ export class GaragesService {
       LEFT JOIN MaintenanceHistory h ON v.VehicleID = h.VehicleID
       LEFT JOIN Appointments a ON v.VehicleID = a.VehicleID
       WHERE (h.GarageID = @garageId OR a.GarageID = @garageId)
-        AND (@search = '' OR v.LicensePlate LIKE '%' + @search + '%')
+        AND (@search = '' OR v.LicensePlate ILIKE '%' || @search || '%')
     `;
 
     const result = await this.dbService.query(query, [
@@ -152,9 +149,9 @@ export class GaragesService {
 
       // Kiểm tra quyền: Gara chỉ xem được khi xe đã từng tạo lịch hẹn hoặc làm dịch vụ tại Gara đó
       const accessCheck = await this.dbService.query(
-        `SELECT TOP 1 1 FROM Appointments WHERE VehicleID = @vehicleId AND GarageID = @garageId
+        `(SELECT 1 FROM Appointments WHERE VehicleID = @vehicleId AND GarageID = @garageId LIMIT 1)
          UNION
-         SELECT TOP 1 1 FROM MaintenanceHistory WHERE VehicleID = @vehicleId AND GarageID = @garageId`,
+         (SELECT 1 FROM MaintenanceHistory WHERE VehicleID = @vehicleId AND GarageID = @garageId LIMIT 1)`,
         [
           { name: 'vehicleId', type: sql.Int, value: vehicleId },
           { name: 'garageId', type: sql.Int, value: garageId }

@@ -19,10 +19,11 @@ export class AnalyticsService {
 
     // 2. Tìm Gara có Email hoặc Số điện thoại khớp với tài khoản User
     const matchUser = await this.dbService.query(
-      `SELECT TOP 1 g.GarageID 
+      `SELECT g.GarageID 
        FROM Garages g 
-       JOIN Users u ON (g.Email = u.Email OR g.Phone = u.PhoneNumber OR g.GarageName LIKE '%' + u.FullName + '%')
-       WHERE u.UserID = @userId`,
+       JOIN Users u ON (g.Email = u.Email OR g.Phone = u.PhoneNumber OR g.GarageName LIKE '%' || u.FullName || '%')
+       WHERE u.UserID = @userId
+       LIMIT 1`,
       [{ name: 'userId', type: sql.Int, value: userId }]
     );
     if (matchUser.recordset.length > 0) {
@@ -39,7 +40,7 @@ export class AnalyticsService {
 
     // 3. Tìm Gara chưa gán UserID hoặc UserID không còn hợp lệ
     const unlinked = await this.dbService.query(
-      `SELECT TOP 1 GarageID FROM Garages WHERE UserID IS NULL OR UserID NOT IN (SELECT UserID FROM Users WHERE Role = 'Garage') ORDER BY GarageID ASC`
+      `SELECT GarageID FROM Garages WHERE UserID IS NULL OR UserID NOT IN (SELECT UserID FROM Users WHERE Role = 'Garage') ORDER BY GarageID ASC LIMIT 1`
     );
     if (unlinked.recordset.length > 0) {
       const gId = unlinked.recordset[0].GarageID;
@@ -55,7 +56,7 @@ export class AnalyticsService {
 
     // 4. Lấy bất kỳ Gara nào hiện có trong hệ thống và tự động liên kết
     const anyGarage = await this.dbService.query(
-      'SELECT TOP 1 GarageID FROM Garages ORDER BY GarageID ASC'
+      'SELECT GarageID FROM Garages ORDER BY GarageID ASC LIMIT 1'
     );
     if (anyGarage.recordset.length > 0) {
       const gId = anyGarage.recordset[0].GarageID;
@@ -78,8 +79,8 @@ export class AnalyticsService {
     const garageName = uInfo.FullName ? `Gara Dịch Vụ ${uInfo.FullName}` : 'ACOH Garage AutoCare';
     const createRes = await this.dbService.query(
       `INSERT INTO Garages (UserID, GarageName, Address, Phone, Email, Rating, IsActive)
-       OUTPUT INSERTED.GarageID
-       VALUES (@userId, @garageName, N'Tứ Dân, Khoái Châu, Hưng Yên', @phone, @email, 5.0, 1)`,
+       VALUES (@userId, @garageName, N'Tứ Dân, Khoái Châu, Hưng Yên', @phone, @email, 5.0, true)
+       RETURNING GarageID`,
       [
         { name: 'userId', type: sql.Int, value: userId },
         { name: 'garageName', type: sql.NVarChar, value: garageName },
@@ -128,7 +129,7 @@ export class AnalyticsService {
     const dailyResult = await this.dbService.query(
       `SELECT CAST(ExecutionDate AS DATE) AS Date, COUNT(*) AS Count 
        FROM MaintenanceHistory 
-       WHERE GarageID = @garageId AND ExecutionDate >= DATEADD(day, -14, GETDATE()) 
+       WHERE GarageID = @garageId AND ExecutionDate >= DATEADD('day', -14, GETDATE()) 
        GROUP BY CAST(ExecutionDate AS DATE) 
        ORDER BY Date ASC`,
       [{ name: 'garageId', type: sql.Int, value: garageId }]
@@ -152,13 +153,14 @@ export class AnalyticsService {
 
     // 5. Danh sách 5 khách hàng thân thiết (xe đến bảo dưỡng nhiều lần nhất)
     const customerResult = await this.dbService.query(
-      `SELECT TOP 5 v.LicensePlate, v.Brand, v.Model, u.FullName AS OwnerName, COUNT(*) AS VisitCount
+      `SELECT v.LicensePlate, v.Brand, v.Model, u.FullName AS OwnerName, COUNT(*) AS VisitCount
        FROM MaintenanceHistory h
        JOIN Vehicles v ON h.VehicleID = v.VehicleID
        JOIN Users u ON v.UserID = u.UserID
        WHERE h.GarageID = @garageId
        GROUP BY v.LicensePlate, v.Brand, v.Model, u.FullName
-       ORDER BY VisitCount DESC`,
+       ORDER BY VisitCount DESC
+       LIMIT 5`,
       [{ name: 'garageId', type: sql.Int, value: garageId }]
     );
     const frequentCustomers = customerResult.recordset;
@@ -214,12 +216,13 @@ export class AnalyticsService {
 
     // 4. Lấy danh sách nhật ký bảo dưỡng có phí gần đây nhất
     const recentHistoryResult = await this.dbService.query(
-      `SELECT TOP 5 h.*, v.LicensePlate, v.Brand, v.Model, g.GarageName
+      `SELECT h.*, v.LicensePlate, v.Brand, v.Model, g.GarageName
        FROM MaintenanceHistory h
        JOIN Vehicles v ON h.VehicleID = v.VehicleID
        LEFT JOIN Garages g ON h.GarageID = g.GarageID
        WHERE v.UserID = @userId
-       ORDER BY h.ExecutionDate DESC, h.HistoryID DESC`,
+       ORDER BY h.ExecutionDate DESC, h.HistoryID DESC
+       LIMIT 5`,
       [{ name: 'userId', type: sql.Int, value: userId }]
     );
     const recentHistory = recentHistoryResult.recordset;

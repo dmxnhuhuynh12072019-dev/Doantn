@@ -59,6 +59,33 @@ export const createGarage = async (garageData) => {
     const res = await api.post('/api/admin/garages', garageData);
     return res.data;
   } catch (error) {
-    throw error.response?.data || { message: 'Không thể khởi tạo tài khoản Gara' };
+    throw error.response?.data || { message: 'Không thể khởi tạo Gara mới' };
+  }
+};
+
+export const linkGarageUser = async (garageId, data) => {
+  try {
+    const res = await api.put(`/api/admin/garages/${garageId}/link-user`, data);
+    return res.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Không thể liên kết tài khoản Gara' };
+  }
+};
+
+export const impersonateGarage = async (garageId) => {
+  try {
+    const res = await api.post(`/api/admin/garages/${garageId}/impersonate`);
+    return res.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Không thể đăng nhập vào tài khoản Gara' };
+  }
+};
+
+export const resetGaragePassword = async (garageId, newPassword) => {
+  try {
+    const res = await api.post(`/api/admin/garages/${garageId}/reset-password`, { newPassword });
+    return res.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Không thể đặt lại mật khẩu Gara' };
   }
 };

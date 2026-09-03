@@ -118,9 +118,10 @@ export class ZaloZnsService {
    */
   async getNotificationLogs(userId: number) {
     const result = await this.dbService.query(
-      `SELECT TOP 50 * FROM NotificationLogs 
+      `SELECT * FROM NotificationLogs 
        WHERE UserID = @userId 
-       ORDER BY SentAt DESC`,
+       ORDER BY SentAt DESC
+       LIMIT 50`,
       [{ name: 'userId', type: sql.Int, value: userId }]
     );
     return result.recordset;

@@ -462,8 +462,8 @@ export class AdvisorService {
       if (existingCheck.recordset.length === 0) {
         const insertRes = await this.dbService.query(
           `INSERT INTO MaintenanceSchedules (VehicleID, CategoryName, TargetOdometer, TargetDate, AlertThresholdKM, Status, Notes)
-           OUTPUT INSERTED.ScheduleID
-           VALUES (@vehicleId, @categoryName, @targetOdometer, @targetDate, 500, N'Chưa thực hiện', @notes)`,
+           VALUES (@vehicleId, @categoryName, @targetOdometer, @targetDate, 500, N'Chưa thực hiện', @notes)
+           RETURNING ScheduleID`,
           [
             { name: 'vehicleId', type: sql.Int, value: vehicleId },
             { name: 'categoryName', type: sql.NVarChar, value: comp.name },

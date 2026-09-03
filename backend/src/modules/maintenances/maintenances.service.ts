@@ -30,10 +30,11 @@ export class MaintenancesService {
 
     // 2. Tìm Gara có Email hoặc Số điện thoại khớp với tài khoản User
     const matchUser = await this.dbService.query(
-      `SELECT TOP 1 g.GarageID 
+      `SELECT g.GarageID 
        FROM Garages g 
-       JOIN Users u ON (g.Email = u.Email OR g.Phone = u.PhoneNumber OR g.GarageName LIKE '%' + u.FullName + '%')
-       WHERE u.UserID = @userId`,
+       JOIN Users u ON (g.Email = u.Email OR g.Phone = u.PhoneNumber OR g.GarageName LIKE '%' || u.FullName || '%')
+       WHERE u.UserID = @userId
+       LIMIT 1`,
       [{ name: 'userId', type: sql.Int, value: userId }]
     );
     if (matchUser.recordset.length > 0) {
@@ -50,7 +51,7 @@ export class MaintenancesService {
 
     // 3. Tìm Gara chưa gán UserID hoặc UserID không còn hợp lệ
     const unlinked = await this.dbService.query(
-      `SELECT TOP 1 GarageID FROM Garages WHERE UserID IS NULL OR UserID NOT IN (SELECT UserID FROM Users WHERE Role = 'Garage') ORDER BY GarageID ASC`
+      `SELECT GarageID FROM Garages WHERE UserID IS NULL OR UserID NOT IN (SELECT UserID FROM Users WHERE Role = 'Garage') ORDER BY GarageID ASC LIMIT 1`
     );
     if (unlinked.recordset.length > 0) {
       const gId = unlinked.recordset[0].GarageID;
@@ -66,7 +67,7 @@ export class MaintenancesService {
 
     // 4. Lấy bất kỳ Gara nào hiện có trong hệ thống và tự động liên kết
     const anyGarage = await this.dbService.query(
-      'SELECT TOP 1 GarageID FROM Garages ORDER BY GarageID ASC'
+      'SELECT GarageID FROM Garages ORDER BY GarageID ASC LIMIT 1'
     );
     if (anyGarage.recordset.length > 0) {
       const gId = anyGarage.recordset[0].GarageID;
@@ -89,8 +90,8 @@ export class MaintenancesService {
     const garageName = uInfo.FullName ? `Gara Dịch Vụ ${uInfo.FullName}` : 'ACOH Garage AutoCare';
     const createRes = await this.dbService.query(
       `INSERT INTO Garages (UserID, GarageName, Address, Phone, Email, Rating, IsActive)
-       OUTPUT INSERTED.GarageID
-       VALUES (@userId, @garageName, N'Tứ Dân, Khoái Châu, Hưng Yên', @phone, @email, 5.0, 1)`,
+       VALUES (@userId, @garageName, N'Tứ Dân, Khoái Châu, Hưng Yên', @phone, @email, 5.0, true)
+       RETURNING GarageID`,
       [
         { name: 'userId', type: sql.Int, value: userId },
         { name: 'garageName', type: sql.NVarChar, value: garageName },
@@ -184,8 +185,8 @@ export class MaintenancesService {
 
     const result = await this.dbService.query(
       `INSERT INTO MaintenanceSchedules (VehicleID, CategoryName, TargetOdometer, TargetDate, AlertThresholdKM, Status, Notes)
-       OUTPUT INSERTED.ScheduleID
-       VALUES (@vehicleId, @categoryName, @targetOdometer, @targetDate, @alertThresholdKM, N'Chưa thực hiện', @notes)`,
+       VALUES (@vehicleId, @categoryName, @targetOdometer, @targetDate, @alertThresholdKM, N'Chưa thực hiện', @notes)
+       RETURNING ScheduleID`,
       [
         { name: 'vehicleId', type: sql.Int, value: dto.vehicleId },
         { name: 'categoryName', type: sql.NVarChar, value: dto.categoryName },
@@ -366,7 +367,7 @@ export class MaintenancesService {
        SET Status = N'Đã hoàn thành'
        WHERE VehicleID = @vehicleId 
          AND Status = N'Chưa thực hiện'
-         AND (CategoryName LIKE '%' + @details + '%' OR @details LIKE '%' + CategoryName + '%')`,
+         AND (CategoryName LIKE '%' || @details || '%' OR @details LIKE '%' || CategoryName || '%')`,
       [
         { name: 'vehicleId', type: sql.Int, value: dto.vehicleId },
         { name: 'details', type: sql.NVarChar, value: dto.details }

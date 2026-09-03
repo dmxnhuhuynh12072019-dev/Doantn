@@ -70,4 +70,35 @@ export class AdminController {
   ) {
     return this.adminService.updateGarageStatus(garageId, isActive);
   }
+
+  @Put('garages/:garageId/link-user')
+  @ApiOperation({ summary: 'Liên kết hoặc cấp tài khoản người dùng cho Gara' })
+  async linkGarageUser(
+    @Param('garageId', ParseIntPipe) garageId: number,
+    @Body() dto: {
+      userId?: number;
+      createNewUser?: boolean;
+      fullName?: string;
+      email?: string;
+      password?: string;
+      phoneNumber?: string;
+    },
+  ) {
+    return this.adminService.linkGarageUser(garageId, dto);
+  }
+
+  @Post('garages/:garageId/impersonate')
+  @ApiOperation({ summary: 'Đăng nhập nhanh với vai trò Gara (Admin Impersonation)' })
+  async impersonateGarage(@Param('garageId', ParseIntPipe) garageId: number) {
+    return this.adminService.impersonateGarage(garageId);
+  }
+
+  @Post('garages/:garageId/reset-password')
+  @ApiOperation({ summary: 'Đổi mật khẩu tài khoản Gara' })
+  async resetGaragePassword(
+    @Param('garageId', ParseIntPipe) garageId: number,
+    @Body('newPassword') newPassword: string,
+  ) {
+    return this.adminService.resetGaragePassword(garageId, newPassword);
+  }
 }

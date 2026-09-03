@@ -26,7 +26,7 @@ export class NotificationsService {
     if (type === 'InApp' || type === 'All') {
       await this.dbService.query(
         `INSERT INTO Notifications (UserID, Title, Message, NotificationType, IsRead, CreatedAt)
-         VALUES (@userId, @title, @message, @type, 0, GETDATE())`,
+         VALUES (@userId, @title, @message, @type, false, GETDATE())`,
         [
           { name: 'userId', type: sql.Int, value: userId },
           { name: 'title', type: sql.NVarChar, value: title },
@@ -130,14 +130,14 @@ export class NotificationsService {
     }
 
     await this.dbService.query(
-      'UPDATE Notifications SET IsRead = 1 WHERE NotificationID = @id',
+      'UPDATE Notifications SET IsRead = true WHERE NotificationID = @id',
       [{ name: 'id', type: sql.Int, value: id }]
     );
 
     // === SOCKET.IO: Cập nhật unread count sau khi đánh dấu đọc ===
     try {
       const unreadResult = await this.dbService.query(
-        'SELECT COUNT(*) AS cnt FROM Notifications WHERE UserID = @userId AND IsRead = 0',
+        'SELECT COUNT(*) AS cnt FROM Notifications WHERE UserID = @userId AND IsRead = false',
         [{ name: 'userId', type: sql.Int, value: userId }]
       );
       const unreadCount = unreadResult.recordset[0]?.cnt || 0;
@@ -152,7 +152,7 @@ export class NotificationsService {
   // 4. Đánh dấu tất cả thông báo là đã đọc
   async markAllAsRead(userId: number) {
     await this.dbService.query(
-      'UPDATE Notifications SET IsRead = 1 WHERE UserID = @userId AND IsRead = 0',
+      'UPDATE Notifications SET IsRead = true WHERE UserID = @userId AND IsRead = false',
       [{ name: 'userId', type: sql.Int, value: userId }]
     );
 
@@ -218,13 +218,13 @@ export class NotificationsService {
     const expiredDocs = await this.dbService.query(
       `SELECT ld.DocumentID, ld.DocumentType, ld.ExpiryDate, ld.AlertThresholdDays, 
               v.LicensePlate, v.UserID, u.Email, u.FullName,
-              DATEDIFF(day, GETDATE(), ld.ExpiryDate) AS DaysRemaining
+              DATEDIFF('day', GETDATE(), ld.ExpiryDate) AS DaysRemaining
        FROM LegalDocuments ld
        JOIN Vehicles v ON ld.VehicleID = v.VehicleID
        JOIN Users u ON v.UserID = u.UserID
        WHERE ld.Status != N'Quá hạn'
-         AND DATEDIFF(day, GETDATE(), ld.ExpiryDate) >= 0
-         AND DATEDIFF(day, GETDATE(), ld.ExpiryDate) <= ld.AlertThresholdDays`
+         AND DATEDIFF('day', GETDATE(), ld.ExpiryDate) >= 0
+         AND DATEDIFF('day', GETDATE(), ld.ExpiryDate) <= ld.AlertThresholdDays`
     );
 
     for (const doc of expiredDocs.recordset) {
@@ -233,7 +233,7 @@ export class NotificationsService {
       
       // Chống gửi trùng lặp nếu người dùng chưa đọc thông báo cảnh báo trước đó
       const checkDup = await this.dbService.query(
-        'SELECT TOP 1 1 FROM Notifications WHERE UserID = @userId AND Title = @title AND IsRead = 0',
+        'SELECT 1 FROM Notifications WHERE UserID = @userId AND Title = @title AND IsRead = false LIMIT 1',
         [
           { name: 'userId', type: sql.Int, value: doc.UserID },
           { name: 'title', type: sql.NVarChar, value: title }
@@ -250,14 +250,14 @@ export class NotificationsService {
     const dateSchedules = await this.dbService.query(
       `SELECT ms.ScheduleID, ms.CategoryName, ms.TargetDate, 
               v.LicensePlate, v.UserID, u.FullName,
-              DATEDIFF(day, GETDATE(), ms.TargetDate) AS DaysRemaining
+              DATEDIFF('day', GETDATE(), ms.TargetDate) AS DaysRemaining
        FROM MaintenanceSchedules ms
        JOIN Vehicles v ON ms.VehicleID = v.VehicleID
        JOIN Users u ON v.UserID = u.UserID
        WHERE ms.Status = N'Chưa thực hiện'
          AND ms.TargetDate IS NOT NULL
-         AND DATEDIFF(day, GETDATE(), ms.TargetDate) >= 0
-         AND DATEDIFF(day, GETDATE(), ms.TargetDate) <= 7`
+         AND DATEDIFF('day', GETDATE(), ms.TargetDate) >= 0
+         AND DATEDIFF('day', GETDATE(), ms.TargetDate) <= 7`
     );
 
     for (const sched of dateSchedules.recordset) {
@@ -265,7 +265,7 @@ export class NotificationsService {
       const message = `Chào ${sched.FullName},\n\nLịch nhắc bảo dưỡng định kỳ hạng mục "${sched.CategoryName}" của xe ${sched.LicensePlate} sắp đến ngày thực hiện: ${new Date(sched.TargetDate).toLocaleDateString('vi-VN')} (còn ${sched.DaysRemaining} ngày).\n\nVui lòng sắp xếp thời gian đưa xe đến gara đối tác để kiểm tra.`;
 
       const checkDup = await this.dbService.query(
-        'SELECT TOP 1 1 FROM Notifications WHERE UserID = @userId AND Title = @title AND IsRead = 0',
+        'SELECT 1 FROM Notifications WHERE UserID = @userId AND Title = @title AND IsRead = false LIMIT 1',
         [
           { name: 'userId', type: sql.Int, value: sched.UserID },
           { name: 'title', type: sql.NVarChar, value: title }
@@ -297,7 +297,7 @@ export class NotificationsService {
       const message = `Chào ${sched.FullName},\n\nPhương tiện ${sched.LicensePlate} sắp đạt mốc kilomet bảo dưỡng ${sched.TargetOdometer.toLocaleString()} km (chỉ còn ${kmRemaining.toLocaleString()} km nữa, số km hiện tại: ${sched.CurrentOdometer.toLocaleString()} km).\n\nHạng mục cần thực hiện: "${sched.CategoryName}". Vui lòng theo dõi và đặt lịch bảo dưỡng.`;
 
       const checkDup = await this.dbService.query(
-        'SELECT TOP 1 1 FROM Notifications WHERE UserID = @userId AND Title = @title AND IsRead = 0',
+        'SELECT 1 FROM Notifications WHERE UserID = @userId AND Title = @title AND IsRead = false LIMIT 1',
         [
           { name: 'userId', type: sql.Int, value: sched.UserID },
           { name: 'title', type: sql.NVarChar, value: title }

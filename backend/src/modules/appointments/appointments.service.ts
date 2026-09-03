@@ -29,10 +29,11 @@ export class AppointmentsService {
 
     // 2. Tìm Gara có Email hoặc Số điện thoại khớp với tài khoản User
     const matchUser = await this.dbService.query(
-      `SELECT TOP 1 g.GarageID 
+      `SELECT g.GarageID 
        FROM Garages g 
-       JOIN Users u ON (g.Email = u.Email OR g.Phone = u.PhoneNumber OR g.GarageName LIKE '%' + u.FullName + '%')
-       WHERE u.UserID = @userId`,
+       JOIN Users u ON (g.Email = u.Email OR g.Phone = u.PhoneNumber OR g.GarageName LIKE '%' || u.FullName || '%')
+       WHERE u.UserID = @userId
+       LIMIT 1`,
       [{ name: 'userId', type: sql.Int, value: userId }]
     );
     if (matchUser.recordset.length > 0) {
@@ -49,7 +50,7 @@ export class AppointmentsService {
 
     // 3. Tìm Gara chưa gán UserID hoặc UserID không còn hợp lệ
     const unlinked = await this.dbService.query(
-      `SELECT TOP 1 GarageID FROM Garages WHERE UserID IS NULL OR UserID NOT IN (SELECT UserID FROM Users WHERE Role = 'Garage') ORDER BY GarageID ASC`
+      `SELECT GarageID FROM Garages WHERE UserID IS NULL OR UserID NOT IN (SELECT UserID FROM Users WHERE Role = 'Garage') ORDER BY GarageID ASC LIMIT 1`
     );
     if (unlinked.recordset.length > 0) {
       const gId = unlinked.recordset[0].GarageID;
@@ -65,7 +66,7 @@ export class AppointmentsService {
 
     // 4. Lấy bất kỳ Gara nào hiện có trong hệ thống và tự động liên kết
     const anyGarage = await this.dbService.query(
-      'SELECT TOP 1 GarageID FROM Garages ORDER BY GarageID ASC'
+      'SELECT GarageID FROM Garages ORDER BY GarageID ASC LIMIT 1'
     );
     if (anyGarage.recordset.length > 0) {
       const gId = anyGarage.recordset[0].GarageID;
@@ -88,8 +89,8 @@ export class AppointmentsService {
     const garageName = uInfo.FullName ? `Gara Dịch Vụ ${uInfo.FullName}` : 'ACOH Garage AutoCare';
     const createRes = await this.dbService.query(
       `INSERT INTO Garages (UserID, GarageName, Address, Phone, Email, Rating, IsActive)
-       OUTPUT INSERTED.GarageID
-       VALUES (@userId, @garageName, N'Tứ Dân, Khoái Châu, Hưng Yên', @phone, @email, 5.0, 1)`,
+       VALUES (@userId, @garageName, N'Tứ Dân, Khoái Châu, Hưng Yên', @phone, @email, 5.0, true)
+       RETURNING GarageID`,
       [
         { name: 'userId', type: sql.Int, value: userId },
         { name: 'garageName', type: sql.NVarChar, value: garageName },
@@ -159,8 +160,8 @@ export class AppointmentsService {
     // 4. Tiến hành thêm lịch đặt hẹn
     const result = await this.dbService.query(
       `INSERT INTO Appointments (UserID, GarageID, VehicleID, AppointmentDate, Status, Notes, CreatedAt)
-       OUTPUT INSERTED.AppointmentID
-       VALUES (@userId, @garageId, @vehicleId, @appointmentDate, N'Chờ xác nhận', @notes, GETDATE())`,
+       VALUES (@userId, @garageId, @vehicleId, @appointmentDate, N'Chờ xác nhận', @notes, GETDATE())
+       RETURNING AppointmentID`,
       [
         { name: 'userId', type: sql.Int, value: userId },
         { name: 'garageId', type: sql.Int, value: dto.garageId },
@@ -373,7 +374,7 @@ export class AppointmentsService {
          SET Status = N'Đã hoàn thành'
          WHERE VehicleID = @vehicleId 
            AND Status = N'Chưa thực hiện'
-           AND (CategoryName LIKE '%' + @details + '%' OR @details LIKE '%' + CategoryName + '%')`,
+           AND (CategoryName LIKE '%' || @details || '%' OR @details LIKE '%' || CategoryName || '%')`,
         [
           { name: 'vehicleId', type: sql.Int, value: appt.VehicleID },
           { name: 'details', type: sql.NVarChar, value: dto.details }
@@ -403,12 +404,12 @@ export class AppointmentsService {
   // Lấy thống kê số lượng đặt lịch theo từng khung giờ của Gara trong ngày
   async getSlotAvailability(garageId: number, dateStr: string) {
     const result = await this.dbService.query(
-      `SELECT FORMAT(AppointmentDate, 'HH:mm') AS TimeSlot, COUNT(*) AS BookedCount
+      `SELECT TO_CHAR(AppointmentDate, 'HH24:MI') AS TimeSlot, COUNT(*) AS BookedCount
        FROM Appointments
        WHERE GarageID = @garageId
          AND CAST(AppointmentDate AS DATE) = CAST(@date AS DATE)
          AND Status != N'Hủy lịch'
-       GROUP BY FORMAT(AppointmentDate, 'HH:mm')`,
+       GROUP BY TO_CHAR(AppointmentDate, 'HH24:MI')`,
       [
         { name: 'garageId', type: sql.Int, value: garageId },
         { name: 'date', type: sql.VarChar, value: dateStr },

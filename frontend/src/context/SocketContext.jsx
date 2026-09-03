@@ -5,7 +5,7 @@ import { useAuth } from './AuthContext';
 const SocketContext = createContext(null);
 
 // URL của backend Socket.IO server
-const SOCKET_URL = 'http://localhost:3000';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export const SocketProvider = ({ children }) => {
   const { user, token } = useAuth();

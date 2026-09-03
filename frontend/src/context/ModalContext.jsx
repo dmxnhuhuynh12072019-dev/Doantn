@@ -72,6 +72,8 @@ export const ModalProvider = ({ children }) => {
     error: (msg, duration) => addToast(msg, 'error', duration),
     warning: (msg, duration) => addToast(msg, 'warning', duration),
     info: (msg, duration) => addToast(msg, 'info', duration),
+    loading: (msg, duration) => addToast(msg, 'info', duration || 2000),
+    dismiss: (id) => id && removeToast(id),
   };
 
   return (

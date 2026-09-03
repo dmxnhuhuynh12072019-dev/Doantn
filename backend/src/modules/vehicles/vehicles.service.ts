@@ -63,8 +63,8 @@ export class VehiclesService {
     // 2. Thêm xe mới vào database
     const insertResult = await this.dbService.query(
       `INSERT INTO Vehicles (UserID, LicensePlate, VehicleType, Brand, Model, ManufactureYear, PurchaseDate, CurrentOdometer, IsCommercial, HTXCode, BadgeNumber, UpdatedAt)
-       OUTPUT INSERTED.VehicleID
-       VALUES (@userId, @licensePlate, @vehicleType, @brand, @model, @manufactureYear, @purchaseDate, @currentOdometer, @isCommercial, @htxCode, @badgeNumber, GETDATE())`,
+       VALUES (@userId, @licensePlate, @vehicleType, @brand, @model, @manufactureYear, @purchaseDate, @currentOdometer, @isCommercial, @htxCode, @badgeNumber, GETDATE())
+       RETURNING VehicleID`,
       [
         { name: 'userId', type: sql.Int, value: userId },
         { name: 'licensePlate', type: sql.VarChar, value: dto.licensePlate },

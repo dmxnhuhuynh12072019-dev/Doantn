@@ -46,8 +46,8 @@ export class PaymentsService {
     // 2. Chèn bản ghi khởi tạo giao dịch vào bảng Payments (Status: Pending)
     const insertRes = await this.dbService.query(
       `INSERT INTO Payments (AppointmentID, UserID, Amount, PaymentMethod, TxnRef, OrderInfo, Status, CreatedAt)
-       OUTPUT INSERTED.PaymentID
-       VALUES (@appointmentId, @userId, @amount, @paymentMethod, @txnRef, @orderInfo, N'Pending', GETDATE())`,
+       VALUES (@appointmentId, @userId, @amount, @paymentMethod, @txnRef, @orderInfo, N'Pending', GETDATE())
+       RETURNING PaymentID`,
       [
         { name: 'appointmentId', type: sql.Int, value: dto.appointmentId || null },
         { name: 'userId', type: sql.Int, value: userId },

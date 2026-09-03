@@ -43,8 +43,8 @@ export class LegalService {
     await this.dbService.query(
       `UPDATE LegalDocuments
        SET Status = CASE
-                      WHEN DATEDIFF(day, GETDATE(), ExpiryDate) < 0 THEN N'Quá hạn'
-                      WHEN DATEDIFF(day, GETDATE(), ExpiryDate) <= AlertThresholdDays THEN N'Sắp hết hạn'
+                      WHEN DATEDIFF('day', GETDATE(), ExpiryDate) < 0 THEN N'Quá hạn'
+                      WHEN DATEDIFF('day', GETDATE(), ExpiryDate) <= AlertThresholdDays THEN N'Sắp hết hạn'
                       ELSE N'Còn hạn'
                     END
        WHERE VehicleID = @vehicleId`,
@@ -84,14 +84,14 @@ export class LegalService {
 
     const result = await this.dbService.query(
       `INSERT INTO LegalDocuments (VehicleID, DocumentType, IssueDate, ExpiryDate, AlertThresholdDays, Status)
-       OUTPUT INSERTED.DocumentID
        VALUES (@vehicleId, @documentType, @issueDate, @expiryDate, @alertThresholdDays,
          CASE
-           WHEN DATEDIFF(day, GETDATE(), @expiryDate) < 0 THEN N'Quá hạn'
-           WHEN DATEDIFF(day, GETDATE(), @expiryDate) <= @alertThresholdDays THEN N'Sắp hết hạn'
+           WHEN DATEDIFF('day', GETDATE(), @expiryDate) < 0 THEN N'Quá hạn'
+           WHEN DATEDIFF('day', GETDATE(), @expiryDate) <= @alertThresholdDays THEN N'Sắp hết hạn'
            ELSE N'Còn hạn'
          END
-       )`,
+       )
+       RETURNING DocumentID`,
       [
         { name: 'vehicleId', type: sql.Int, value: dto.vehicleId },
         { name: 'documentType', type: sql.NVarChar, value: dto.documentType },

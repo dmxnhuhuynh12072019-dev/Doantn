@@ -30,15 +30,17 @@ export const getReviews = async (garageId) => {
   }
 };
 
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 // 4. Đường dẫn xuất file báo cáo chi tiết (dùng tải trực tiếp bằng token)
 export const getExportExpensesURL = () => {
   const token = localStorage.getItem('token');
-  return `http://localhost:3000/api/extensions/export/expenses?token=${token}`;
+  return `${BASE_URL}/api/extensions/export/expenses?token=${token}`;
 };
 
 export const getExportInvoiceURL = (appointmentId) => {
   const token = localStorage.getItem('token');
-  return `http://localhost:3000/api/extensions/export/invoice/${appointmentId}?token=${token}`;
+  return `${BASE_URL}/api/extensions/export/invoice/${appointmentId}?token=${token}`;
 };
 
 export const getInvoiceData = async (appointmentId) => {
