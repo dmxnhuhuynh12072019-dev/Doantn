@@ -86,14 +86,10 @@ export const scanPlate = async (file) => {
     return res.data;
   } catch (error) {
     console.error('OCR scanPlate error:', error);
-    if (error.response?.data?.licensePlate) {
+    if (error.response?.data) {
       return error.response.data;
     }
-    // Safe fallback for AI OCR recognition
-    return {
-      licensePlate: '30G-567.89',
-      message: 'Đã nhận diện biển số xe từ hình ảnh',
-    };
+    throw error.response?.data || { message: 'Lỗi nhận diện biển số xe từ hình ảnh. Vui lòng kiểm tra lại.' };
   }
 };
 

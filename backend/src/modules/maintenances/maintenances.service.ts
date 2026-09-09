@@ -415,8 +415,8 @@ export class MaintenancesService {
   // Lấy bộ khung các mốc bảo dưỡng và danh mục công việc kỹ thuật chuẩn
   async getMaintenanceCategories(vehicleType?: string) {
     let queryStr = `
-      SELECT c.CategoryID, c.CategoryName, c.TargetOdometer, c.VehicleType, c.Description AS CategoryDescription,
-             i.ItemID, i.ItemName, i.Description AS ItemDescription, i.IsRequired
+      SELECT c.CategoryID, c.CategoryName, c.IntervalKm AS TargetOdometer, c.IntervalKm, c.IntervalMonths, c.VehicleType, c.Description AS CategoryDescription,
+             i.ItemID, i.ItemName, i.ItemDescription, i.IsRequired, i.EstimatedCost
       FROM MaintenanceCategories c
       LEFT JOIN MaintenanceItems i ON c.CategoryID = i.CategoryID
     `;
@@ -427,7 +427,7 @@ export class MaintenancesService {
       params.push({ name: 'vehicleType', type: sql.NVarChar, value: vehicleType });
     }
 
-    queryStr += ` ORDER BY c.TargetOdometer ASC, c.CategoryID ASC, i.ItemID ASC`;
+    queryStr += ` ORDER BY c.IntervalKm ASC, c.CategoryID ASC, i.ItemID ASC`;
 
     const result = await this.dbService.query(queryStr, params);
 
@@ -437,7 +437,9 @@ export class MaintenancesService {
         categoriesMap.set(row.CategoryID, {
           categoryId: row.CategoryID,
           categoryName: row.CategoryName,
-          targetOdometer: row.TargetOdometer,
+          targetOdometer: row.TargetOdometer || row.IntervalKm,
+          intervalKm: row.IntervalKm,
+          intervalMonths: row.IntervalMonths,
           vehicleType: row.VehicleType,
           description: row.CategoryDescription,
           items: [],
@@ -450,6 +452,7 @@ export class MaintenancesService {
           itemName: row.ItemName,
           description: row.ItemDescription,
           isRequired: !!row.IsRequired,
+          estimatedCost: row.EstimatedCost ? Number(row.EstimatedCost) : 0,
         });
       }
     }

@@ -1,15 +1,31 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
+import { OpenRouterService } from './openrouter.service';
 import * as sql from 'mssql';
 
 @Injectable()
 export class ExtensionsService {
   private readonly logger = new Logger(ExtensionsService.name);
 
-  constructor(private dbService: DatabaseService) {}
+  constructor(
+    private dbService: DatabaseService,
+    private openRouterService: OpenRouterService,
+  ) {}
 
   // 1. Trợ lý ảo AI Bác sĩ xe tư vấn & chẩn đoán bệnh xe thông minh
   async chatWithAI(message: string): Promise<string> {
+    // A. Ưu tiên sử dụng OpenRouter AI LLM nếu đã cấu hình API Key
+    if (this.openRouterService.isConfigured()) {
+      try {
+        const aiReply = await this.openRouterService.chatWithAI(message);
+        if (aiReply && aiReply.trim().length > 0) {
+          return aiReply;
+        }
+      } catch (err) {
+        this.logger.warn(`OpenRouter chatWithAI thất bại, chuyển sang bộ quy tắc chuyên gia cục bộ: ${err?.message || err}`);
+      }
+    }
+
     const msg = message.toLowerCase();
 
     // 1. Kiểm tra sức khỏe tổng thể xe
@@ -552,62 +568,175 @@ export class ExtensionsService {
 </html>`;
   }
 
-  // Helper: Bóc tách và định dạng chuẩn biển số xe Ô tô Việt Nam bằng AI OCR
+  // Danh sách mã vùng biển số các tỉnh thành Việt Nam hợp lệ
+  private static readonly VALID_PROVINCES = new Set([
+    11, 12, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33,
+    34, 35, 36, 37, 38, 43, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59,
+    60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79,
+    80, 81, 82, 83, 84, 85, 86, 88, 89, 90, 92, 93, 94, 95, 97, 98, 99
+  ]);
+
+  // Ký hiệu seri xe ô tô đặc biệt 2 chữ cái
+  private static readonly SPECIAL_CAR_SERIES = new Set(['LD', 'DA', 'MK', 'KT', 'NG', 'QT', 'CV', 'NN', 'TD', 'HC']);
+
+  // Helper: Bóc tách và định dạng chuẩn biển số xe Ô tô & Xe máy Việt Nam bằng AI OCR
   private extractPlateFromText(rawText: string): string | null {
     if (!rawText) return null;
 
-    // Chuẩn hóa văn bản OCR: Chuyển chữ hoa, thay xuống dòng bằng khoảng trắng
-    const text = rawText.toUpperCase().replace(/[\r\n]+/g, ' ').trim();
+    const fixDigits = (str: string) => {
+      if (!str) return '';
+      return str
+        .replace(/O/gi, '0').replace(/Q/gi, '0')
+        .replace(/I/gi, '1').replace(/L/gi, '1').replace(/\|/g, '1').replace(/\]/g, '1').replace(/\[/g, '1')
+        .replace(/Z/gi, '2')
+        .replace(/A/gi, '4')
+        .replace(/S/gi, '5')
+        .replace(/G/gi, '6')
+        .replace(/B/gi, '8');
+    };
 
-    // Hàm nắn chỉnh lỗi nhận diện OCR thường gặp trên biển số ô tô
-    const fixDigits = (str: string) => str
-      .replace(/O/g, '0').replace(/Q/g, '0')
-      .replace(/I/g, '1').replace(/L/g, '1').replace(/\|/g, '1')
-      .replace(/Z/g, '2')
-      .replace(/S/g, '5')
-      .replace(/B/g, '8');
-
-    // 1. Phân tích Regex chuẩn cho Biển số xe Ô tô Việt Nam (Ví dụ: 30G-567.89 | 51K-123.45 | 30E-922.91 | 59A-123.45)
-    // Cấu trúc ô tô: [Mã tỉnh 2 số] [Ký tự seri 1-2 chữ] - [Dãy số 4-5 chữ số]
-    const carRegex = /([1-9][0-9OIZSB])[\s._-]*([A-Z]{1,2})[\s._-]*([0-9OIZSB]{3,5}(?:[.]?[0-9OIZSB]{2})?)/gi;
-    const matches = Array.from(text.matchAll(carRegex));
-
-    for (const match of matches) {
-      const rawProvince = fixDigits(match[1]);
-      let rawSeries = match[2];
-      let rawNumbers = fixDigits(match[3].replace(/[^0-9A-Z]/gi, ''));
-
-      const provNum = parseInt(rawProvince, 10);
-      if (isNaN(provNum) || provNum < 11 || provNum > 99) continue;
-
-      if (!/^[0-9]+$/.test(rawNumbers)) continue; // Kiểm tra bắt buộc phần số không chứa ký tự chữ
-
-      if (rawNumbers.length === 5) {
-        rawNumbers = `${rawNumbers.substring(0, 3)}.${rawNumbers.substring(3, 5)}`;
-      } else if (rawNumbers.length < 4 || rawNumbers.length > 5) {
-        continue;
+    const formatNumbers = (numStr: string) => {
+      const digits = numStr.replace(/[^0-9]/g, '');
+      if (digits.length === 5) {
+        return `${digits.substring(0, 3)}.${digits.substring(3, 5)}`;
       }
-      return `${rawProvince}${rawSeries}-${rawNumbers}`;
+      return digits;
+    };
+
+    // 1. Phân tích từng dòng cho biển số 2 tầng (Rất phổ biến ở Xe máy và Biển vuông Ô tô)
+    const lines = rawText.split(/[\r\n]+/).map(l => l.trim().toUpperCase()).filter(Boolean);
+    for (let i = 0; i < lines.length - 1; i++) {
+      const line1 = lines[i].replace(/[^0-9A-Z]/g, '');
+      const line2 = lines[i + 1].replace(/[^0-9A-Z]/g, '');
+
+      // Dòng 1 xe máy: 2 số tỉnh + 1 chữ + 1 số/chữ (VD: 69D1, 59X3, 59AA)
+      // Dòng 2: 4-5 chữ số (VD: 666.66, 123.45, 6666)
+      const mBikeLine1 = line1.match(/^([1-9][0-9OIZSB])([A-Z])([0-9OIZSB]|[A-Z])$/i);
+      const mDigits2 = fixDigits(line2);
+
+      if (mBikeLine1 && /^[0-9]{4,5}$/.test(mDigits2)) {
+        const prov = fixDigits(mBikeLine1[1]);
+        const provNum = parseInt(prov, 10);
+        if (ExtensionsService.VALID_PROVINCES.has(provNum)) {
+          const letter = mBikeLine1[2].toUpperCase();
+          let second = mBikeLine1[3].toUpperCase();
+          if (/[OIZSB0-9]/.test(second)) {
+            const digit = fixDigits(second);
+            if (/[0-9]/.test(digit)) {
+              second = digit;
+            }
+          }
+          const series = `${letter}${second}`;
+          const formattedNum = formatNumbers(mDigits2);
+          return `${prov}-${series} ${formattedNum}`;
+        }
+      }
+
+      // Dòng 1 xe máy điện: 2 số tỉnh + MD + số (VD: 50MD1)
+      const mElecLine1 = line1.match(/^([1-9][0-9OIZSB])(MD)([0-9OIZSB]?)$/i);
+      if (mElecLine1 && /^[0-9]{4,5}$/.test(mDigits2)) {
+        const prov = fixDigits(mElecLine1[1]);
+        const provNum = parseInt(prov, 10);
+        if (ExtensionsService.VALID_PROVINCES.has(provNum)) {
+          const digit = mElecLine1[3] ? fixDigits(mElecLine1[3]) : '1';
+          const formattedNum = formatNumbers(mDigits2);
+          return `${prov}-MD${digit} ${formattedNum}`;
+        }
+      }
+
+      // Dòng 1 ô tô biển vuông: 2 số tỉnh + 1-2 chữ cái (VD: 30A, 51K, 29LD)
+      const mCarLine1 = line1.match(/^([1-9][0-9OIZSB])([A-Z]{1,2})$/i);
+      if (mCarLine1 && /^[0-9]{4,5}$/.test(mDigits2)) {
+        const prov = fixDigits(mCarLine1[1]);
+        const provNum = parseInt(prov, 10);
+        if (ExtensionsService.VALID_PROVINCES.has(provNum)) {
+          const series = mCarLine1[2].toUpperCase();
+          const formattedNum = formatNumbers(mDigits2);
+          return `${prov}${series}-${formattedNum}`;
+        }
+      }
     }
 
-    // 3. Tra cứu bằng cửa sổ trượt (Sliding Window) 8-9 ký tự
+    // 2. Phân tích chuỗi văn bản toàn thể (Full-text Normalized Regex Search)
+    const text = rawText.toUpperCase().replace(/[\r\n]+/g, ' ').trim();
+
+    // Mẫu A: Xe máy seri [1 chữ + 1 số/chữ] (VD: 69-D1 666.66 | 59-X3 123.45 | 29-H1 888.88 | 59-AA 123.45)
+    const motorbikeRegex = /([1-9][0-9OIZSB])[\s._-]*([A-Z])([0-9OIZSB]|[A-Z])[\s._-]+([0-9OIZSB]{3,5}(?:[.]?[0-9OIZSB]{2})?|[0-9OIZSB]{4,5})/gi;
+    const mbMatches = Array.from(text.matchAll(motorbikeRegex));
+    for (const match of mbMatches) {
+      const prov = fixDigits(match[1]);
+      const provNum = parseInt(prov, 10);
+      if (!ExtensionsService.VALID_PROVINCES.has(provNum)) continue;
+
+      const letter = match[2].toUpperCase();
+      let second = match[3].toUpperCase();
+      if (/[OIZSB0-9]/.test(second)) {
+        const digit = fixDigits(second);
+        if (/[0-9]/.test(digit)) {
+          second = digit;
+        }
+      }
+      const series = `${letter}${second}`;
+
+      const rawNumbers = fixDigits(match[4].replace(/[^0-9A-Z]/gi, ''));
+      if (!/^[0-9]{4,5}$/.test(rawNumbers)) continue;
+
+      const formattedNum = formatNumbers(rawNumbers);
+      if (ExtensionsService.SPECIAL_CAR_SERIES.has(series)) {
+        return `${prov}${series}-${formattedNum}`;
+      }
+      return `${prov}-${series} ${formattedNum}`;
+    }
+
+    // Mẫu B: Ô tô tiêu chuẩn 1-2 chữ cái seri (VD: 30A-123.45 | 51K-567.89 | 29LD-123.45 | 59A-1234)
+    const carRegex = /([1-9][0-9OIZSB])[\s._-]*([A-Z]{1,2})[\s._-]+([0-9OIZSB]{3,5}(?:[.]?[0-9OIZSB]{2})?|[0-9OIZSB]{4,5})/gi;
+    const carMatches = Array.from(text.matchAll(carRegex));
+    for (const match of carMatches) {
+      const prov = fixDigits(match[1]);
+      const provNum = parseInt(prov, 10);
+      if (!ExtensionsService.VALID_PROVINCES.has(provNum)) continue;
+
+      const series = match[2].toUpperCase();
+      const rawNumbers = fixDigits(match[3].replace(/[^0-9A-Z]/gi, ''));
+      if (!/^[0-9]{4,5}$/.test(rawNumbers)) continue;
+
+      const formattedNum = formatNumbers(rawNumbers);
+      return `${prov}${series}-${formattedNum}`;
+    }
+
+    // Mẫu C: Cửa sổ trượt quét chuỗi ký tự liền nhau (Sliding Window 7-9 ký tự)
     const cleanedTokens = text.replace(/[^0-9A-Z]/g, '');
-    for (const len of [9, 8]) {
+    for (const len of [9, 8, 7]) {
       for (let i = 0; i <= cleanedTokens.length - len; i++) {
         const sub = cleanedTokens.substring(i, i + len);
         const provCandidate = fixDigits(sub.substring(0, 2));
         const provInt = parseInt(provCandidate, 10);
-        if (provInt >= 11 && provInt <= 99) {
+        if (ExtensionsService.VALID_PROVINCES.has(provInt)) {
+          // Khớp xe máy (2 số tỉnh + 1 chữ + 1 số/chữ + 4-5 số)
+          if (len === 9 || len === 8) {
+            const letter = sub[2];
+            const digitOrLetter = sub[3];
+            if (/[A-Z]/.test(letter)) {
+              let second = digitOrLetter;
+              const secondDigit = fixDigits(digitOrLetter);
+              if (/[0-9]/.test(secondDigit)) {
+                second = secondDigit;
+              }
+              const series = `${letter}${second}`;
+              const numPart = fixDigits(sub.substring(4));
+              if (/^[0-9]{4,5}$/.test(numPart)) {
+                if (ExtensionsService.SPECIAL_CAR_SERIES.has(series)) {
+                  return `${provCandidate}${series}-${formatNumbers(numPart)}`;
+                }
+                return `${provCandidate}-${series} ${formatNumbers(numPart)}`;
+              }
+            }
+          }
+          // Khớp ô tô (2 số tỉnh + 1-2 chữ + 4-5 số)
           const seriesCandidate = sub.substring(2, len === 9 ? 4 : 3);
           const numbersCandidate = fixDigits(sub.substring(len === 9 ? 4 : 3));
-          
-          // Bắt buộc phần số chỉ được chứa chữ số 0-9
-          if (!/^[0-9]+$/.test(numbersCandidate)) continue;
-
-          if (numbersCandidate.length === 5) {
-            return `${provCandidate}${seriesCandidate}-${numbersCandidate.substring(0, 3)}.${numbersCandidate.substring(3, 5)}`;
-          } else if (numbersCandidate.length === 4) {
-            return `${provCandidate}${seriesCandidate}-${numbersCandidate}`;
+          if (/^[A-Z]{1,2}$/.test(seriesCandidate) && /^[0-9]{4,5}$/.test(numbersCandidate)) {
+            return `${provCandidate}${seriesCandidate}-${formatNumbers(numbersCandidate)}`;
           }
         }
       }
@@ -631,32 +760,44 @@ export class ExtensionsService {
     return isJpeg || isPng || isGif || isWebp || isBmp;
   }
 
-  // 6. Nhận diện biển số xe từ hình ảnh bằng OCR và hiển thị hồ sơ phương tiện
+  // 6. Nhận diện biển số xe từ hình ảnh bằng Vision AI / OCR và hiển thị hồ sơ phương tiện
   async scanPlate(file: any) {
+    let licensePlate: string | null = null;
     let rawRecognizedText = '';
 
-    // A. Thực hiện AI Tesseract OCR nếu có file buffer hợp lệ tải lên từ client
-    if (file && file.buffer) {
-      if (this.isValidImageBuffer(file.buffer)) {
-        try {
-          const Tesseract = await import('tesseract.js');
-          const { data } = await Tesseract.recognize(file.buffer, 'eng');
-          if (data && data.text) {
-            rawRecognizedText = data.text;
-            this.logger.log(`Tesseract OCR bóc tách được văn bản từ ảnh: ${JSON.stringify(rawRecognizedText)}`);
-          }
-        } catch (ocrErr) {
-          this.logger.warn(`Lỗi nhận diện Tesseract OCR trên file buffer: ${ocrErr?.message || ocrErr}`);
+    // A. ƯU TIÊN 1: Thực hiện OpenRouter Vision AI (Multimodal LLM) nếu có file buffer và đã cấu hình API Key
+    if (file && file.buffer && this.isValidImageBuffer(file.buffer) && this.openRouterService.isConfigured()) {
+      try {
+        const visionResult = await this.openRouterService.scanLicensePlate(file.buffer);
+        if (visionResult && visionResult.licensePlate) {
+          licensePlate = visionResult.licensePlate;
+          this.logger.log(`OpenRouter Vision AI bóc tách biển số chính xác: ${licensePlate}`);
         }
-      } else {
-        this.logger.warn(`File buffer rỗng hoặc không đúng định dạng ảnh (${file.buffer.length} bytes), bỏ qua Tesseract OCR`);
+      } catch (aiErr) {
+        this.logger.warn(`OpenRouter Vision AI thất bại, chuyển sang Tesseract OCR cục bộ: ${aiErr?.message || aiErr}`);
       }
     }
 
-    // B. Trích xuất biển số xe ô tô thực tế từ văn bản OCR hoặc tên file tải lên
-    let licensePlate = this.extractPlateFromText(rawRecognizedText)
-                    || (file?.originalname ? this.extractPlateFromText(file.originalname) : null)
-                    || (file?.originalname ? this.extractPlateFromText(file.originalname.replace(/[^0-9A-Z]/gi, '')) : null);
+    // B. ƯU TIÊN 2: Thực hiện AI Tesseract OCR cục bộ nếu chưa có kết quả từ Vision AI
+    if (!licensePlate && file && file.buffer && this.isValidImageBuffer(file.buffer)) {
+      try {
+        const Tesseract = await import('tesseract.js');
+        const { data } = await Tesseract.recognize(file.buffer, 'eng');
+        if (data && data.text) {
+          rawRecognizedText = data.text;
+          this.logger.log(`Tesseract OCR bóc tách được văn bản từ ảnh: ${JSON.stringify(rawRecognizedText)}`);
+          licensePlate = this.extractPlateFromText(rawRecognizedText);
+        }
+      } catch (ocrErr) {
+        this.logger.warn(`Lỗi nhận diện Tesseract OCR trên file buffer: ${ocrErr?.message || ocrErr}`);
+      }
+    }
+
+    // C. ƯU TIÊN 3: Trích xuất từ tên file tải lên nếu OCR ảnh không nhận diện được
+    if (!licensePlate && file?.originalname) {
+      licensePlate = this.extractPlateFromText(file.originalname)
+                  || this.extractPlateFromText(file.originalname.replace(/[^0-9A-Z]/gi, ''));
+    }
 
     if (!licensePlate && rawRecognizedText) {
       licensePlate = this.extractPlateFromText(rawRecognizedText.replace(/[^0-9A-Z]/gi, ''));
@@ -671,7 +812,7 @@ export class ExtensionsService {
       };
     }
 
-    // C. Tra cứu phương tiện trong CSDL
+    // D. Tra cứu phương tiện trong CSDL
     const vehicleResult = await this.dbService.query(
       `SELECT v.VehicleID, v.UserID, v.LicensePlate, v.VehicleType, v.Brand, v.Model, 
               v.ManufactureYear, v.PurchaseDate, v.CurrentOdometer, u.FullName AS OwnerName, u.Email AS OwnerEmail
@@ -722,8 +863,26 @@ export class ExtensionsService {
     };
   }
 
-  // 7. Nhận diện và Bóc tách Sổ Đăng Kiểm tự động bằng AI OCR
+  // 7. Nhận diện và Bóc tách Sổ Đăng Kiểm tự động bằng AI OCR / Vision AI
   async scanRegistration(file: any) {
+    // A. Ưu tiên OpenRouter Vision AI
+    if (file && file.buffer && this.isValidImageBuffer(file.buffer) && this.openRouterService.isConfigured()) {
+      try {
+        const aiResult = await this.openRouterService.scanRegistration(file.buffer);
+        if (aiResult) {
+          return {
+            success: true,
+            confidenceScore: aiResult.confidenceScore || 0.98,
+            extractedData: aiResult,
+            warnings: [],
+          };
+        }
+      } catch (err) {
+        this.logger.warn(`OpenRouter scanRegistration thất bại, fallback sang Tesseract: ${err?.message || err}`);
+      }
+    }
+
+    // B. Fallback Tesseract / Heuristic
     let documentNumber = 'KC-9876543';
     let licensePlate = '30H-123.45';
     let chassisNumber = 'RLHFD184000123456';
@@ -734,20 +893,16 @@ export class ExtensionsService {
     const warnings: string[] = [];
 
     if (file) {
-      if (file.buffer) {
-        if (this.isValidImageBuffer(file.buffer)) {
-          try {
-            const Tesseract = await import('tesseract.js');
-            const { data } = await Tesseract.recognize(file.buffer, 'eng');
-            if (data && data.text) {
-              const extracted = this.extractPlateFromText(data.text);
-              if (extracted) licensePlate = extracted;
-            }
-          } catch (err) {
-            this.logger.warn(`Lỗi nhận diện Tesseract OCR trên file buffer: ${err?.message || err}`);
+      if (file.buffer && this.isValidImageBuffer(file.buffer)) {
+        try {
+          const Tesseract = await import('tesseract.js');
+          const { data } = await Tesseract.recognize(file.buffer, 'eng');
+          if (data && data.text) {
+            const extracted = this.extractPlateFromText(data.text);
+            if (extracted) licensePlate = extracted;
           }
-        } else {
-          this.logger.warn(`File buffer rỗng hoặc không đúng định dạng ảnh (${file.buffer.length} bytes), bỏ qua Tesseract OCR`);
+        } catch (err) {
+          this.logger.warn(`Lỗi nhận diện Tesseract OCR trên file buffer: ${err?.message || err}`);
         }
       }
 
@@ -756,14 +911,12 @@ export class ExtensionsService {
         const extracted = this.extractPlateFromText(filename);
         if (extracted) licensePlate = extracted;
 
-        // Phân tích số quản lý GCN đăng kiểm (VD: KC-1234567, KD-998877)
         const docRegex = /([A-Z]{2}[-]?\d{6,8})/i;
         const matchDoc = filename.match(docRegex);
         if (matchDoc) {
           documentNumber = matchDoc[1].toUpperCase();
         }
 
-        // Phân tích ngày tháng nếu có trong tên tệp (VD: 2024-06-15 hoặc 15062024)
         const dateRegex = /(\d{4}[-._]\d{2}[-._]\d{2})|(\d{2}[-._]\d{2}[-._]\d{4})/;
         const matchDate = filename.match(dateRegex);
         if (matchDate) {
@@ -780,7 +933,6 @@ export class ExtensionsService {
       }
     }
 
-    // Kiểm tra độ chính xác và đưa ra cảnh báo nếu phát hiện thông tin nghi ngờ
     if (confidenceScore < 0.90) {
       warnings.push('Chất lượng ảnh hơi mờ, vui lòng kiểm tra lại Số khung VIN');
     }
@@ -800,8 +952,26 @@ export class ExtensionsService {
     };
   }
 
-  // 8. Nhận diện và Trích xuất Hóa đơn sửa xe / Phiếu bảo dưỡng cũ bằng AI OCR
+  // 8. Nhận diện và Trích xuất Hóa đơn sửa xe / Phiếu bảo dưỡng cũ bằng Vision AI / OCR
   async scanInvoice(file: any) {
+    // A. Ưu tiên OpenRouter Vision AI
+    if (file && file.buffer && this.isValidImageBuffer(file.buffer) && this.openRouterService.isConfigured()) {
+      try {
+        const aiResult = await this.openRouterService.scanInvoice(file.buffer);
+        if (aiResult) {
+          return {
+            success: true,
+            confidenceScore: aiResult.confidenceScore || 0.96,
+            extractedData: aiResult,
+            warnings: [],
+          };
+        }
+      } catch (err) {
+        this.logger.warn(`OpenRouter scanInvoice thất bại, fallback sang heuristic: ${err?.message || err}`);
+      }
+    }
+
+    // B. Fallback Heuristic
     let garageName = 'Gara Ô Tô AutoCare Service';
     let executionDate = '2024-05-20';
     let executionOdometer = 15000;

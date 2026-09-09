@@ -186,10 +186,10 @@ const LicensePlateScannerModal = ({ isOpen, onClose, onSearchSuccess }) => {
         <div className="flex justify-between items-center mb-5">
           <div>
             <h3 className="text-xl font-black text-slate-800 dark:text-white flex items-center gap-2">
-              📸 Quét & Nhận diện Biển số Xe Ô tô (AI OCR)
+              📸 Quét & Nhận diện Biển số Xe (AI OCR)
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
-              Sử dụng WebCam trực tiếp hoặc tải tệp ảnh xe ô tô vào xưởng
+              Sử dụng WebCam trực tiếp hoặc tải tệp ảnh xe để nhận diện tự động
             </p>
           </div>
           <button
@@ -258,7 +258,7 @@ const LicensePlateScannerModal = ({ isOpen, onClose, onSearchSuccess }) => {
                   <div className="absolute inset-0 border-2 border-dashed border-indigo-400/40 pointer-events-none rounded-2xl flex items-center justify-center">
                     <div className="w-3/4 h-1/2 border-2 border-indigo-400 rounded-xl relative">
                       <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xxs font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                        Căn biển số ô tô vào đây
+                        Căn biển số xe vào đây
                       </span>
                     </div>
                   </div>
@@ -303,7 +303,7 @@ const LicensePlateScannerModal = ({ isOpen, onClose, onSearchSuccess }) => {
                 <div className="text-center p-6 text-slate-400 space-y-4">
                   <span className="text-5xl block animate-bounce">📤</span>
                   <div className="space-y-1">
-                    <p className="text-xs font-bold text-slate-300">Tải ảnh chụp biển số xe ô tô rõ ràng</p>
+                    <p className="text-xs font-bold text-slate-300">Tải ảnh chụp biển số xe (Ô tô / Xe máy) rõ ràng</p>
                     <p className="text-xxs text-slate-500">Hỗ trợ các định dạng JPG, PNG, WEBP</p>
                   </div>
                   <button
@@ -332,7 +332,7 @@ const LicensePlateScannerModal = ({ isOpen, onClose, onSearchSuccess }) => {
               {scanning && (
                 <div className="absolute inset-0 bg-slate-950/75 flex flex-col items-center justify-center gap-3 text-white z-10">
                   <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-                  <p className="text-xs font-bold tracking-wide animate-pulse">AI OCR đang bóc tách biển số ô tô thực tế...</p>
+                  <p className="text-xs font-bold tracking-wide animate-pulse">AI OCR đang bóc tách biển số xe thực tế...</p>
                 </div>
               )}
             </div>
@@ -352,7 +352,7 @@ const LicensePlateScannerModal = ({ isOpen, onClose, onSearchSuccess }) => {
                   value={scannedPlate}
                   onChange={(e) => setScannedPlate(e.target.value.toUpperCase())}
                   className="flex-1 px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white font-black tracking-wider text-center text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-                  placeholder="Ví dụ: 30G-567.89..."
+                  placeholder="Ví dụ: 69-D1 666.66, 30G-567.89..."
                 />
                 <button
                   type="submit"
