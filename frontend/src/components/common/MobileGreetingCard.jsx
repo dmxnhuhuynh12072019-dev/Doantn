@@ -13,7 +13,9 @@ const MobileGreetingCard = () => {
   };
 
   const displayName = user?.fullName || user?.username || 'Huỳnh Võ Hoài Như';
-  const initial = displayName.charAt(0).toUpperCase();
+  const userRole = user?.role ? String(user.role).toLowerCase() : '';
+  const isAdmin = userRole === 'admin';
+  const isGarage = userRole === 'garage';
 
   return (
     <div className="w-full px-4 sm:px-6 pt-3 pb-2 max-w-7xl mx-auto">
@@ -42,7 +44,9 @@ const MobileGreetingCard = () => {
         {/* Quick Badge / Role Indicator */}
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/40 text-indigo-600 dark:text-indigo-300 text-xs font-bold shrink-0">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span className="text-[11px] sm:text-xs">{user?.role === 'Garage' ? 'Gara Partner' : 'Khách hàng'}</span>
+          <span className="text-[11px] sm:text-xs">
+            {isAdmin ? 'Super Admin' : isGarage ? 'Gara Partner' : 'Khách hàng'}
+          </span>
         </div>
       </div>
     </div>

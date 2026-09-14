@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import NotificationBell from '../notifications/NotificationBell';
 
@@ -10,6 +11,7 @@ const serviceSubItems = [
 
 const Header = ({ dashboardType = 'user', currentView, onOpenOcrScanner, onMenuClick }) => {
   const { user, logout, themePreference, updateThemePreference } = useAuth();
+  const navigate = useNavigate();
   const [activeMenu, setActiveMenu] = useState('home');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -17,10 +19,16 @@ const Header = ({ dashboardType = 'user', currentView, onOpenOcrScanner, onMenuC
   const [isScrolled, setIsScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [isServicesDropdownOpen, setIsServicesDropdownOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isMobileServicesOpen, setIsMobileServicesOpen] = useState(false);
-  const dropdownRef = useRef(null);
 
-  const isGarage = dashboardType === 'garage' || user?.role === 'Garage';
+  const dropdownRef = useRef(null);
+  const userMenuRef = useRef(null);
+
+  const userRole = user?.role ? String(user.role).toLowerCase() : '';
+  const isAdmin = userRole === 'admin';
+  const isGarage = dashboardType === 'garage' || userRole === 'garage';
+  const isUser = userRole === 'user' || (!isAdmin && !isGarage);
 
   useEffect(() => {
     if (currentView) {
@@ -33,14 +41,17 @@ const Header = ({ dashboardType = 'user', currentView, onOpenOcrScanner, onMenuC
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsServicesDropdownOpen(false);
       }
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setIsUserMenuOpen(false);
+      }
     };
-    if (isServicesDropdownOpen) {
+    if (isServicesDropdownOpen || isUserMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isServicesDropdownOpen]);
+  }, [isServicesDropdownOpen, isUserMenuOpen]);
 
   useEffect(() => {
     if (isMobileMenuOpen) {
@@ -59,22 +70,17 @@ const Header = ({ dashboardType = 'user', currentView, onOpenOcrScanner, onMenuC
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
 
-      // Shadow elevation state
       if (currentScrollY > 10) {
         setIsScrolled(true);
       } else {
         setIsScrolled(false);
       }
 
-      // Smooth scroll direction detection:
-      // Always keep header visible near top of page (0 - 80px)
       if (currentScrollY <= 80) {
         setIsVisible(true);
       } else if (currentScrollY > prevScrollY + 8) {
-        // Scrolling DOWN -> slide header up out of view
         setIsVisible(false);
       } else if (currentScrollY < prevScrollY - 5) {
-        // Scrolling UP -> slide header back down smoothly on top
         setIsVisible(true);
       }
 
@@ -93,7 +99,7 @@ const Header = ({ dashboardType = 'user', currentView, onOpenOcrScanner, onMenuC
           : 'shadow-xs bg-white dark:bg-slate-900'
       }`}
     >
-      {/* 1. TOP ANNOUNCEMENT BAR (Hidden on mobile for sleek space-saving header) */}
+      {/* 1. TOP ANNOUNCEMENT BAR */}
       <div className={`hidden md:block bg-indigo-600 dark:bg-indigo-700 text-white text-xs font-semibold px-6 sm:px-10 lg:px-16 transition-all duration-300 overflow-hidden ${
         isScrolled ? 'max-h-0 py-0 opacity-0' : 'max-h-10 py-2'
       }`}>
@@ -141,33 +147,33 @@ const Header = ({ dashboardType = 'user', currentView, onOpenOcrScanner, onMenuC
           ? 'py-2.5 sm:py-3'
           : 'py-3 sm:py-5'
       }`}>
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-8 md:gap-12">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 md:gap-8">
           {/* Logo & Brand Name */}
-          <div className="flex items-center gap-2 h-9 md:h-10">
-            <div className="w-9 h-9 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md border border-indigo-500 shrink-0">
+          <Link to="/" className="flex items-center gap-2 h-9 md:h-10 shrink-0 group">
+            <div className="w-9 h-9 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-indigo-600 group-hover:bg-indigo-500 flex items-center justify-center text-white shadow-md border border-indigo-500 shrink-0 transition-colors">
               <svg className="w-4 h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 stroke-current" fill="none" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 17a2 2 0 100 4 2 2 0 000-4zm10 0a2 2 0 100 4 2 2 0 000-4zM4 11l2-5h12l2 5M4 11h16M4 11v6h16v-6" />
               </svg>
             </div>
             <h1 className="text-[11px] md:text-xs font-bold tracking-tight text-slate-900 dark:text-white leading-none m-0 flex items-center h-9 md:h-10">
               {isGarage ? (
-                <>ACOH <span className="text-indigo-600 dark:text-indigo-400">Garage</span></>
+                <>ACOH <span className="text-indigo-600 dark:text-indigo-400 ml-1">Garage</span></>
               ) : (
-                <>ACOH <span className="text-indigo-600 dark:text-indigo-400">AutoCare</span></>
+                <>ACOH <span className="text-indigo-600 dark:text-indigo-400 ml-1">AutoCare</span></>
               )}
             </h1>
-          </div>
+          </Link>
 
           {/* Right Info: Working Hours, Hotline (Desktop) & User Controls */}
-          <div className="flex items-center gap-10 lg:gap-16">
+          <div className="flex items-center gap-4 sm:gap-6 lg:gap-8">
             {/* Working Hours (Desktop Only) */}
-            <div className="hidden lg:flex flex-col justify-center text-left h-9 md:h-10">
+            <div className="hidden xl:flex flex-col justify-center text-left h-9 md:h-10">
               <span className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm leading-tight">Giờ làm việc:</span>
               <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-tight">Thứ 2 - thứ 6 (9h - 18h)</span>
             </div>
 
             {/* Hotline (Desktop Only) */}
-            <div className="hidden md:flex flex-col justify-center text-left h-9 md:h-10">
+            <div className="hidden lg:flex flex-col justify-center text-left h-9 md:h-10">
               <span className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm leading-tight">Gọi ngay:</span>
               <a href="tel:0313728397" className="font-bold text-xs sm:text-sm text-rose-500 hover:text-rose-600 dark:text-rose-400 leading-tight transition">
                 (+84) 313-728-397
@@ -175,7 +181,7 @@ const Header = ({ dashboardType = 'user', currentView, onOpenOcrScanner, onMenuC
             </div>
 
             {/* User Controls */}
-            <div className="flex items-center gap-4 sm:gap-5">
+            <div className="flex items-center gap-3 sm:gap-4">
 
               {/* Garage special action: OCR Scan (Desktop) */}
               {isGarage && onOpenOcrScanner && (
@@ -203,25 +209,110 @@ const Header = ({ dashboardType = 'user', currentView, onOpenOcrScanner, onMenuC
                 {themePreference === 'light' ? '☀️' : themePreference === 'dark' ? '🌙' : '💻'}
               </button>
 
-              {/* User Avatar (Desktop & Tablet) */}
-              <div className="hidden sm:flex items-center gap-2 h-9 md:h-10">
-                <a
-                  href="/profile"
-                  className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 flex items-center justify-center font-bold border border-slate-200 dark:border-slate-600 hover:shadow-xs transition shrink-0 text-xs sm:text-sm"
-                  title="Hồ sơ cá nhân"
+              {/* User Avatar with Dropdown Popover */}
+              <div className="relative" ref={userMenuRef}>
+                <button
+                  onClick={() => setIsUserMenuOpen((prev) => !prev)}
+                  className="flex items-center gap-2 h-9 md:h-10 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700/60 transition cursor-pointer"
+                  title="Tài khoản người dùng"
                 >
-                  {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
-                </a>
-                <div className="hidden xl:flex flex-col justify-center text-left h-9 md:h-10">
-                  <span className="text-xs font-bold text-slate-800 dark:text-white leading-tight">{user?.fullName}</span>
-                  <span className="text-xxs text-slate-400 dark:text-slate-500 font-semibold leading-tight">{user?.role || 'Người dùng'}</span>
-                </div>
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-gradient-to-tr from-indigo-600 to-teal-400 text-white flex items-center justify-center font-bold shadow-xs shrink-0 text-xs sm:text-sm">
+                    {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                  <div className="hidden xl:flex flex-col justify-center text-left">
+                    <span className="text-xs font-bold text-slate-800 dark:text-white leading-tight max-w-[120px] truncate">{user?.fullName || 'Tài khoản'}</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-400 font-semibold leading-tight">
+                      {isAdmin ? '🛡️ Admin' : isGarage ? '🏬 Gara' : '🚗 Khách hàng'}
+                    </span>
+                  </div>
+                  <svg className={`hidden xl:block w-3.5 h-3.5 text-slate-400 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* User Dropdown Menu */}
+                {isUserMenuOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 z-50 p-2 animate-fadeIn">
+                    <div className="p-3 border-b border-slate-100 dark:border-slate-700 mb-1">
+                      <p className="text-xs font-black text-slate-800 dark:text-white truncate">{user?.fullName || 'Người dùng'}</p>
+                      <div className="mt-1 flex items-center gap-1.5">
+                        <span className={`inline-block px-2 py-0.5 text-[10px] font-black rounded-md ${
+                          isAdmin 
+                            ? 'bg-violet-50 dark:bg-violet-950/60 text-violet-600 dark:text-violet-400'
+                            : isGarage
+                            ? 'bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400'
+                            : 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400'
+                        }`}>
+                          {isAdmin ? '🛡️ Quản trị viên (Admin)' : isGarage ? '🏬 Chủ Gara Đối Tác' : '🚗 Khách hàng'}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 truncate mt-1">{user?.email}</p>
+                    </div>
+
+                    {/* Return Action Link based on user role */}
+                    {isAdmin && (
+                      <Link
+                        to="/admin/dashboard"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/40 transition flex items-center gap-2"
+                      >
+                        <span className="text-sm">🛡️</span>
+                        <span>Về Bảng Quản trị Admin</span>
+                      </Link>
+                    )}
+
+                    {isGarage && (
+                      <Link
+                        to="/garage/dashboard"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950/40 transition flex items-center gap-2"
+                      >
+                        <span className="text-sm">🏬</span>
+                        <span>Về Bảng Quản lý Gara</span>
+                      </Link>
+                    )}
+
+                    {isUser && (
+                      <button
+                        onClick={() => {
+                          setIsUserMenuOpen(false);
+                          if (onMenuClick) onMenuClick('vehicles');
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition flex items-center gap-2 cursor-pointer"
+                      >
+                        <span className="text-sm">🚗</span>
+                        <span>Quản lý Xe & Lịch hẹn</span>
+                      </button>
+                    )}
+
+                    <Link
+                      to="/profile"
+                      onClick={() => setIsUserMenuOpen(false)}
+                      className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center gap-2"
+                    >
+                      <span className="text-sm">⚙️</span>
+                      <span>Hồ sơ & Cài đặt cá nhân</span>
+                    </Link>
+
+                    <button
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        logout();
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition flex items-center gap-2 cursor-pointer"
+                    >
+                      <span className="text-sm">🚪</span>
+                      <span>Đăng xuất</span>
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Logout Button (Desktop) */}
               <button
                 onClick={logout}
-                className="hidden md:flex w-9 h-9 md:w-10 md:h-10 rounded-full items-center justify-center text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 border border-transparent hover:border-rose-100 dark:hover:border-rose-950/40 transition shrink-0"
+                className="hidden md:flex w-9 h-9 md:w-10 md:h-10 rounded-full items-center justify-center text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 border border-transparent hover:border-rose-100 dark:hover:border-rose-950/40 transition shrink-0 cursor-pointer"
                 title="Đăng xuất"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -254,7 +345,7 @@ const Header = ({ dashboardType = 'user', currentView, onOpenOcrScanner, onMenuC
       <nav className="relative z-0 hidden md:block bg-slate-900 text-white border-t border-slate-800/60 shadow-md px-6 sm:px-10 lg:px-16 py-2.5">
         <div className="max-w-7xl mx-auto min-h-[40px] flex justify-center items-center relative">
           {isSearchOpen ? (
-            /* Full-width sleek search mode */
+            /* Full-width search mode */
             <div className="w-full flex items-center justify-between gap-3 px-2 animate-fadeIn">
               <div className="flex-1 flex items-center bg-slate-900 border border-indigo-500/60 rounded-xl px-3.5 py-1.5 focus-within:ring-2 focus-within:ring-indigo-500 transition-all shadow-inner">
                 <svg className="w-4 h-4 text-indigo-400 mr-2.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -289,18 +380,32 @@ const Header = ({ dashboardType = 'user', currentView, onOpenOcrScanner, onMenuC
               </button>
             </div>
           ) : (
-            /* Standard Centered Navigation Links */
+            /* Centered Navigation Links */
             <>
-              <div className="flex items-center justify-center space-x-6 lg:space-x-8 text-xs sm:text-sm font-bold tracking-wider uppercase whitespace-nowrap no-scrollbar">
+              <div className="flex items-center justify-center space-x-5 lg:space-x-7 text-xs sm:text-sm font-bold tracking-wider uppercase whitespace-nowrap no-scrollbar">
                 {[
                   { id: 'home', label: 'TRANG CHỦ' },
-                  ...(!isGarage ? [{ id: 'vehicles', label: 'DANH SÁCH XE' }] : []),
+                  ...(isAdmin ? [{ id: 'admin-dash', label: '🛡️ QUẢN TRỊ ADMIN', route: '/admin/dashboard' }] : []),
+                  ...(isGarage ? [{ id: 'garage-dash', label: '🏬 QUẢN LÝ GARA', route: '/garage/dashboard' }] : []),
+                  ...(isUser && user ? [{ id: 'vehicles', label: 'DANH SÁCH XE' }] : []),
                   { id: 'about', label: 'GIỚI THIỆU' },
                   { id: 'services', label: 'DỊCH VỤ' },
                   { id: 'news', label: 'TIN TỨC' },
                   { id: 'contact', label: 'LIÊN HỆ' },
                 ].map((menu) => {
                   const isActive = activeMenu === menu.id;
+
+                  if (menu.route) {
+                    return (
+                      <Link
+                        key={menu.id}
+                        to={menu.route}
+                        className="px-3.5 py-1.5 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white font-black tracking-wide border border-indigo-500/40 hover:border-indigo-400 transition-all shadow-xs flex items-center gap-1.5"
+                      >
+                        <span>{menu.label}</span>
+                      </Link>
+                    );
+                  }
 
                   if (menu.id === 'services') {
                     return (
@@ -338,7 +443,6 @@ const Header = ({ dashboardType = 'user', currentView, onOpenOcrScanner, onMenuC
                         {/* Dropdown Popover */}
                         {isServicesDropdownOpen && (
                           <div className="absolute top-full mt-3.5 left-1/2 -translate-x-1/2 w-72 sm:w-80 bg-slate-900 text-white rounded-2xl shadow-2xl border border-slate-700 p-2.5 z-50 animate-fadeIn">
-                            {/* Top Pointer Triangle Arrow */}
                             <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3.5 h-3.5 bg-slate-900 rotate-45 border-t border-l border-slate-700"></div>
 
                             <div className="relative z-10 flex flex-col space-y-1">
@@ -442,6 +546,44 @@ const Header = ({ dashboardType = 'user', currentView, onOpenOcrScanner, onMenuC
             </button>
           </div>
 
+          {/* Quick Return Dashboard Button for Mobile */}
+          <div className="p-4 pb-0">
+            {isAdmin && (
+              <Link
+                to="/admin/dashboard"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold text-xs shadow-md flex items-center justify-center gap-2"
+              >
+                <span>🛡️</span>
+                <span>Về Bảng Quản trị Admin</span>
+              </Link>
+            )}
+
+            {isGarage && (
+              <Link
+                to="/garage/dashboard"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-teal-600 to-indigo-600 text-white font-bold text-xs shadow-md flex items-center justify-center gap-2"
+              >
+                <span>🏬</span>
+                <span>Về Bảng Quản lý Garage</span>
+              </Link>
+            )}
+
+            {isUser && user && (
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  if (onMenuClick) onMenuClick('vehicles');
+                }}
+                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-bold text-xs shadow-md flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>🚗</span>
+                <span>Quản lý Xe & Lịch hẹn</span>
+              </button>
+            )}
+          </div>
+
           {/* Search bar inside mobile drawer */}
           <div className="p-4 border-b border-slate-800/80">
             <div className="flex items-center bg-slate-900 border border-indigo-500/40 rounded-xl px-3.5 py-2.5 focus-within:ring-2 focus-within:ring-indigo-500 transition-all">
@@ -462,12 +604,28 @@ const Header = ({ dashboardType = 'user', currentView, onOpenOcrScanner, onMenuC
           <div className="p-4 flex flex-col space-y-1.5">
             {[
               { id: 'home', label: 'TRANG CHỦ', icon: '🏠' },
-              ...(!isGarage ? [{ id: 'vehicles', label: 'DANH SÁCH XE', icon: '🚗' }] : []),
+              ...(isAdmin ? [{ id: 'admin-dash', label: 'QUẢN TRỊ ADMIN', icon: '🛡️', route: '/admin/dashboard' }] : []),
+              ...(isGarage ? [{ id: 'garage-dash', label: 'QUẢN LÝ GARA', icon: '🏬', route: '/garage/dashboard' }] : []),
+              ...(isUser && user ? [{ id: 'vehicles', label: 'DANH SÁCH XE', icon: '🚗' }] : []),
               { id: 'about', label: 'GIỚI THIỆU', icon: 'ℹ️' },
               { id: 'services', label: 'DỊCH VỤ', icon: '🛠️' },
               { id: 'news', label: 'TIN TỨC', icon: '📰' },
               { id: 'contact', label: 'LIÊN HỆ', icon: '📞' },
             ].map((menu) => {
+              if (menu.route) {
+                return (
+                  <Link
+                    key={menu.id}
+                    to={menu.route}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm bg-indigo-600/30 text-indigo-300 hover:bg-indigo-600 hover:text-white transition"
+                  >
+                    <span className="text-base">{menu.icon}</span>
+                    <span>{menu.label}</span>
+                  </Link>
+                );
+              }
+
               if (menu.id === 'services') {
                 return (
                   <div key={menu.id} className="flex flex-col space-y-1">
@@ -574,25 +732,27 @@ const Header = ({ dashboardType = 'user', currentView, onOpenOcrScanner, onMenuC
           <div className="mt-auto p-4 border-t border-slate-800 bg-slate-900/60">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <a
-                  href="/profile"
+                <Link
+                  to="/profile"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="w-10 h-10 rounded-full bg-slate-800 text-indigo-400 flex items-center justify-center font-black border border-slate-700"
                 >
                   {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
-                </a>
+                </Link>
                 <div className="flex flex-col">
                   <span className="text-sm font-bold text-white leading-tight">{user?.fullName || 'Người dùng'}</span>
-                  <span className="text-xs text-slate-400 font-medium">{user?.role || 'User'}</span>
+                  <span className="text-xs text-slate-400 font-medium">
+                    {isAdmin ? '🛡️ Super Admin' : isGarage ? '🏬 Chủ Gara Đối Tác' : '🚗 Khách hàng'}
+                  </span>
                 </div>
               </div>
-              <a
-                href="/profile"
+              <Link
+                to="/profile"
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="text-xs font-semibold text-indigo-400 hover:text-indigo-300"
               >
                 Hồ sơ →
-              </a>
+              </Link>
             </div>
 
             <div className="text-xs text-slate-400 space-y-1 mb-4 pt-2 border-t border-slate-800/80">
@@ -623,4 +783,3 @@ const Header = ({ dashboardType = 'user', currentView, onOpenOcrScanner, onMenuC
 };
 
 export default Header;
-
