@@ -494,16 +494,24 @@ export class MaintenancesService {
       }
     }
 
-    await this.dbService.query(
+    const finalCost = dto.totalCost && Number(dto.totalCost) > 0 
+      ? Number(dto.totalCost) 
+      : ((dto.selectedItemIds?.length || 1) * 250000);
+
+    const insertResult = await this.dbService.query(
       `INSERT INTO MaintenanceHistory (VehicleID, GarageID, ExecutionDate, ExecutionOdometer, TotalCost, Details)
-       VALUES (@vehicleId, @garageId, GETDATE(), @odometer, 0, @details)`,
+       VALUES (@vehicleId, @garageId, GETDATE(), @odometer, @totalCost, @details)
+       RETURNING HistoryID`,
       [
         { name: 'vehicleId', type: sql.Int, value: dto.vehicleId },
         { name: 'garageId', type: sql.Int, value: garageId },
         { name: 'odometer', type: sql.Int, value: dto.odometer },
+        { name: 'totalCost', type: sql.Decimal(18, 2), value: finalCost },
         { name: 'details', type: sql.NVarChar, value: details },
       ]
     );
+
+    const historyId = insertResult.recordset[0]?.HistoryID;
 
     await this.dbService.query(
       `UPDATE Vehicles 
@@ -530,6 +538,8 @@ export class MaintenancesService {
 
     return {
       message: 'Lưu bảo dưỡng theo mốc km thành công!',
+      historyId,
+      totalCost: finalCost,
       details,
     };
   }

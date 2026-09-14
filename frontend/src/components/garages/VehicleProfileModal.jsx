@@ -66,7 +66,7 @@ const VehicleProfileModal = ({ isOpen, onClose, vehicleId }) => {
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
             <p className="text-sm text-slate-500 font-semibold">Đang tải hồ sơ xe...</p>
           </div>
-        ) : !profile ? (
+        ) : !profile?.vehicle ? (
           <div className="flex-1 text-center py-12 text-slate-400">
             Không tìm thấy thông tin phương tiện.
           </div>
@@ -78,16 +78,16 @@ const VehicleProfileModal = ({ isOpen, onClose, vehicleId }) => {
                 <div>
                   <span className="text-xxs text-slate-400 dark:text-slate-500 font-bold uppercase block tracking-wider">Thông tin xe</span>
                   <h4 className="text-lg font-black text-slate-800 dark:text-white mt-1">
-                    {profile.vehicle.Brand} {profile.vehicle.Model}
+                    {profile.vehicle.Brand || 'Xe'} {profile.vehicle.Model || ''}
                   </h4>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Loại xe: {profile.vehicle.VehicleType} | Năm SX: {profile.vehicle.ManufactureYear || 'Không rõ'}
+                    Loại xe: {profile.vehicle.VehicleType || 'Ô tô'} | Năm SX: {profile.vehicle.ManufactureYear || 'Không rõ'}
                   </p>
                 </div>
                 <div>
                   <span className="text-xxs text-slate-400 dark:text-slate-500 font-bold uppercase block tracking-wider mb-1.5">Biển số kiểm soát</span>
                   <span className="border-2 border-slate-800 dark:border-slate-400 bg-white dark:bg-slate-900 rounded-md px-3 py-1 text-sm font-black tracking-wider text-slate-850 dark:text-white shadow-xs shrink-0 whitespace-nowrap">
-                    {profile.vehicle.LicensePlate}
+                    {profile.vehicle.LicensePlate || '---'}
                   </span>
                 </div>
               </div>
@@ -96,19 +96,19 @@ const VehicleProfileModal = ({ isOpen, onClose, vehicleId }) => {
                 <div>
                   <span className="text-xxs text-slate-400 dark:text-slate-500 font-bold uppercase block tracking-wider">Chủ sở hữu xe</span>
                   <h4 className="text-sm font-bold text-slate-800 dark:text-white mt-1">
-                    {profile.vehicle.OwnerName}
+                    {profile.vehicle.OwnerName || 'Chưa cập nhật'}
                   </h4>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     📞 {profile.vehicle.OwnerPhone || 'Chưa cung cấp'}
                   </p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    ✉️ {profile.vehicle.OwnerEmail}
+                    ✉️ {profile.vehicle.OwnerEmail || 'Chưa có email'}
                   </p>
                 </div>
                 <div>
                   <span className="text-xxs text-slate-400 dark:text-slate-500 font-bold uppercase block tracking-wider">Số Odometer hiện tại</span>
                   <p className="text-xl font-black text-slate-800 dark:text-white">
-                    {profile.vehicle.CurrentOdometer.toLocaleString()} <span className="text-xs font-normal text-slate-500">km</span>
+                    {(profile.vehicle.CurrentOdometer ?? 0).toLocaleString()} <span className="text-xs font-normal text-slate-500">km</span>
                   </p>
                 </div>
               </div>
@@ -117,19 +117,19 @@ const VehicleProfileModal = ({ isOpen, onClose, vehicleId }) => {
             {/* Service History at Gara */}
             <div className="space-y-4">
               <h4 className="text-lg font-black text-slate-800 dark:text-white">
-                🔧 Nhật ký sửa chữa tại Gara của bạn ({profile.history.length})
+                🔧 Nhật ký sửa chữa tại Gara của bạn ({(profile?.history || []).length})
               </h4>
 
-              {profile.history.length === 0 ? (
+              {(!profile?.history || profile.history.length === 0) ? (
                 <div className="text-center py-8 text-slate-400 dark:text-slate-500 border border-dashed border-slate-200 dark:border-slate-700 rounded-2xl bg-slate-50/10">
                   <span className="text-2xl mb-1 block">📝</span>
                   <p className="text-sm">Chưa có bản ghi lịch sử sửa chữa nào của xe tại xưởng bạn.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {profile.history.map((record) => (
+                  {(profile.history || []).map((record) => (
                     <div
-                      key={record.HistoryID}
+                      key={record.HistoryID || record.historyId || Math.random()}
                       className="bg-slate-50/50 dark:bg-slate-900/20 border border-slate-100 dark:border-slate-750 rounded-2xl p-5 space-y-3"
                     >
                       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-slate-100 dark:border-slate-750 pb-2">
@@ -137,13 +137,13 @@ const VehicleProfileModal = ({ isOpen, onClose, vehicleId }) => {
                           <div>
                             <span className="text-slate-450 dark:text-slate-500 font-semibold block">Ngày bảo dưỡng</span>
                             <strong className="text-slate-700 dark:text-slate-200">
-                              {new Date(record.ExecutionDate).toLocaleDateString()}
+                              {record.ExecutionDate ? new Date(record.ExecutionDate).toLocaleDateString('vi-VN') : '---'}
                             </strong>
                           </div>
                           <div>
                             <span className="text-slate-450 dark:text-slate-500 font-semibold block">Số km (Odo)</span>
                             <strong className="text-slate-700 dark:text-slate-200">
-                              {record.ExecutionOdometer.toLocaleString()} km
+                              {(record.ExecutionOdometer ?? 0).toLocaleString()} km
                             </strong>
                           </div>
                         </div>
@@ -156,9 +156,9 @@ const VehicleProfileModal = ({ isOpen, onClose, vehicleId }) => {
                       </div>
 
                       <div className="space-y-1">
-                        <span className="text-xxs text-slate-450 dark:text-slate-500 block uppercase font-bold">Nội dung chi tiết</span>
+                        <span className="text-xxs text-slate-400 dark:text-slate-500 block uppercase font-bold">Nội dung chi tiết</span>
                         <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
-                          {record.Details}
+                          {record.Details || 'Bảo dưỡng / Kiểm tra'}
                         </p>
                       </div>
                     </div>

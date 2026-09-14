@@ -44,3 +44,22 @@ export const getUserExpenses = async () => {
     throw error.response?.data || { message: 'Không thể tải báo cáo phân tích chi tiêu' };
   }
 };
+
+export const getMyGarageSettings = async () => {
+  try {
+    const res = await api.get('/api/garages/my-garage');
+    return res.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Không thể tải thông tin cấu hình Gara' };
+  }
+};
+
+export const updateMyGarageSettings = async (settingsData) => {
+  try {
+    const res = await api.put('/api/garages/my-garage', settingsData);
+    return res.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Không thể cập nhật thông tin cấu hình Gara' };
+  }
+};
+

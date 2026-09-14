@@ -30,6 +30,15 @@ export class SaveMatrixChecklistDto {
   selectedItemIds: number[];
 
   @ApiPropertyOptional({
+    description: 'Tổng chi phí bảo dưỡng (VNĐ)',
+    example: 750000,
+  })
+  @IsOptional()
+  @IsInt({ message: 'Tổng chi phí phải là số nguyên' })
+  @Min(0, { message: 'Tổng chi phí không được âm' })
+  totalCost?: number;
+
+  @ApiPropertyOptional({
     description: 'Ghi chú thêm về việc bảo dưỡng theo khung mốc',
     example: 'Thực hiện bảo dưỡng mốc 5.000km tại garage',
   })

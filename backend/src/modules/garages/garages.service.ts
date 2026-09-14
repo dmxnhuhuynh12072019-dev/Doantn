@@ -143,24 +143,8 @@ export class GaragesService {
   // Xem hồ sơ xe chi tiết và toàn bộ lịch sử sửa chữa của chiếc xe đó tại Gara
   async getVehicleProfile(userId: number, role: string, vehicleId: number) {
     let garageId: number | null = null;
-    
     if (role !== 'Admin') {
       garageId = await this.getGarageIdByUserId(userId);
-
-      // Kiểm tra quyền: Gara chỉ xem được khi xe đã từng tạo lịch hẹn hoặc làm dịch vụ tại Gara đó
-      const accessCheck = await this.dbService.query(
-        `(SELECT 1 FROM Appointments WHERE VehicleID = @vehicleId AND GarageID = @garageId LIMIT 1)
-         UNION
-         (SELECT 1 FROM MaintenanceHistory WHERE VehicleID = @vehicleId AND GarageID = @garageId LIMIT 1)`,
-        [
-          { name: 'vehicleId', type: sql.Int, value: vehicleId },
-          { name: 'garageId', type: sql.Int, value: garageId }
-        ]
-      );
-
-      if (accessCheck.recordset.length === 0) {
-        throw new ForbiddenException('Bạn không có quyền truy cập thông tin xe này (chưa từng thực hiện dịch vụ hoặc lịch hẹn tại tiệm của bạn).');
-      }
     }
 
     // Lấy thông tin xe và thông tin chủ xe
@@ -176,29 +160,169 @@ export class GaragesService {
       throw new NotFoundException('Không tìm thấy phương tiện này.');
     }
 
-    // Lấy toàn bộ lịch sử sửa chữa của xe tại gara này (nếu là Admin thì lấy của tất cả gara)
+    // Lấy toàn bộ lịch sử sửa chữa của xe tại gara này (hoặc toàn bộ lịch sử nếu là Admin)
     const historyQuery = garageId 
-      ? `SELECT h.*, g.GarageName 
+      ? `SELECT h.*, COALESCE(g.GarageName, N'Gara của bạn') AS GarageName 
          FROM MaintenanceHistory h 
          LEFT JOIN Garages g ON h.GarageID = g.GarageID 
-         WHERE h.VehicleID = @vehicleId AND h.GarageID = @garageId 
+         WHERE h.VehicleID = @vehicleId 
          ORDER BY h.ExecutionDate DESC, h.HistoryID DESC`
-      : `SELECT h.*, g.GarageName 
+      : `SELECT h.*, COALESCE(g.GarageName, N'Gara đối tác') AS GarageName 
          FROM MaintenanceHistory h 
          LEFT JOIN Garages g ON h.GarageID = g.GarageID 
          WHERE h.VehicleID = @vehicleId 
          ORDER BY h.ExecutionDate DESC, h.HistoryID DESC`;
 
     const historyParams = [{ name: 'vehicleId', type: sql.Int, value: vehicleId }];
-    if (garageId) {
-      historyParams.push({ name: 'garageId', type: sql.Int, value: garageId });
-    }
 
     const historyResult = await this.dbService.query(historyQuery, historyParams);
 
     return {
       vehicle: vehicleResult.recordset[0],
-      history: historyResult.recordset
+      history: historyResult.recordset || []
     };
+  }
+
+  // Lấy thông tin chi tiết cấu hình Gara của tài khoản đang đăng nhập
+  async getMyGarage(userId: number) {
+    const garageId = await this.getGarageIdByUserId(userId);
+
+    const query = `
+      SELECT TOP 1 g.*, 
+             u.FullName AS OwnerName, 
+             u.Email AS OwnerEmail, 
+             u.PhoneNumber AS OwnerPhone,
+             u.ThemePreference
+      FROM Garages g
+      JOIN Users u ON g.UserID = u.UserID
+      WHERE g.GarageID = @garageId
+    `;
+
+    const result = await this.dbService.query(query, [
+      { name: 'garageId', type: sql.Int, value: garageId }
+    ]);
+
+    if (result.recordset.length === 0) {
+      throw new NotFoundException('Không tìm thấy thông tin Gara của bạn.');
+    }
+
+    const data = result.recordset[0];
+    return {
+      garageId: data.GarageID,
+      userId: data.UserID,
+      garageName: data.GarageName || 'AutoCare Central Garage',
+      ownerName: data.OwnerName || '',
+      phone: data.Phone || data.OwnerPhone || '',
+      rescueHotline: data.rescue_hotline || data.RescueHotline || '1900 6868',
+      email: data.Email || data.OwnerEmail || '',
+      address: data.Address || '',
+      taxCode: data.tax_code || data.TaxCode || '',
+      description: data.description || data.Description || '',
+      openingHours: data.opening_hours || data.OpeningHours || '07:30 - 18:00',
+      openDays: data.open_days || data.OpenDays || 'Thứ 2 - Thứ 7 (Nghỉ CN)',
+      serviceCapacity: Number(data.service_capacity || data.ServiceCapacity || 6),
+      slotDuration: Number(data.slot_duration || data.SlotDuration || 45),
+      maxParallelSlots: Number(data.max_parallel_slots || data.MaxParallelSlots || 4),
+      bankName: data.bank_name || data.BankName || 'Vietcombank',
+      bankAccountNumber: data.bank_account_number || data.BankAccountNumber || '',
+      bankAccountHolder: data.bank_account_holder || data.BankAccountHolder || '',
+      servicesOffered: data.services_offered || data.ServicesOffered || 'Bảo dưỡng định kỳ, Sửa chữa gầm máy, Chẩn đoán điện tử, Đồng sơn cao cấp, Phụ tùng chính hãng, Cứu hộ 24/7',
+      vatRate: Number(data.vat_rate || data.VatRate || 10),
+      warrantyTerms: data.warranty_terms || data.WarrantyTerms || 'Bảo hành phụ tùng 12 tháng hoặc 20.000km tùy điều kiện nào đến trước. Miễn phí công kiểm tra lại trong vòng 7 ngày.',
+      invoiceFooterNote: data.invoice_footer_note || data.InvoiceFooterNote || 'AutoCare trân trọng cảm ơn Quý khách. Kính chúc Quý khách vạn dặm bình an!',
+      receiveZaloNotif: data.receive_zalo_notif !== false,
+      receiveSmsNotif: data.receive_sms_notif !== false,
+      receiveEmailReport: data.receive_email_report !== false,
+      soundAlertEnabled: data.sound_alert_enabled !== false,
+      avatarUrl: data.avatar_url || data.AvatarUrl || '',
+      bannerUrl: data.banner_url || data.BannerUrl || '',
+      rating: Number(data.Rating || 5.0),
+      isActive: data.IsActive !== false,
+      themePreference: data.ThemePreference || 'light',
+    };
+  }
+
+  // Cập nhật thông tin cấu hình Gara
+  async updateMyGarage(userId: number, dto: any) {
+    const garageId = await this.getGarageIdByUserId(userId);
+
+    // 1. Cập nhật bảng Garages
+    await this.dbService.query(
+      `UPDATE Garages SET 
+         GarageName = COALESCE(@garageName, GarageName),
+         Address = COALESCE(@address, Address),
+         Phone = COALESCE(@phone, Phone),
+         Email = COALESCE(@email, Email),
+         description = COALESCE(@description, description),
+         opening_hours = COALESCE(@openingHours, opening_hours),
+         open_days = COALESCE(@openDays, open_days),
+         service_capacity = COALESCE(@serviceCapacity, service_capacity),
+         slot_duration = COALESCE(@slotDuration, slot_duration),
+         max_parallel_slots = COALESCE(@maxParallelSlots, max_parallel_slots),
+         tax_code = COALESCE(@taxCode, tax_code),
+         rescue_hotline = COALESCE(@rescueHotline, rescue_hotline),
+         bank_name = COALESCE(@bankName, bank_name),
+         bank_account_number = COALESCE(@bankAccountNumber, bank_account_number),
+         bank_account_holder = COALESCE(@bankAccountHolder, bank_account_holder),
+         services_offered = COALESCE(@servicesOffered, services_offered),
+         vat_rate = COALESCE(@vatRate, vat_rate),
+         warranty_terms = COALESCE(@warrantyTerms, warranty_terms),
+         invoice_footer_note = COALESCE(@invoiceFooterNote, invoice_footer_note),
+         receive_zalo_notif = COALESCE(@receiveZaloNotif, receive_zalo_notif),
+         receive_sms_notif = COALESCE(@receiveSmsNotif, receive_sms_notif),
+         receive_email_report = COALESCE(@receiveEmailReport, receive_email_report),
+         sound_alert_enabled = COALESCE(@soundAlertEnabled, sound_alert_enabled),
+         avatar_url = COALESCE(@avatarUrl, avatar_url),
+         banner_url = COALESCE(@bannerUrl, banner_url),
+         IsActive = COALESCE(@isActive, IsActive),
+         UpdatedAt = NOW()
+       WHERE GarageID = @garageId`,
+      [
+        { name: 'garageId', type: sql.Int, value: garageId },
+        { name: 'garageName', type: sql.NVarChar, value: dto.garageName ?? null },
+        { name: 'address', type: sql.NVarChar, value: dto.address ?? null },
+        { name: 'phone', type: sql.VarChar, value: dto.phone ?? null },
+        { name: 'email', type: sql.VarChar, value: dto.email ?? null },
+        { name: 'description', type: sql.NVarChar, value: dto.description ?? null },
+        { name: 'openingHours', type: sql.VarChar, value: dto.openingHours ?? null },
+        { name: 'openDays', type: sql.NVarChar, value: dto.openDays ?? null },
+        { name: 'serviceCapacity', type: sql.Int, value: dto.serviceCapacity ?? null },
+        { name: 'slotDuration', type: sql.Int, value: dto.slotDuration ?? null },
+        { name: 'maxParallelSlots', type: sql.Int, value: dto.maxParallelSlots ?? null },
+        { name: 'taxCode', type: sql.VarChar, value: dto.taxCode ?? null },
+        { name: 'rescueHotline', type: sql.VarChar, value: dto.rescueHotline ?? null },
+        { name: 'bankName', type: sql.NVarChar, value: dto.bankName ?? null },
+        { name: 'bankAccountNumber', type: sql.VarChar, value: dto.bankAccountNumber ?? null },
+        { name: 'bankAccountHolder', type: sql.NVarChar, value: dto.bankAccountHolder ?? null },
+        { name: 'servicesOffered', type: sql.NVarChar, value: dto.servicesOffered ?? null },
+        { name: 'vatRate', type: sql.Decimal, value: dto.vatRate ?? null },
+        { name: 'warrantyTerms', type: sql.NVarChar, value: dto.warrantyTerms ?? null },
+        { name: 'invoiceFooterNote', type: sql.NVarChar, value: dto.invoiceFooterNote ?? null },
+        { name: 'receiveZaloNotif', type: sql.Bit, value: dto.receiveZaloNotif !== undefined ? (dto.receiveZaloNotif ? 1 : 0) : null },
+        { name: 'receiveSmsNotif', type: sql.Bit, value: dto.receiveSmsNotif !== undefined ? (dto.receiveSmsNotif ? 1 : 0) : null },
+        { name: 'receiveEmailReport', type: sql.Bit, value: dto.receiveEmailReport !== undefined ? (dto.receiveEmailReport ? 1 : 0) : null },
+        { name: 'soundAlertEnabled', type: sql.Bit, value: dto.soundAlertEnabled !== undefined ? (dto.soundAlertEnabled ? 1 : 0) : null },
+        { name: 'avatarUrl', type: sql.VarChar, value: dto.avatarUrl ?? null },
+        { name: 'bannerUrl', type: sql.VarChar, value: dto.bannerUrl ?? null },
+        { name: 'isActive', type: sql.Bit, value: dto.isActive !== undefined ? (dto.isActive ? 1 : 0) : null },
+      ]
+    );
+
+    // 2. Cập nhật họ tên chủ / số điện thoại tài khoản nếu có
+    if (dto.ownerName || dto.phone) {
+      await this.dbService.query(
+        `UPDATE Users SET 
+           FullName = COALESCE(@ownerName, FullName),
+           PhoneNumber = COALESCE(@phone, PhoneNumber)
+         WHERE UserID = @userId`,
+        [
+          { name: 'userId', type: sql.Int, value: userId },
+          { name: 'ownerName', type: sql.NVarChar, value: dto.ownerName ?? null },
+          { name: 'phone', type: sql.VarChar, value: dto.phone ?? null },
+        ]
+      );
+    }
+
+    return this.getMyGarage(userId);
   }
 }

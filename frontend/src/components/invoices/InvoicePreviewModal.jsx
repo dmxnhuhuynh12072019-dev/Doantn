@@ -261,19 +261,19 @@ const InvoicePreviewModal = ({ isOpen, onClose, appointmentId }) => {
                       </div>
                     </td>
                     <td colSpan={2} className="border-r border-black p-1.5 font-bold">Tổng tiền (A + B + C):</td>
-                    <td className="p-1.5 text-right font-bold">{formatNumber(invoice.totalSupplies + invoice.totalLabor + invoice.oldDebt)}</td>
+                    <td className="p-1.5 text-right font-bold">{formatNumber((invoice.totalSupplies || 0) + (invoice.totalLabor || 0) + (invoice.oldDebt || 0))}</td>
                   </tr>
                   <tr className="border-b border-black">
                     <td colSpan={2} className="border-r border-black p-1.5">Giảm giá:</td>
-                    <td className="p-1.5 text-right">{formatNumber(invoice.discount)}</td>
+                    <td className="p-1.5 text-right">{formatNumber(invoice.discount || 0)}</td>
                   </tr>
                   <tr className="border-b border-black">
                     <td colSpan={2} className="border-r border-black p-1.5 italic">Đưa trước:</td>
-                    <td className="p-1.5 text-right italic">{formatNumber(invoice.prepaid)}</td>
+                    <td className="p-1.5 text-right italic">{formatNumber(invoice.prepaid || 0)}</td>
                   </tr>
                   <tr>
                     <td colSpan={2} className="border-r border-black p-2 font-black text-sm align-middle">Thanh toán:</td>
-                    <td className="p-2 text-right font-black text-base align-middle">{formatNumber(invoice.grandTotal)}</td>
+                    <td className="p-2 text-right font-black text-base align-middle">{formatNumber(invoice.grandTotal ?? Math.max(0, ((invoice.totalSupplies || 0) + (invoice.totalLabor || 0) + (invoice.oldDebt || 0)) - (invoice.discount || 0) - (invoice.prepaid || 0)))}</td>
                   </tr>
                   <tr>
                     <td colSpan={3}></td>

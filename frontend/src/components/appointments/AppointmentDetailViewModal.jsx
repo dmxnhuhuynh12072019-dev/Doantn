@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getInvoiceData } from '../../services/extensionService';
 
 const AppointmentDetailViewModal = ({
   isOpen,
@@ -8,6 +9,25 @@ const AppointmentDetailViewModal = ({
   onOpenReview,
 }) => {
   const [selectedImage, setSelectedImage] = useState(null);
+  const [invoiceData, setInvoiceData] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (isOpen && appointment?.AppointmentID) {
+      getInvoiceData(appointment.AppointmentID)
+        .then(data => {
+          if (isMounted) setInvoiceData(data);
+        })
+        .catch(() => {
+          if (isMounted) setInvoiceData(null);
+        });
+    } else {
+      setInvoiceData(null);
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, appointment?.AppointmentID]);
 
   if (!isOpen || !appointment) return null;
 
@@ -31,9 +51,11 @@ const AppointmentDetailViewModal = ({
     : 'Chưa xác định';
   const executionDate = appointment.ExecutionDate
     ? new Date(appointment.ExecutionDate).toLocaleDateString('vi-VN')
-    : apptDate;
+    : (invoiceData?.dates?.deliveryDate || apptDate);
   const odo = appointment.ExecutionOdometer || appointment.CurrentOdometer || 0;
-  const totalCost = Number(appointment.TotalCost || 0);
+  
+  // Total cost priority: invoiceData.grandTotal -> appointment.TotalCost -> calculated items total -> 0
+  const totalCost = invoiceData?.grandTotal ?? (Number(appointment.TotalCost) > 0 ? Number(appointment.TotalCost) : 0);
 
   // Parse details string into itemized parts and technical notes
   const rawDetails = appointment.Details || appointment.Notes || '';
@@ -52,7 +74,12 @@ const AppointmentDetailViewModal = ({
   }
 
   if (itemsList.length === 0) {
-    if (rawDetails) {
+    if (invoiceData && (invoiceData.supplies?.length || invoiceData.labor?.length)) {
+      itemsList = [
+        ...(invoiceData.supplies || []).map(s => s.name),
+        ...(invoiceData.labor || []).map(l => l.name),
+      ];
+    } else if (rawDetails) {
       itemsList = rawDetails.split(/[,;\n]+/).map(s => s.trim()).filter(Boolean);
     } else {
       itemsList = [
@@ -237,7 +264,7 @@ const AppointmentDetailViewModal = ({
 
             <div className="text-right">
               <div className="text-2xl font-black text-emerald-400 tracking-tight">
-                {formatVnd(totalCost > 0 ? totalCost : 1200000)}
+                {formatVnd(totalCost)}
               </div>
               <span className="text-[11px] text-slate-300 font-medium">
                 {isCompleted ? '✓ Đã thanh toán đầy đủ' : 'Thanh toán tại quầy khi nhận xe'}

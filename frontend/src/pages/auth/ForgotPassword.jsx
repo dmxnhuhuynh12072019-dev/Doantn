@@ -31,64 +31,54 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950 relative overflow-hidden p-4 sm:p-6 lg:p-8 selection:bg-indigo-500 selection:text-white">
-      {/* Dynamic Background Glowing Orbs */}
-      <div className="absolute -top-40 -left-40 w-96 h-96 bg-indigo-600/25 rounded-full blur-3xl pointer-events-none animate-pulse"></div>
-      <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-teal-500/15 rounded-full blur-3xl pointer-events-none"></div>
-
-      {/* Grid Pattern Overlay */}
-      <div 
-        className="absolute inset-0 opacity-[0.03] pointer-events-none" 
-        style={{ 
-          backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', 
-          backgroundSize: '32px 32px' 
-        }} 
-      />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 relative overflow-hidden p-4 sm:p-6 lg:p-8 selection:bg-indigo-500 selection:text-white">
+      {/* Subtle Ambient Background Gradients */}
+      <div className="absolute -top-32 -left-32 w-80 h-80 bg-indigo-200/30 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="absolute -bottom-32 -right-32 w-80 h-80 bg-teal-200/20 rounded-full blur-3xl pointer-events-none"></div>
 
       {/* Form Container */}
-      <div className="relative z-10 w-full max-w-md bg-slate-900/80 backdrop-blur-2xl border border-slate-800/80 rounded-3xl shadow-2xl shadow-black/80 overflow-hidden p-6 sm:p-8">
+      <div className="relative z-10 w-full max-w-md bg-white border border-slate-200/90 rounded-3xl shadow-xl shadow-slate-200/70 overflow-hidden p-6 sm:p-8">
         
         {/* Brand Header */}
         <div className="text-center mb-6">
           <Link to="/" className="inline-flex items-center gap-2.5 mb-3 group">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-teal-400 p-0.5 shadow-lg shadow-indigo-500/30 group-hover:scale-105 transition-transform">
-              <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
-                <Wrench className="w-5 h-5 text-indigo-400" />
-              </div>
+            <div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+              <Wrench className="w-5 h-5" />
             </div>
-            <span className="text-xl font-extrabold tracking-tight text-white">
-              ACOH <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-teal-300">AutoCare</span>
+            <span className="text-xl font-extrabold tracking-tight text-slate-900">
+              ACOH <span className="text-indigo-600">AutoCare</span>
             </span>
           </Link>
-          <h2 className="text-2xl font-bold text-white tracking-tight">Quên mật khẩu? 🔐</h2>
-          <p className="text-slate-400 text-xs sm:text-sm mt-1">
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Quên mật khẩu? 🔐</h2>
+          <p className="text-slate-500 text-xs sm:text-sm mt-1">
             Nhập email đã đăng ký để nhận mã OTP khôi phục tài khoản.
           </p>
         </div>
 
         {/* Error Alert */}
         {error && (
-          <div className="mb-4 p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs sm:text-sm font-medium flex items-start gap-2.5">
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
+          <div className="mb-4 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs sm:text-sm font-bold flex items-start gap-2.5 animate-shake">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
             <span>{error}</span>
           </div>
         )}
 
         {/* Success Alert */}
         {success && (
-          <div className="mb-4 p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs sm:text-sm font-medium flex items-start gap-2.5">
-            <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-400" />
+          <div className="mb-4 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs sm:text-sm font-bold flex items-start gap-2.5">
+            <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600" />
             <span>{success}</span>
           </div>
         )}
 
+        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="block text-xs sm:text-sm font-semibold text-slate-300">
-              Địa chỉ Email
+            <label className="block text-xs sm:text-sm font-bold text-slate-700">
+              Địa chỉ Email của bạn
             </label>
             <div className="relative flex items-center group">
-              <div className="absolute left-3.5 text-slate-400 group-focus-within:text-indigo-400 transition-colors pointer-events-none">
+              <div className="absolute left-3.5 text-slate-400 group-focus-within:text-indigo-600 transition-colors pointer-events-none">
                 <Mail className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
               <input
@@ -96,7 +86,7 @@ const ForgotPassword = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full bg-slate-950/70 text-white text-xs sm:text-sm rounded-2xl pl-11 pr-4 py-3 sm:py-3.5 border border-slate-800 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/15 outline-none transition-all placeholder:text-slate-500 hover:border-slate-700"
+                className="w-full bg-slate-50/60 focus:bg-white text-slate-900 text-xs sm:text-sm rounded-2xl pl-11 pr-4 py-3 sm:py-3.5 border border-slate-200 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all placeholder:text-slate-400 hover:border-slate-300 font-medium"
                 placeholder="name@example.com"
               />
             </div>
@@ -105,35 +95,35 @@ const ForgotPassword = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 px-6 rounded-2xl text-sm sm:text-base font-bold text-white bg-gradient-to-r from-indigo-600 via-indigo-500 to-teal-500 hover:from-indigo-500 hover:to-teal-400 focus:outline-none focus:ring-4 focus:ring-indigo-500/25 disabled:opacity-60 transition-all transform active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-indigo-600/30 hover:shadow-indigo-600/50"
+            className="w-full py-3.5 px-6 rounded-2xl text-sm sm:text-base font-black text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/20 disabled:opacity-60 transition-all transform active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-indigo-600/25 hover:shadow-indigo-600/35"
           >
             {loading ? (
               <>
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                <span>Đang gửi OTP...</span>
+                <span>Đang gửi mã OTP...</span>
               </>
             ) : (
               <>
+                <span>Gửi mã xác thực OTP</span>
                 <Send className="w-4 h-4" />
-                <span>Gửi mã OTP xác thực</span>
               </>
             )}
           </button>
         </form>
 
-        {/* Back Link & Security Note */}
-        <div className="mt-6 pt-4 border-t border-slate-800/80 flex flex-col items-center gap-3">
+        {/* Back Link */}
+        <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
           <Link
             to="/login"
-            className="inline-flex items-center gap-2 font-bold text-xs sm:text-sm text-indigo-400 hover:text-indigo-300 hover:underline transition"
+            className="inline-flex items-center gap-1.5 font-bold text-slate-600 hover:text-indigo-600 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            Quay lại trang Đăng nhập
+            Quay lại Đăng nhập
           </Link>
 
-          <div className="flex items-center gap-1.5 text-slate-500 text-[11px]">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Mã OTP có hiệu lực trong 5 phút</span>
+          <div className="flex items-center gap-1 text-slate-400 text-[11px] font-semibold">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Mã hóa SSL</span>
           </div>
         </div>
 

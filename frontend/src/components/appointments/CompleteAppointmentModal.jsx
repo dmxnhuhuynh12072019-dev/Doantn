@@ -65,13 +65,32 @@ const CompleteAppointmentModal = ({ isOpen, onClose, onSave, appointment }) => {
         setTechNotes('Má phanh trước mòn ~30%, lốp sau cần kiểm tra sau 5.000km tới.');
       }
       
-      setSelectedItems([
+      let initialItems = [
         'Thay dầu Castrol Magnatec 10W-40 (4L)',
         'Thay lọc nhớt',
         'Vệ sinh má phanh trước & sau',
         'Kiểm tra hệ thống phanh, đèn, lốp xe',
-      ]);
-      setServiceCost(1200000);
+      ];
+      const rawDetails = appointment.Details || appointment.Notes || '';
+      if (rawDetails.includes('[Hạng mục đã thực hiện:')) {
+        const match = rawDetails.match(/\[Hạng mục đã thực hiện:\s*([^\]]+)\]/);
+        if (match && match[1]) {
+          const parsed = match[1].split(',').map(s => s.trim()).filter(Boolean);
+          if (parsed.length > 0) initialItems = parsed;
+        }
+      }
+      setSelectedItems(initialItems);
+
+      if (appointment.TotalCost && Number(appointment.TotalCost) > 0) {
+        setServiceCost(Number(appointment.TotalCost));
+      } else {
+        const sum = initialItems.reduce((acc, item) => {
+          const matched = PRESET_SERVICE_ITEMS.find(p => p.name.toLowerCase() === item.toLowerCase());
+          return acc + (matched ? matched.price : 250000);
+        }, 0);
+        setServiceCost(sum > 0 ? sum : 1200000);
+      }
+
       setDiscount(0);
       setIsPaid(true);
       setError('');

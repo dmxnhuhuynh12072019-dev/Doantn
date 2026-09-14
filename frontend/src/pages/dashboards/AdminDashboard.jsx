@@ -342,6 +342,27 @@ const AdminDashboard = () => {
           password: newAccountForm.password,
           fullName: newAccountForm.fullName.trim(),
         });
+        // Cập nhật ngay lập tức giao diện
+        setGarages((prev) =>
+          prev.map((g) =>
+            g.GarageID === selectedGarageForLink.GarageID
+              ? {
+                  ...g,
+                  UserID: res.user?.UserID || res.user?.userId || 999,
+                  OwnerName: newAccountForm.fullName.trim(),
+                  OwnerEmail: newAccountForm.email.trim(),
+                  OwnerPhone: newAccountForm.phoneNumber?.trim() || g.OwnerPhone,
+                }
+              : g
+          )
+        );
+        setSelectedGarageForLink((prev) => prev ? ({
+          ...prev,
+          UserID: res.user?.UserID || res.user?.userId || 999,
+          OwnerName: newAccountForm.fullName.trim(),
+          OwnerEmail: newAccountForm.email.trim(),
+          OwnerPhone: newAccountForm.phoneNumber?.trim() || prev.OwnerPhone,
+        }) : null);
         fetchGarages();
         fetchUsers();
       } else if (linkTab === 'existing') {
@@ -353,6 +374,20 @@ const AdminDashboard = () => {
           userId: Number(selectedUserIdToLink),
         });
         toast.success(res.message || 'Đã liên kết tài khoản thành công!');
+        const chosenUser = users.find((u) => u.UserID === Number(selectedUserIdToLink));
+        setGarages((prev) =>
+          prev.map((g) =>
+            g.GarageID === selectedGarageForLink.GarageID
+              ? {
+                  ...g,
+                  UserID: Number(selectedUserIdToLink),
+                  OwnerName: chosenUser?.FullName || g.OwnerName,
+                  OwnerEmail: chosenUser?.Email || g.OwnerEmail,
+                  OwnerPhone: chosenUser?.PhoneNumber || g.OwnerPhone,
+                }
+              : g
+          )
+        );
         setIsLinkModalOpen(false);
         fetchGarages();
         fetchUsers();
@@ -1412,13 +1447,15 @@ const AdminDashboard = () => {
 
                             {/* Owner */}
                             <td className="px-6 py-4">
-                              {gara.OwnerName ? (
+                              {(gara.OwnerName || gara.OwnerEmail || gara.UserID) ? (
                                 <div>
                                   <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
                                     <span className="text-xs">👤</span>
-                                    <span>{gara.OwnerName}</span>
+                                    <span>{gara.OwnerName || gara.OwnerEmail || 'Chủ đại diện Gara'}</span>
                                   </div>
-                                  <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{gara.OwnerEmail}</div>
+                                  {gara.OwnerEmail && (
+                                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{gara.OwnerEmail}</div>
+                                  )}
                                   {gara.OwnerPhone && (
                                     <div className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1">
                                       <span>📞</span>
@@ -1471,16 +1508,6 @@ const AdminDashboard = () => {
                             {/* Action */}
                             <td className="px-6 py-4 text-center">
                               <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                                {/* Quick Login into Garage */}
-                                <button
-                                  onClick={() => handleQuickLoginAsGarage(gara)}
-                                  title="Đăng nhập trực tiếp vào Gara này để quản lý và xác nhận đặt lịch"
-                                  className="px-2.5 py-1.5 rounded-xl font-bold text-xs border border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/40 hover:bg-violet-100 dark:hover:bg-violet-900/50 transition cursor-pointer flex items-center gap-1 shadow-xs"
-                                >
-                                  <span>⚡</span>
-                                  <span>Vào Gara</span>
-                                </button>
-
                                 {/* Link Modal Button */}
                                 <button
                                   onClick={() => handleOpenLinkModal(gara)}
@@ -2113,22 +2140,21 @@ const AdminDashboard = () => {
                   <div className="flex gap-2 pt-1">
                     <button
                       type="button"
-                      onClick={() => handleQuickLoginAsGarage(selectedGarageForLink)}
-                      className="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 shadow-md shadow-indigo-600/20 transition cursor-pointer flex items-center justify-center gap-1.5"
-                    >
-                      <span>⚡</span>
-                      <span>Vào Gara ngay (Tự động đăng nhập)</span>
-                    </button>
-                    <button
-                      type="button"
                       onClick={() => {
                         navigator.clipboard.writeText(`Email: ${createdCredentials.email} | Mật khẩu: ${createdCredentials.password}`);
                         toast.success('Đã sao chép tài khoản vào bộ nhớ tạm!');
                       }}
-                      className="py-2.5 px-3 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer"
-                      title="Sao chép thông tin"
+                      className="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-600/20 transition cursor-pointer flex items-center justify-center gap-1.5"
                     >
-                      📋 Copy
+                      <span>📋</span>
+                      <span>Sao chép thông tin tài khoản</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsLinkModalOpen(false)}
+                      className="py-2.5 px-4 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer"
+                    >
+                      Đóng
                     </button>
                   </div>
                 </div>
@@ -2146,15 +2172,6 @@ const AdminDashboard = () => {
                         <span className="font-bold text-amber-600 dark:text-amber-400">Chưa liên kết tài khoản nào</span>
                       )}
                     </div>
-                    {selectedGarageForLink.UserID && (
-                      <button
-                        type="button"
-                        onClick={() => handleQuickLoginAsGarage(selectedGarageForLink)}
-                        className="px-2.5 py-1 rounded-lg text-[11px] font-bold text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-950/60 hover:bg-violet-100 border border-violet-200 dark:border-violet-800 transition cursor-pointer"
-                      >
-                        ⚡ Vào Gara
-                      </button>
-                    )}
                   </div>
 
                   {/* Tabs Navigation */}

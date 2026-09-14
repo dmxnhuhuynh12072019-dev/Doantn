@@ -15,6 +15,8 @@ import PresetOdometerChecklist from '../../components/maintenances/PresetOdomete
 import NotificationBell from '../../components/notifications/NotificationBell';
 import InvoicePreviewModal from '../../components/invoices/InvoicePreviewModal';
 import AppointmentDetailViewModal from '../../components/appointments/AppointmentDetailViewModal';
+import GarageSettingsTab from '../../components/garages/GarageSettingsTab';
+import IdentifyVehicleModal from '../../components/vehicles/IdentifyVehicleModal';
 
 const GarageDashboard = () => {
   const { user, logout, themePreference, updateThemePreference } = useAuth();
@@ -22,7 +24,7 @@ const GarageDashboard = () => {
   const { toast } = useModal();
   const { socket } = useSocket();
 
-  // Tab state: 'overview' | 'appointments' | 'services' | 'customers' | 'vehicles' | 'analytics' | 'settings'
+  // Tab state: 'overview' | 'appointments' | 'services' | 'vehicles' | 'analytics' | 'settings'
   const [activeTab, setActiveTab] = useState('overview');
 
   // Filter in appointments tab
@@ -32,6 +34,7 @@ const GarageDashboard = () => {
   const [isQuickLogOpen, setIsQuickLogOpen] = useState(false);
   const [isOcrScannerOpen, setIsOcrScannerOpen] = useState(false);
   const [isPresetKmOpen, setIsPresetKmOpen] = useState(false);
+  const [isIdentifyModalOpen, setIsIdentifyModalOpen] = useState(false);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [selectedInvoiceApptId, setSelectedInvoiceApptId] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -233,9 +236,44 @@ const GarageDashboard = () => {
       setFoundVehicle(vehicle);
       await fetchQuickVehicleHistory(vehicle.VehicleID);
     } catch (err) {
-      setQuickSearchError(err.message || 'Không tìm thấy phương tiện nào với biển số xe này.');
+      // Create temporary un-identified vehicle object so Gara can immediately identify & register it
+      const cleanPlate = licensePlateSearch.trim().toUpperCase();
+      setFoundVehicle({
+        VehicleID: null,
+        vehicleId: null,
+        LicensePlate: cleanPlate,
+        licensePlate: cleanPlate,
+        VehicleType: 'Ô tô',
+        Brand: 'Ô tô',
+        Model: 'Chưa cập nhật model',
+        CurrentOdometer: 0,
+        OwnerName: 'Chủ xe (Chờ định danh)',
+        history: [],
+      });
+      setQuickSearchError('');
     } finally {
       setSearchingQuick(false);
+    }
+  };
+
+  const handleOpenChecklistOrIdentify = () => {
+    if (!foundVehicle) return;
+    const vId = foundVehicle.VehicleID || foundVehicle.vehicleId;
+    if (!vId) {
+      setIsIdentifyModalOpen(true);
+    } else {
+      setIsPresetKmOpen(true);
+    }
+  };
+
+  const handleIdentifiedSuccess = (newVehicle, openChecklistAfter = true) => {
+    setFoundVehicle(newVehicle);
+    if (newVehicle.VehicleID || newVehicle.vehicleId) {
+      fetchQuickVehicleHistory(newVehicle.VehicleID || newVehicle.vehicleId);
+    }
+    toast.success(`🎉 Đã định danh xe ${newVehicle.LicensePlate} (${newVehicle.Brand} ${newVehicle.Model}) thành công!`);
+    if (openChecklistAfter) {
+      setIsPresetKmOpen(true);
     }
   };
 
@@ -342,11 +380,6 @@ const GarageDashboard = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
               </svg>
             )},
-            { id: 'customers', title: 'Khách hàng', icon: (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            )},
             { id: 'vehicles', title: 'Hồ sơ phương tiện', icon: (
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 16l-1.5-6.5A2 2 0 0015.5 8h-7a2 2 0 00-2 1.5L5 16m14 0a2 2 0 11-4 0 2 2 0 014 0zM9 16a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -427,7 +460,6 @@ const GarageDashboard = () => {
               {activeTab === 'overview' && 'Tổng quan vận hành'}
               {activeTab === 'appointments' && 'Quản lý lịch hẹn tiếp nhận'}
               {activeTab === 'services' && 'Dịch vụ & Ghi sổ bảo dưỡng'}
-              {activeTab === 'customers' && 'Quản lý khách hàng'}
               {activeTab === 'vehicles' && 'Quản lý phương tiện'}
               {activeTab === 'analytics' && 'Báo cáo doanh thu & vận hành'}
               {activeTab === 'settings' && 'Cài đặt hệ thống Gara'}
@@ -563,16 +595,19 @@ const GarageDashboard = () => {
                   <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xl shrink-0">
                     💵
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1 flex-1">
                     <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block">
                       Tổng doanh thu xưởng
                     </span>
                     <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-none">
                       {formatCurrency(analyticsData?.totalRevenue ?? 0)}
                     </p>
-                    <p className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5 pt-0.5">
-                      <span>Đã quyết toán</span>
-                    </p>
+                    <button
+                      onClick={() => setActiveTab('analytics')}
+                      className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline block pt-0.5 cursor-pointer"
+                    >
+                      Xem chi tiết →
+                    </button>
                   </div>
                 </div>
 
@@ -716,7 +751,7 @@ const GarageDashboard = () => {
                   
                   {/* Revenue Chart Card */}
                   <div className="bg-white dark:bg-slate-800 rounded-3xl p-5 sm:p-6 border border-slate-200/80 dark:border-slate-700 shadow-2xs">
-                    <div className="flex items-start justify-between">
+                    <div className="flex items-start justify-between gap-3">
                       <div>
                         <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block">
                           Doanh thu lũy kế dịch vụ
@@ -728,26 +763,52 @@ const GarageDashboard = () => {
                           <span>{analyticsData?.totalVehicles ?? 0} lượt phương tiện đã hoàn tất</span>
                         </p>
                       </div>
+
+                      <button
+                        onClick={() => setActiveTab('analytics')}
+                        className="px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 text-xs font-bold transition flex items-center gap-1 cursor-pointer border border-indigo-100 dark:border-indigo-900/40 shadow-2xs shrink-0"
+                        title="Xem báo cáo doanh thu chi tiết"
+                      >
+                        <span>Xem chi tiết</span>
+                        <span>→</span>
+                      </button>
                     </div>
 
                     {/* Dynamic Bar/Line Preview */}
                     <div className="mt-4 pt-2">
-                      <div className="h-28 w-full flex items-end gap-1.5 px-1 border-b border-slate-100 dark:border-slate-700">
+                      <div className="h-32 w-full flex items-end gap-2 px-1 border-b border-slate-100 dark:border-slate-700 pb-1">
                         {(analyticsData?.dailyVisits || Array.from({ length: 7 }, (_, i) => ({ date: `${i + 1}`, count: 0 }))).slice(-7).map((item, idx) => {
                           const maxCount = Math.max(...(analyticsData?.dailyVisits || []).map(d => d.count), 1);
-                          const h = (item.count / maxCount) * 100;
+                          const h = Math.max((item.count / maxCount) * 100, item.count > 0 ? 15 : 6);
                           return (
-                            <div key={idx} className="flex-1 flex flex-col items-center gap-1">
-                              <div 
-                                className="w-full bg-gradient-to-t from-indigo-600 to-indigo-500 rounded-t-md transition-all duration-300 min-h-[4px]"
-                                style={{ height: `${Math.max(h, 6)}%` }}
-                                title={`${item.date}: ${item.count} lượt`}
-                              ></div>
+                            <div key={idx} className="flex-1 h-full flex flex-col justify-end items-center gap-1 group relative">
+                              {/* Hover Tooltip */}
+                              <div className="absolute -top-7 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-[10px] font-bold py-0.5 px-1.5 rounded shadow pointer-events-none whitespace-nowrap z-10">
+                                {item.count} xe
+                              </div>
+                              <div className="w-full flex items-end justify-center h-full">
+                                <div 
+                                  className="w-full max-w-[28px] bg-gradient-to-t from-indigo-600 to-indigo-400 dark:from-indigo-500 dark:to-indigo-300 rounded-t-lg transition-all duration-300 group-hover:brightness-110 shadow-xs"
+                                  style={{ height: `${h}%` }}
+                                ></div>
+                              </div>
                               <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500">{item.date}</span>
                             </div>
                           );
                         })}
                       </div>
+                    </div>
+
+                    {/* Bottom Forward Link */}
+                    <div className="pt-3 mt-2 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                      <span className="text-[11px] text-slate-400 dark:text-slate-400 font-medium">Lượt xe 7 ngày qua</span>
+                      <button
+                        onClick={() => setActiveTab('analytics')}
+                        className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 flex items-center gap-1 transition cursor-pointer"
+                      >
+                        <span>Xem báo cáo doanh thu</span>
+                        <span>→</span>
+                      </button>
                     </div>
                   </div>
 
@@ -1080,34 +1141,72 @@ const GarageDashboard = () => {
 
                   {foundVehicle && (
                     <div className="pt-4 border-t border-slate-100 dark:border-slate-700 space-y-3">
+                      
+                      {/* Identification Status Banner if not registered yet */}
+                      {(!foundVehicle.VehicleID && !foundVehicle.vehicleId) && (
+                        <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-800 dark:text-amber-300 text-[11px] font-bold flex items-center justify-between gap-2">
+                          <span className="flex items-center gap-1.5">
+                            <span>⚠️</span>
+                            <span>Xe mới (Chưa lưu trong CSDL)</span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setIsIdentifyModalOpen(true)}
+                            className="px-2 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-bold transition cursor-pointer"
+                          >
+                            Định danh ngay
+                          </button>
+                        </div>
+                      )}
+
                       <div className="flex justify-between items-center">
                         <span className="text-xs font-black text-slate-900 dark:text-white">
-                          {foundVehicle.Brand} {foundVehicle.Model}
+                          {foundVehicle.Brand || foundVehicle.brand} {foundVehicle.Model || foundVehicle.model}
                         </span>
                         <span className="px-2.5 py-0.5 border-2 border-slate-800 dark:border-slate-300 rounded-md text-xs font-black bg-white dark:bg-slate-900 text-slate-800 dark:text-white">
-                          {foundVehicle.LicensePlate}
+                          {foundVehicle.LicensePlate || foundVehicle.licensePlate}
                         </span>
                       </div>
 
                       <div className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl text-xs space-y-1 border border-slate-100 dark:border-slate-700/60">
                         <div className="flex justify-between text-slate-500 dark:text-slate-400">
                           <span>Chủ xe:</span>
-                          <strong className="text-slate-800 dark:text-slate-200">{foundVehicle.OwnerName}</strong>
+                          <strong className="text-slate-800 dark:text-slate-200">{foundVehicle.OwnerName || foundVehicle.customerName || 'Chủ xe'}</strong>
                         </div>
                         <div className="flex justify-between text-slate-500 dark:text-slate-400">
                           <span>Odo hiện tại:</span>
                           <strong className="text-indigo-600 dark:text-indigo-400 font-bold">
-                            {(foundVehicle.CurrentOdometer ?? 0).toLocaleString()} km
+                            {(foundVehicle.CurrentOdometer ?? foundVehicle.currentOdometer ?? 0).toLocaleString()} km
                           </strong>
                         </div>
                       </div>
 
-                      <button
-                        onClick={() => setIsPresetKmOpen(true)}
-                        className="w-full py-2.5 px-3 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white rounded-xl text-xs font-bold shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
-                      >
-                        🛠️ Lập phiếu kiểm tra mốc Km
-                      </button>
+                      {(!foundVehicle.VehicleID && !foundVehicle.vehicleId) ? (
+                        <button
+                          type="button"
+                          onClick={() => setIsIdentifyModalOpen(true)}
+                          className="w-full py-2.5 px-3 bg-gradient-to-r from-amber-500 to-indigo-600 hover:from-amber-600 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
+                        >
+                          📝 Định danh & Lập phiếu kiểm tra mốc Km
+                        </button>
+                      ) : (
+                        <div className="space-y-2">
+                          <button
+                            type="button"
+                            onClick={handleOpenChecklistOrIdentify}
+                            className="w-full py-2.5 px-3 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white rounded-xl text-xs font-bold shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
+                          >
+                            🛠️ Lập phiếu kiểm tra mốc Km
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleViewVehicleProfile(foundVehicle.VehicleID || foundVehicle.vehicleId)}
+                            className="w-full py-2 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-750 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                          >
+                            🔍 Xem hồ sơ phương tiện
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1133,14 +1232,27 @@ const GarageDashboard = () => {
                   ) : (
                     <div className="space-y-3 overflow-y-auto max-h-[380px] pr-1">
                       {quickVehicleHistory.map((rec) => (
-                        <div key={rec.HistoryID} className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-100 dark:border-slate-700/60 text-xs space-y-1.5">
+                        <div key={rec.HistoryID} className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-100 dark:border-slate-700/60 text-xs space-y-2">
                           <div className="flex justify-between items-center font-bold">
                             <span className="text-slate-700 dark:text-slate-200">
                               📅 {new Date(rec.ExecutionDate).toLocaleDateString('vi-VN')} ({rec.ExecutionOdometer?.toLocaleString()} km)
                             </span>
-                            <span className="text-indigo-600 dark:text-indigo-400 font-black text-sm">
-                              {formatCurrency(rec.TotalCost)}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-indigo-600 dark:text-indigo-400 font-black text-sm">
+                                {formatCurrency(rec.TotalCost)}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedInvoiceApptId(rec.HistoryID);
+                                  setIsInvoiceModalOpen(true);
+                                }}
+                                className="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-[11px] font-bold shadow-xs transition flex items-center gap-1 cursor-pointer"
+                              >
+                                <span>🧾</span>
+                                <span>In hóa đơn</span>
+                              </button>
+                            </div>
                           </div>
                           <p className="text-slate-500 dark:text-slate-400 whitespace-pre-line">{rec.Details}</p>
                         </div>
@@ -1155,70 +1267,7 @@ const GarageDashboard = () => {
           )}
 
           {/* ===================================================================== */}
-          {/* 4. TAB CUSTOMERS (Khách hàng)                                         */}
-          {/* ===================================================================== */}
-          {activeTab === 'customers' && (
-            <div className="space-y-6 animate-in fade-in duration-200">
-              
-              <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200/80 dark:border-slate-700 p-6 shadow-2xs">
-                <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">
-                  Quản lý khách hàng
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Danh sách khách hàng cá nhân và tần suất bảo dưỡng xe tại xưởng.
-                </p>
-              </div>
-
-              {/* Customers Table */}
-              <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200/80 dark:border-slate-700 shadow-2xs overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-slate-50 dark:bg-slate-900/40 border-b border-slate-100 dark:border-slate-700 text-slate-400 dark:text-slate-400 font-bold">
-                        <th className="px-6 py-3.5">Khách hàng</th>
-                        <th className="px-6 py-3.5">Số điện thoại</th>
-                        <th className="px-6 py-3.5">Phương tiện</th>
-                        <th className="px-6 py-3.5">Biển số</th>
-                        <th className="px-6 py-3.5 text-right">Hành động</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-slate-700 dark:text-slate-200">
-                      {servicedVehicles.map((v) => (
-                        <tr key={v.VehicleID} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/50 transition">
-                          <td className="px-6 py-3.5 font-bold text-slate-900 dark:text-white">
-                            {v.OwnerName}
-                          </td>
-                          <td className="px-6 py-3.5 text-slate-500 dark:text-slate-400 font-medium">
-                            {v.OwnerPhone || 'Chưa cập nhật'}
-                          </td>
-                          <td className="px-6 py-3.5 font-semibold">
-                            {v.Brand} {v.Model}
-                          </td>
-                          <td className="px-6 py-3.5">
-                            <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded font-black text-[11px] text-slate-800 dark:text-slate-200">
-                              {v.LicensePlate}
-                            </span>
-                          </td>
-                          <td className="px-6 py-3.5 text-right">
-                            <button
-                              onClick={() => handleViewVehicleProfile(v.VehicleID)}
-                              className="px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition cursor-pointer"
-                            >
-                              Xem xe →
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-            </div>
-          )}
-
-          {/* ===================================================================== */}
-          {/* 5. TAB VEHICLES (Quản lý xe đã bảo dưỡng)                             */}
+          {/* 4. TAB VEHICLES (Quản lý xe đã bảo dưỡng)                             */}
           {/* ===================================================================== */}
           {activeTab === 'vehicles' && (
             <div className="space-y-6 animate-in fade-in duration-200">
@@ -1226,70 +1275,77 @@ const GarageDashboard = () => {
               <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200/80 dark:border-slate-700 p-6 shadow-2xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                   <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">
-                    Quản lý phương tiện đã phục vụ
+                    Danh Sách Phương Tiện Đã Bảo Dưỡng
                   </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Hồ sơ chi tiết các đầu xe đã từng thực hiện bảo dưỡng hoặc sửa chữa tại tiệm.
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
+                    Tổng hợp tất cả xe từng sửa chữa, cập nhật Odometer và hồ sơ kỹ thuật
                   </p>
                 </div>
 
-                <form onSubmit={handleSearchVehicle} className="flex gap-2 w-full md:w-auto">
-                  <input
-                    type="text"
-                    value={vehicleSearch}
-                    onChange={(e) => setVehicleSearch(e.target.value)}
-                    placeholder="Tìm theo biển số xe..."
-                    className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                  <button type="submit" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition cursor-pointer">
-                    Tìm kiếm
+                <div className="flex items-center gap-2.5 w-full md:w-auto">
+                  <button
+                    onClick={() => setIsOcrScannerOpen(true)}
+                    className="flex-1 md:flex-none px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <span>📷</span>
+                    <span>Quét Biển Số AI</span>
                   </button>
-                </form>
+                </div>
               </div>
 
-              {/* Table */}
-              <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200/80 dark:border-slate-700 shadow-2xs overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-slate-50 dark:bg-slate-900/40 border-b border-slate-100 dark:border-slate-700 text-slate-400 dark:text-slate-400 font-bold">
-                        <th className="px-6 py-3.5">Biển số</th>
-                        <th className="px-6 py-3.5">Hãng & Dòng xe</th>
-                        <th className="px-6 py-3.5">Odometer hiện tại</th>
-                        <th className="px-6 py-3.5">Chủ sở hữu</th>
-                        <th className="px-6 py-3.5 text-right">Chi tiết</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-slate-700 dark:text-slate-200">
-                      {servicedVehicles.map((v) => (
-                        <tr key={v.VehicleID} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/50 transition">
-                          <td className="px-6 py-3.5 font-black">
-                            <span className="px-2 py-0.5 border border-slate-800 dark:border-slate-300 rounded bg-white dark:bg-slate-900 text-[11px] text-slate-800 dark:text-slate-200">
-                              {v.LicensePlate}
-                            </span>
-                          </td>
-                          <td className="px-6 py-3.5 font-bold text-slate-900 dark:text-white">
-                            {v.Brand} {v.Model}
-                          </td>
-                          <td className="px-6 py-3.5 font-semibold text-indigo-600 dark:text-indigo-400">
-                            {(v.CurrentOdometer ?? 0).toLocaleString()} km
-                          </td>
-                          <td className="px-6 py-3.5 font-medium text-slate-600 dark:text-slate-300">
-                            {v.OwnerName}
-                          </td>
-                          <td className="px-6 py-3.5 text-right">
-                            <button
-                              onClick={() => handleViewVehicleProfile(v.VehicleID)}
-                              className="px-3.5 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition cursor-pointer"
-                            >
-                              Xem hồ sơ xe
-                            </button>
-                          </td>
+              {/* Vehicle Table */}
+              <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200/80 dark:border-slate-700 overflow-hidden shadow-2xs">
+                {loadingVehicles ? (
+                  <div className="p-12 text-center text-slate-400 text-xs">Đang tải danh sách phương tiện...</div>
+                ) : (servicedVehicles || []).length === 0 ? (
+                  <div className="p-12 text-center text-slate-400 text-xs">Chưa có phương tiện nào trong danh sách.</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 text-slate-400 font-bold uppercase tracking-wider">
+                          <th className="p-4">Biển số</th>
+                          <th className="p-4">Phương tiện</th>
+                          <th className="p-4">Chủ xe</th>
+                          <th className="p-4">Số Km hiện tại</th>
+                          <th className="p-4">Lần bảo dưỡng gần nhất</th>
+                          <th className="p-4 text-right">Thao tác</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-slate-700 dark:text-slate-200">
+                        {servicedVehicles.map((v) => (
+                          <tr key={v.VehicleID} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/50 transition">
+                            <td className="p-4 font-black">
+                              <span className="px-2 py-0.5 border border-slate-800 dark:border-slate-300 rounded bg-white dark:bg-slate-900 text-[11px] text-slate-800 dark:text-slate-200 font-mono font-bold">
+                                {v.LicensePlate}
+                              </span>
+                            </td>
+                            <td className="p-4 font-bold text-slate-900 dark:text-white">
+                              {v.Brand} {v.Model}
+                            </td>
+                            <td className="p-4 font-medium text-slate-600 dark:text-slate-300">
+                              {v.OwnerName || 'Chưa cập nhật'}
+                            </td>
+                            <td className="p-4 font-semibold text-indigo-600 dark:text-indigo-400">
+                              {(v.CurrentOdometer ?? 0).toLocaleString()} km
+                            </td>
+                            <td className="p-4 text-slate-500 dark:text-slate-400">
+                              {v.LastMaintenanceDate ? new Date(v.LastMaintenanceDate).toLocaleDateString('vi-VN') : 'Mới tiếp nhận'}
+                            </td>
+                            <td className="p-4 text-right">
+                              <button
+                                onClick={() => handleViewVehicleProfile(v.VehicleID)}
+                                className="px-3.5 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition cursor-pointer"
+                              >
+                                Xem hồ sơ xe
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
 
             </div>
@@ -1314,17 +1370,36 @@ const GarageDashboard = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Daily Visits */}
                   <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-700 shadow-2xs space-y-4">
-                    <h4 className="text-sm font-black text-slate-900 dark:text-white">
-                      📈 Lượng xe đến xưởng 15 ngày qua
-                    </h4>
-                    <div className="flex items-end gap-1.5 h-44 pt-4 border-b border-l border-slate-100 dark:border-slate-700 px-2">
+                    <div className="flex justify-between items-center">
+                      <h4 className="text-sm font-black text-slate-900 dark:text-white">
+                        📈 Lượng xe đến xưởng 15 ngày qua
+                      </h4>
+                      <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2.5 py-1 rounded-lg border border-indigo-100 dark:border-indigo-900/40">
+                        Tổng: {analyticsData.dailyVisits.reduce((acc, cur) => acc + (Number(cur.count) || 0), 0)} lượt
+                      </span>
+                    </div>
+
+                    <div className="h-48 w-full flex items-end gap-1.5 pt-6 pb-1 px-2 border-b border-l border-slate-100 dark:border-slate-700">
                       {analyticsData.dailyVisits.map((item, idx) => {
                         const maxCount = Math.max(...analyticsData.dailyVisits.map(d => d.count), 1);
-                        const h = (item.count / maxCount) * 100;
+                        const h = Math.max((item.count / maxCount) * 100, item.count > 0 ? 12 : 4);
                         return (
-                          <div key={idx} className="flex-1 flex flex-col items-center gap-1 group relative">
-                            <div className="w-full bg-indigo-600 hover:bg-indigo-700 rounded-t-md transition-all duration-300" style={{ height: `${Math.max(h, 6)}%` }}></div>
-                            <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 transform -rotate-45 sm:rotate-0 mt-1">
+                          <div key={idx} className="flex-1 h-full flex flex-col justify-end items-center gap-1 group relative">
+                            {/* Value on Hover / Top Tag */}
+                            <div className="absolute -top-7 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-[10px] font-bold py-0.5 px-1.5 rounded shadow pointer-events-none whitespace-nowrap z-10">
+                              {item.date}: <span className="text-indigo-400">{item.count} xe</span>
+                            </div>
+
+                            {/* Bar Column Container */}
+                            <div className="w-full flex items-end justify-center h-full">
+                              <div 
+                                className="w-full max-w-[22px] bg-gradient-to-t from-indigo-600 to-indigo-400 dark:from-indigo-500 dark:to-indigo-300 rounded-t-md transition-all duration-300 group-hover:brightness-110 shadow-xs group-hover:from-indigo-500 group-hover:to-indigo-300" 
+                                style={{ height: `${h}%` }}
+                              ></div>
+                            </div>
+
+                            {/* Date Label */}
+                            <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 transform -rotate-45 sm:rotate-0 mt-1 whitespace-nowrap">
                               {item.date.split('/')[0]}
                             </span>
                           </div>
@@ -1363,67 +1438,10 @@ const GarageDashboard = () => {
           )}
 
           {/* ===================================================================== */}
-          {/* 7. TAB SETTINGS (Cài đặt)                                             */}
+          {/* 7. TAB SETTINGS (Cài đặt Gara)                                        */}
           {/* ===================================================================== */}
           {activeTab === 'settings' && (
-            <div className="space-y-6 animate-in fade-in duration-200">
-              
-              <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200/80 dark:border-slate-700 p-6 shadow-2xs">
-                <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">
-                  Cài đặt thông tin Gara & Tài khoản
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Cập nhật hồ sơ xưởng dịch vụ, thời gian hoạt động và cấu hình nhận thông báo.
-                </p>
-              </div>
-
-              <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200/80 dark:border-slate-700 p-6 shadow-2xs space-y-5 max-w-2xl">
-                <div className="space-y-4">
-                  {/* Role and Partner Type Card */}
-                  <div className="p-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50 flex items-center justify-between">
-                    <div>
-                      <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider block">
-                        Cấp quyền & Vai trò
-                      </span>
-                      <strong className="text-sm font-black text-slate-900 dark:text-white mt-0.5 block">
-                        Chủ Gara Đối Tác (Role: Garage Partner)
-                      </strong>
-                    </div>
-                    <span className="px-3 py-1 bg-indigo-600 text-white text-xs font-black rounded-xl shadow-xs">
-                      🏬 Đối tác chính thức
-                    </span>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Tên Gara Đối Tác</label>
-                    <input type="text" readOnly value={user?.fullName || 'Gara AutoCare'} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs font-bold" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Email liên hệ đăng nhập</label>
-                    <input type="text" readOnly value={user?.email || 'gara@autocare.vn'} className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Giao diện mặc định</label>
-                    <div className="flex gap-2 pt-1">
-                      {['light', 'dark', 'system'].map(m => (
-                        <button
-                          key={m}
-                          onClick={() => updateThemePreference(m)}
-                          className={`flex-1 py-2 rounded-xl text-xs font-bold border transition cursor-pointer capitalize ${
-                            themePreference === m
-                              ? 'bg-indigo-600 text-white border-indigo-600'
-                              : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
-                          }`}
-                        >
-                          {m === 'light' ? '☀️ Sáng' : m === 'dark' ? '🌙 Tối' : '💻 Hệ thống'}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-            </div>
+            <GarageSettingsTab />
           )}
 
         </div>
@@ -1456,7 +1474,14 @@ const GarageDashboard = () => {
         onSearchSuccess={handleOcrSearchSuccess}
       />
 
-      {foundVehicle && (
+      <IdentifyVehicleModal
+        isOpen={isIdentifyModalOpen}
+        onClose={() => setIsIdentifyModalOpen(false)}
+        initialData={foundVehicle || {}}
+        onIdentifiedSuccess={handleIdentifiedSuccess}
+      />
+
+      {foundVehicle && (foundVehicle.VehicleID || foundVehicle.vehicleId) && (
         <PresetOdometerChecklist
           isOpen={isPresetKmOpen}
           onClose={() => setIsPresetKmOpen(false)}

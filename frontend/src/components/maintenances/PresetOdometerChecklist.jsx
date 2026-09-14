@@ -15,6 +15,7 @@ export default function PresetOdometerChecklist({ vehicle, isOpen, onClose, onSu
 
   const [odometer, setOdometer] = useState(vCurrentOdometer);
   const [notes, setNotes] = useState('');
+  const [totalCost, setTotalCost] = useState('750000');
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -50,15 +51,18 @@ export default function PresetOdometerChecklist({ vehicle, isOpen, onClose, onSu
     // Pre-select items for this category
     const defaultIds = cat.items.map(i => i.itemId);
     setSelectedItemIds(defaultIds);
+    setTotalCost(((defaultIds.length || 1) * 250000).toString());
     if (cat.targetOdometer) {
       setOdometer(Math.max(vCurrentOdometer, cat.targetOdometer));
     }
   };
 
   const handleToggleItem = (itemId) => {
-    setSelectedItemIds(prev =>
-      prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]
-    );
+    setSelectedItemIds(prev => {
+      const next = prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId];
+      setTotalCost(((next.length || 1) * 250000).toString());
+      return next;
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -74,18 +78,25 @@ export default function PresetOdometerChecklist({ vehicle, isOpen, onClose, onSu
       return;
     }
 
+    const parsedCost = parseInt(totalCost.toString().replace(/,/g, ''), 10);
+    if (isNaN(parsedCost) || parsedCost < 0) {
+      setError('Tổng chi phí dịch vụ không hợp lệ.');
+      return;
+    }
+
     setSubmitting(true);
     setError('');
 
     try {
-      await saveMatrixChecklist({
+      const result = await saveMatrixChecklist({
         vehicleId: targetVehicleId,
         odometer: Number(odometer),
         selectedItemIds,
         notes,
+        totalCost: parsedCost,
       });
 
-      if (onSuccess) onSuccess();
+      if (onSuccess) onSuccess(result);
       onClose();
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Lưu bảo dưỡng theo mốc km thất bại';
@@ -236,9 +247,48 @@ export default function PresetOdometerChecklist({ vehicle, isOpen, onClose, onSu
                 rows={2}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Ví dụ: Đã kiểm tra van, cảm biến oxy, sục rửa bình xăng mốc 75k km..."
+                placeholder="Ví dụ: Đã kiểm tra van, cảm biến oxy, sục rửa bình xăng, sơn xe, thay nhớt..."
                 className="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-slate-100 text-xs focus:outline-none focus:border-blue-500"
               />
+            </div>
+
+            {/* Total Cost input */}
+            <div className="bg-slate-950/90 p-3.5 rounded-xl border border-slate-800 space-y-2">
+              <div className="flex justify-between items-center">
+                <label className="block text-xs font-bold text-slate-200">
+                  4. Tổng Chi Phí Dịch Vụ & Vật Tư (VNĐ):
+                </label>
+                <span className="text-[11px] text-blue-400 font-medium">
+                  {new Intl.NumberFormat('vi-VN').format(parseInt(totalCost, 10) || 0)} đ
+                </span>
+              </div>
+              <div className="relative">
+                <input
+                  type="number"
+                  value={totalCost}
+                  onChange={(e) => setTotalCost(e.target.value)}
+                  placeholder="Nhập tổng tiền (VD: 750000)"
+                  min={0}
+                  step={10000}
+                  required
+                  className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-emerald-400 font-black text-sm focus:outline-none focus:border-emerald-500"
+                />
+                <span className="absolute right-3.5 top-2.5 text-xs text-slate-400 font-bold">
+                  VNĐ
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {[350000, 550000, 750000, 1200000, 1800000, 2500000].map((amt) => (
+                  <button
+                    key={amt}
+                    type="button"
+                    onClick={() => setTotalCost(amt.toString())}
+                    className="px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 border border-slate-700 font-medium transition cursor-pointer"
+                  >
+                    {new Intl.NumberFormat('vi-VN').format(amt)} đ
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Form Actions */}

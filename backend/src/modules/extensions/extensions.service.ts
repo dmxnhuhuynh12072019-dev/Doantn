@@ -222,48 +222,89 @@ export class ExtensionsService {
   }
 
   // 5. Lấy dữ liệu chi tiết hóa đơn bảo dưỡng
-  async getInvoiceData(appointmentId: number, userId: number, role: string) {
+  async getInvoiceData(targetId: number, userId: number, role: string) {
     const isGarage = role?.trim()?.toLowerCase() === 'garage' || role?.trim()?.toLowerCase() === 'admin';
-    const queryStr = isGarage
+    
+    // 1. Thử truy vấn từ MaintenanceHistory (hỗ trợ cả bảo dưỡng trực tiếp lẫn bảo dưỡng qua lịch hẹn)
+    const historyQuery = isGarage
       ? `SELECT h.HistoryID, h.ExecutionDate, h.ExecutionOdometer, h.TotalCost, h.Details,
                 a.AppointmentID, a.AppointmentDate, a.Status AS AppointmentStatus, a.Notes AS AppointmentNotes,
                 v.VehicleID, v.LicensePlate, v.Brand, v.Model, v.VehicleType, v.CurrentOdometer,
-                g.GarageID, g.GarageName, g.Address AS GarageAddress, g.Phone AS GaragePhone, g.Email AS GarageEmail,
+                COALESCE(g.GarageID, gDirect.GarageID) AS GarageID,
+                COALESCE(g.GarageName, gDirect.GarageName, N'AUTO HUẤN ĐẶNG') AS GarageName,
+                COALESCE(g.Address, gDirect.Address, N'Tứ Dân – Khoái Châu – Hưng Yên') AS GarageAddress,
+                COALESCE(g.Phone, gDirect.Phone, '0945 561 535 – 0989 416 086') AS GaragePhone,
+                COALESCE(g.Email, gDirect.Email, 'dnghuan@gmail.com') AS GarageEmail,
                 u.UserID, u.FullName AS OwnerName, u.PhoneNumber AS OwnerPhone
-         FROM Appointments a
-         JOIN Vehicles v ON a.VehicleID = v.VehicleID
-         JOIN Users u ON a.UserID = u.UserID
+         FROM MaintenanceHistory h
+         JOIN Vehicles v ON h.VehicleID = v.VehicleID
+         JOIN Users u ON v.UserID = u.UserID
+         LEFT JOIN Garages gDirect ON h.GarageID = gDirect.GarageID
+         LEFT JOIN Appointments a ON h.AppointmentID = a.AppointmentID
          LEFT JOIN Garages g ON a.GarageID = g.GarageID
-         LEFT JOIN MaintenanceHistory h ON a.AppointmentID = h.AppointmentID
-         WHERE a.AppointmentID = @appointmentId`
+         WHERE (h.HistoryID = @targetId OR h.AppointmentID = @targetId OR a.AppointmentID = @targetId)`
       : `SELECT h.HistoryID, h.ExecutionDate, h.ExecutionOdometer, h.TotalCost, h.Details,
                 a.AppointmentID, a.AppointmentDate, a.Status AS AppointmentStatus, a.Notes AS AppointmentNotes,
                 v.VehicleID, v.LicensePlate, v.Brand, v.Model, v.VehicleType, v.CurrentOdometer,
-                g.GarageID, g.GarageName, g.Address AS GarageAddress, g.Phone AS GaragePhone, g.Email AS GarageEmail,
+                COALESCE(g.GarageID, gDirect.GarageID) AS GarageID,
+                COALESCE(g.GarageName, gDirect.GarageName, N'AUTO HUẤN ĐẶNG') AS GarageName,
+                COALESCE(g.Address, gDirect.Address, N'Tứ Dân – Khoái Châu – Hưng Yên') AS GarageAddress,
+                COALESCE(g.Phone, gDirect.Phone, '0945 561 535 – 0989 416 086') AS GaragePhone,
+                COALESCE(g.Email, gDirect.Email, 'dnghuan@gmail.com') AS GarageEmail,
                 u.UserID, u.FullName AS OwnerName, u.PhoneNumber AS OwnerPhone
-         FROM Appointments a
-         JOIN Vehicles v ON a.VehicleID = v.VehicleID
-         JOIN Users u ON a.UserID = u.UserID
+         FROM MaintenanceHistory h
+         JOIN Vehicles v ON h.VehicleID = v.VehicleID
+         JOIN Users u ON v.UserID = u.UserID
+         LEFT JOIN Garages gDirect ON h.GarageID = gDirect.GarageID
+         LEFT JOIN Appointments a ON h.AppointmentID = a.AppointmentID
          LEFT JOIN Garages g ON a.GarageID = g.GarageID
-         LEFT JOIN MaintenanceHistory h ON a.AppointmentID = h.AppointmentID
-         WHERE a.AppointmentID = @appointmentId AND (a.UserID = @userId OR v.UserID = @userId)`;
+         WHERE (h.HistoryID = @targetId OR h.AppointmentID = @targetId OR a.AppointmentID = @targetId)
+           AND (u.UserID = @userId OR v.UserID = @userId)`;
 
-    const result = await this.dbService.query(queryStr, [
-      { name: 'appointmentId', type: sql.Int, value: appointmentId },
+    let result = await this.dbService.query(historyQuery, [
+      { name: 'targetId', type: sql.Int, value: targetId },
       { name: 'userId', type: sql.Int, value: userId }
     ]);
+
+    // 2. Nếu chưa có trong MaintenanceHistory, truy vấn từ Appointments
+    if (result.recordset.length === 0) {
+      const apptQuery = isGarage
+        ? `SELECT a.AppointmentID, a.AppointmentDate, a.Status AS AppointmentStatus, a.Notes AS AppointmentNotes,
+                  v.VehicleID, v.LicensePlate, v.Brand, v.Model, v.VehicleType, v.CurrentOdometer,
+                  g.GarageID, g.GarageName, g.Address AS GarageAddress, g.Phone AS GaragePhone, g.Email AS GarageEmail,
+                  u.UserID, u.FullName AS OwnerName, u.PhoneNumber AS OwnerPhone
+           FROM Appointments a
+           JOIN Vehicles v ON a.VehicleID = v.VehicleID
+           JOIN Users u ON a.UserID = u.UserID
+           LEFT JOIN Garages g ON a.GarageID = g.GarageID
+           WHERE a.AppointmentID = @targetId`
+        : `SELECT a.AppointmentID, a.AppointmentDate, a.Status AS AppointmentStatus, a.Notes AS AppointmentNotes,
+                  v.VehicleID, v.LicensePlate, v.Brand, v.Model, v.VehicleType, v.CurrentOdometer,
+                  g.GarageID, g.GarageName, g.Address AS GarageAddress, g.Phone AS GaragePhone, g.Email AS GarageEmail,
+                  u.UserID, u.FullName AS OwnerName, u.PhoneNumber AS OwnerPhone
+           FROM Appointments a
+           JOIN Vehicles v ON a.VehicleID = v.VehicleID
+           JOIN Users u ON a.UserID = u.UserID
+           LEFT JOIN Garages g ON a.GarageID = g.GarageID
+           WHERE a.AppointmentID = @targetId AND (a.UserID = @userId OR v.UserID = @userId)`;
+
+      result = await this.dbService.query(apptQuery, [
+        { name: 'targetId', type: sql.Int, value: targetId },
+        { name: 'userId', type: sql.Int, value: userId }
+      ]);
+    }
 
     if (result.recordset.length === 0) {
       throw new Error('Không tìm thấy thông tin lịch hẹn hoặc hóa đơn bảo dưỡng');
     }
 
     const row = result.recordset[0];
-    const totalAmount = Number(row.TotalCost || 1200000);
+    const rawTotalCost = row.TotalCost != null && Number(row.TotalCost) > 0 ? Number(row.TotalCost) : null;
 
     // Format invoice number
-    const apptDate = row.AppointmentDate ? new Date(row.AppointmentDate) : new Date();
+    const apptDate = row.AppointmentDate ? new Date(row.AppointmentDate) : (row.ExecutionDate ? new Date(row.ExecutionDate) : new Date());
     const dateCode = `${String(apptDate.getDate()).padStart(2, '0')}${String(apptDate.getMonth() + 1).padStart(2, '0')}${apptDate.getFullYear()}`;
-    const invoiceNumber = `HD_${dateCode}_${String(appointmentId).padStart(2, '0')}`;
+    const invoiceNumber = `HD_${dateCode}_${String(row.HistoryID || row.AppointmentID || targetId).padStart(2, '0')}`;
 
     // Parse items from details string
     const rawDetails = row.Details || row.AppointmentNotes || 'Thay dầu Castrol Magnatec, Thay lọc nhớt, Vệ sinh má phanh trước & sau, Kiểm tra hệ thống phanh, đèn, lốp xe';
@@ -280,44 +321,138 @@ export class ExtensionsService {
       itemsList = rawDetails.split(/[,;\n]+/).map(s => s.trim()).filter(Boolean);
     }
 
-    // Classify into Supplies (Vật tư) vs Labor (Công sửa chữa)
+    // Standard preset price mapping for known garage items
+    const PRESET_PRICES: Record<string, { price: number; unit: string; isLabor: boolean }> = {
+      'thay dầu castrol magnatec 10w-40 (4l)': { price: 550000, unit: 'Can', isLabor: false },
+      'thay dầu castrol magnatec': { price: 550000, unit: 'Can', isLabor: false },
+      'thay dầu động cơ': { price: 550000, unit: 'Can', isLabor: false },
+      'thay nhớt': { price: 550000, unit: 'Can', isLabor: false },
+      'thay lọc nhớt': { price: 150000, unit: 'Cái', isLabor: false },
+      'vệ sinh má phanh trước & sau': { price: 200000, unit: 'Lần', isLabor: true },
+      'vệ sinh má phanh': { price: 200000, unit: 'Lần', isLabor: true },
+      'kiểm tra hệ thống phanh, đèn, lốp xe': { price: 300000, unit: 'Lần', isLabor: true },
+      'kiểm tra hệ thống phanh': { price: 300000, unit: 'Lần', isLabor: true },
+      'thay lọc gió động cơ': { price: 180000, unit: 'Cái', isLabor: false },
+      'thay lọc gió điều hòa': { price: 220000, unit: 'Cái', isLabor: false },
+      'thay bugi iridium (4 cái)': { price: 600000, unit: 'Bộ', isLabor: false },
+      'thay bugi iridium': { price: 600000, unit: 'Bộ', isLabor: false },
+      'thay bugi': { price: 600000, unit: 'Bộ', isLabor: false },
+      'thay nước làm mát động cơ': { price: 250000, unit: 'Bình', isLabor: false },
+      'thay nước làm mát': { price: 250000, unit: 'Bình', isLabor: false },
+      'thay dầu phanh dot4': { price: 190000, unit: 'Chai', isLabor: false },
+      'thay dầu phanh': { price: 190000, unit: 'Chai', isLabor: false },
+      'cân mâm bấm chì & đảo lốp': { price: 250000, unit: 'Lần', isLabor: true },
+    };
+
+    interface ItemMeta {
+      name: string;
+      isLabor: boolean;
+      unit: string;
+      basePrice: number;
+    }
+
+    let parsedItems: ItemMeta[] = itemsList.map((item) => {
+      const lower = item.toLowerCase().trim();
+      let matched = PRESET_PRICES[lower];
+      if (!matched) {
+        const key = Object.keys(PRESET_PRICES).find(k => lower.includes(k) || k.includes(lower));
+        if (key) {
+          matched = PRESET_PRICES[key];
+        }
+      }
+
+      if (matched) {
+        return {
+          name: item,
+          isLabor: matched.isLabor,
+          unit: matched.unit,
+          basePrice: matched.price,
+        };
+      }
+
+      const isLabor = lower.includes('công') || lower.includes('vệ sinh') || lower.includes('kiểm tra') || 
+                      lower.includes('xử lý') || lower.includes('bảo dưỡng') || lower.includes('sửa chữa') || 
+                      lower.includes('cân mâm') || lower.includes('đảo lốp');
+      
+      let unit = 'Cái';
+      if (isLabor) {
+        unit = 'Lần';
+      } else if (lower.includes('dầu') || lower.includes('nhớt') || lower.includes('nước')) {
+        unit = lower.includes('nhớt') || lower.includes('dầu động cơ') ? 'Can' : 'Chai';
+      } else if (lower.includes('bugi') || lower.includes('má phanh') || lower.includes('lốp')) {
+        unit = 'Bộ';
+      }
+
+      return {
+        name: item,
+        isLabor,
+        unit,
+        basePrice: isLabor ? 250000 : 350000,
+      };
+    });
+
+    if (parsedItems.length === 0) {
+      parsedItems = [
+        { name: 'Dầu nhớt động cơ cao cấp', isLabor: false, unit: 'Can', basePrice: 550000 },
+        { name: 'Lọc dầu động cơ', isLabor: false, unit: 'Cái', basePrice: 150000 },
+        { name: 'Công kiểm tra & bảo dưỡng hệ thống phanh, gầm', isLabor: true, unit: 'Lần', basePrice: 500000 },
+      ];
+    }
+
+    const sumBase = parsedItems.reduce((sum, item) => sum + item.basePrice, 0);
+    const targetTotal = rawTotalCost != null ? rawTotalCost : (sumBase > 0 ? sumBase : 1200000);
+
+    let allocatedSum = 0;
+    const finalItems = parsedItems.map((item, idx) => {
+      let finalPrice: number;
+      if (idx === parsedItems.length - 1) {
+        finalPrice = Math.max(0, targetTotal - allocatedSum);
+      } else {
+        finalPrice = Math.round((item.basePrice / (sumBase || 1)) * targetTotal);
+        if (targetTotal >= 10000) {
+          finalPrice = Math.round(finalPrice / 1000) * 1000;
+        }
+        allocatedSum += finalPrice;
+      }
+      return {
+        ...item,
+        unitPrice: finalPrice,
+        quantity: 1,
+        total: finalPrice,
+      };
+    });
+
     const supplies: Array<{ code: string; name: string; unit: string; quantity: number; unitPrice: number; total: number }> = [];
     const labor: Array<{ code: string; name: string; unit: string; quantity: number; unitPrice: number; total: number }> = [];
 
-    itemsList.forEach((item, index) => {
-      const lower = item.toLowerCase();
-      if (lower.includes('công') || lower.includes('vệ sinh') || lower.includes('kiểm tra') || lower.includes('xử lý') || lower.includes('bảo dưỡng') || lower.includes('sửa chữa')) {
-        const price = Math.round((totalAmount * 0.4) / (itemsList.length || 1));
+    finalItems.forEach(item => {
+      if (item.isLabor) {
         labor.push({
           code: `NC${String(labor.length + 1).padStart(2, '0')}`,
-          name: item,
-          unit: 'Lần',
-          quantity: 1,
-          unitPrice: price || 200000,
-          total: price || 200000,
+          name: item.name,
+          unit: item.unit,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          total: item.total,
         });
       } else {
-        const price = Math.round((totalAmount * 0.6) / (itemsList.length || 1));
         supplies.push({
           code: `VT${String(supplies.length + 1).padStart(2, '0')}`,
-          name: item,
-          unit: lower.includes('dầu') || lower.includes('nhớt') ? 'Can' : 'Cái',
-          quantity: 1,
-          unitPrice: price || 350000,
-          total: price || 350000,
+          name: item.name,
+          unit: item.unit,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          total: item.total,
         });
       }
     });
 
-    if (supplies.length === 0 && labor.length === 0) {
-      supplies.push({ code: 'VT01', name: 'Dầu nhớt động cơ cao cấp', unit: 'Can', quantity: 1, unitPrice: 550000, total: 550000 });
-      supplies.push({ code: 'VT02', name: 'Lọc dầu động cơ', unit: 'Cái', quantity: 1, unitPrice: 150000, total: 150000 });
-      labor.push({ code: 'NC01', name: 'Công kiểm tra & bảo dưỡng hệ thống phanh, gầm', unit: 'Lần', quantity: 1, unitPrice: 500000, total: 500000 });
-    }
-
     const totalSupplies = supplies.reduce((sum, item) => sum + item.total, 0);
     const totalLabor = labor.reduce((sum, item) => sum + item.total, 0);
-    const calculatedTotal = totalSupplies + totalLabor;
+    const oldDebt = 0;
+    const discount = 0;
+    const prepaid = 0;
+    const grandTotal = Math.max(0, (totalSupplies + totalLabor + oldDebt) - discount - prepaid);
 
     return {
       invoiceNumber,
@@ -349,10 +484,10 @@ export class ExtensionsService {
       labor,
       totalSupplies,
       totalLabor,
-      oldDebt: 0,
-      discount: 0,
-      prepaid: 0,
-      grandTotal: totalAmount > 0 ? totalAmount : calculatedTotal,
+      oldDebt,
+      discount,
+      prepaid,
+      grandTotal,
       bankInfo: {
         accountNumber: '0945561535',
         bankName: 'MB (Quân Đội)',
